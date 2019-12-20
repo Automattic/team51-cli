@@ -1,0 +1,14 @@
+language: php
+sudo: false
+git:
+  submodules: false
+php:
+  - 7.2
+env:
+  matrix:
+    - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
+    - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
+install: true
+script:
+  # Linting and unit tests
+  - make test
