@@ -92,11 +92,7 @@ class Create_Production_Site extends Command {
         $jetpack_connection_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/next_url', (int) $pressable_site->data->id );
         $networkadmin_search_link = sprintf( 'https://wordpress.com/wp-admin/network/sites.php?s=%s&submit=Search+Sites', $pressable_site->data->url );
 
-        $manual_task_notices[] = 'Make sure your browser is logged in to the Team Pressable and WordPress.com accounts.';
-        $manual_task_notices[] = 'Install/activate Jetpack: ' . $jetpack_activation_link;
-        $manual_task_notices[] = 'Connect Jetpack: ' . $jetpack_connection_link;
-        $manual_task_notices[] = 'Flag the Jetpack shadow site as "blue" from its RC: ' . $networkadmin_search_link;
-        $manual_task_notices[] = 'Sticker this site as team-owned/managed: https://mc.a8c.com/tdiv/team-51/';
+        $manual_task_notices[] = 'Install and connect Jetpack to the team account.';
 
         $server_config = array(
             'name'        => 'Production',
