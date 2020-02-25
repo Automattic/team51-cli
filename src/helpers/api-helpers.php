@@ -122,7 +122,8 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => $method,
-				'content' => $data
+				'content' => $data,
+				'timeout' => 60
 			)
 		);
 
