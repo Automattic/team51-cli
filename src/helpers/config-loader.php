@@ -118,3 +118,9 @@ if( ! empty( $config->SLACK_WEBHOOK_URL ) ) {
 } else {
 	echo "Warning: SLACK_WEBHOOK_URL could not be set.\n";
 }
+
+if( ! empty( $config->GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY ) ) {
+	define( 'GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY', $config->GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY );
+} else {
+	echo "Warning: GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY could not be set.\n";
+}
