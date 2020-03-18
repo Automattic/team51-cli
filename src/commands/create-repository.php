@@ -111,6 +111,7 @@ class Create_Repository extends Command {
                 'has_projects' => true,
                 'has_wiki' => true,
                 'license_template' => 'gpl-3.0',
+                'team_id' => GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY,
             ));
         } else {
             $response = $api_helper->call_github_api( 'orgs/' . GITHUB_API_OWNER . '/repos', array(
@@ -123,6 +124,7 @@ class Create_Repository extends Command {
                 'has_wiki' => true,
                 'auto_init' => true,
                 'license_template' => 'gpl-3.0',
+                'team_id' => GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY,
             ));
         }
 
