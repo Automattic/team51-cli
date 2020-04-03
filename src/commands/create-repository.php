@@ -49,25 +49,25 @@ class Create_Repository extends Command {
         }
 
         $output->writeln( "<comment>Creating scaffold/$slug directory.</comment>" );
-        $filesystem->mkdir( "scaffold/$slug" );
+        $filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 
         $output->writeln( "<comment>Copying scaffold/templates/github directory to scaffold/$slug/.github.</comment>" );
-        $filesystem->mirror( "scaffold/templates/github", "scaffold/$slug/.github" );
+        $filesystem->mirror( TEAM51_CLI_ROOT_DIR . "/scaffold/templates/github", TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.github" );
 
         if( empty( $input->getOption( 'issue-repo-only' ) ) ) {
             $output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
-            $filesystem->copy( 'scaffold/templates/gitignore', "scaffold/$slug/.gitignore" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
             $output->writeln( "<comment>Copying scaffold/templates/.travis.yml file to scaffold/$slug/.travis.yml.</comment>" );
-            $filesystem->copy( 'scaffold/templates/.travis.yml', "scaffold/$slug/.travis.yml" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.travis.yml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.travis.yml" );
 
             $output->writeln( "<comment>Copying scaffold/templates/Makefile file to scaffold/$slug/Makefile.</comment>" );
-            $filesystem->copy( 'scaffold/templates/Makefile', "scaffold/$slug/Makefile" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/Makefile', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/Makefile" );
 
             $output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-README.md file to scaffold/$slug/README.md.</comment>" );
-            $filesystem->copy( 'scaffold/templates/EXAMPLE-README.md', "scaffold/$slug/README.md" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
 
-            $readme = file_get_contents( "scaffold/$slug/README.md" );
+            $readme = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
 
             if( empty( $readme ) ) {
                 $output->writeln( "<error>Failed to read contents of README.md. Does it exist?</error>" );
@@ -77,9 +77,9 @@ class Create_Repository extends Command {
             $readme = str_replace( array( 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL', 'EXAMPLE_REPO_NAME' ), array( $input->getOption( 'production-url'), $input->getOption( 'development-url'), $slug ), $readme );
             
             $output->writeln( "<comment>Creating repository README.</comment>" );
-            file_put_contents( "scaffold/$slug/README.md", $readme );
+            file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md", $readme );
 
-            $gitignore = file_get_contents( "scaffold/$slug/.gitignore" );
+            $gitignore = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
             if( ! empty( $input->getOption( 'custom-theme-slug' ) ) ) {
                 $output->writeln( "<comment>Adding custom theme slug {$input->getOption( 'custom-theme-slug' )} to .gitignore.</comment>" );
@@ -95,7 +95,7 @@ class Create_Repository extends Command {
                 $gitignore = str_replace( '!plugins/EXAMPLE_PLUGIN_NAME', '', $gitignore );
             }
 
-            file_put_contents( "scaffold/$slug/.gitignore", $gitignore );
+            file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore", $gitignore );
         }
 
         $output->writeln( "<info>Local setup complete! Now we need to create and populate the repository on GitHub.</info>" );
@@ -140,29 +140,35 @@ class Create_Repository extends Command {
 
         $output->writeln( "<comment>Adding, committing, and pushing files to GitHub.</comment>" );
 
-        $progress_bar = new ProgressBar( $output, 6 );
+        $progress_bar = new ProgressBar( $output, 7 );
         $progress_bar->start();
 
-        $this->execute_command( array( "git", "init", "scaffold/$slug" ) );
+        $this->execute_command( array( "git", "init", TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" ) );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "remote", "add", "origin", "$ssh_url" ), "scaffold/$slug" );
+        $this->execute_command( array( "git", "remote", "add", "origin", "$ssh_url" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "pull", "origin", "master" ), "scaffold/$slug" );
+        $this->execute_command( array( "git", "pull", "origin", "master" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "add", "." ), "scaffold/$slug" );
+        $this->execute_command( array( "git", "add", "." ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "commit", "-m 'Added project files from scaffold'" ), "scaffold/$slug" );
+        $this->execute_command( array( "git", "commit", "-m 'Added project files from scaffold'" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "push", "-u", "origin", "--all" ), "scaffold/$slug" );
+        $this->execute_command( array( "git", "branch", "develop" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+        $progress_bar->advance();
+
+        $this->execute_command( array( "git", "push", "-u", "origin", "--all" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
         $progress_bar->finish();
         $output->writeln( "" );
+
+	$output->writeln( "<comment>Cleaning up scaffold files.</comment>" );
+        $this->execute_command( array( "rm", "-rf", "$slug" ), TEAM51_CLI_ROOT_DIR . "/scaffold" );
 
         $output->writeln( "<comment>Configuring GitHub repository labels.</comment>" );
 
