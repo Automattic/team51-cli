@@ -2,8 +2,6 @@
 
 namespace Team51\Helper;
 
-require __DIR__ . '/config-loader.php';
-
 class API_Helper {
 	
 	public function call_pressable_api( $query, $method, $data ) {
