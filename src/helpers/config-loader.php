@@ -2,7 +2,7 @@
 
 namespace Team51\Helper;
 
-$config = json_decode( file_get_contents( 'config.json' ) );
+$config = json_decode( file_get_contents( TEAM51_CLI_ROOT_DIR . '/config.json' ) );
 
 if( empty( $config ) ) {
 	echo "Config file couldn't be read. Aborting!\n";
