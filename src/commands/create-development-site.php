@@ -17,7 +17,8 @@ class Create_Development_Site extends Command {
         ->setDescription( "Creates a new development site (on Pressable)." )
         ->setHelp( "This command allows you to create a new development site." )
         ->addOption( 'site-id', null, InputOption::VALUE_REQUIRED, "The site ID of the production Pressable site you'd like to clone." )
-        ->addOption( 'temporary-clone', null, InputOption::VALUE_NONE, "Creates a temporary clone of the production site for short-term development work. The site created is meant to be deleted after use." );
+	->addOption( 'temporary-clone', null, InputOption::VALUE_NONE, "Creates a temporary clone of the production site for short-term development work. The site created is meant to be deleted after use." )
+	->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -53,7 +54,7 @@ class Create_Development_Site extends Command {
         }
 
         if( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
-            $site_name .= '-temporary-clone-' . time();
+            $site_name .= '-' . time();
         }
 
         $pressable_site = $api_helper->call_pressable_api(
@@ -98,14 +99,10 @@ class Create_Development_Site extends Command {
         $output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
 
         $server_config = array(
-            'name'        => 'Development',
+            'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
             'environment' => 'development',
-            'branch'      => 'develop',
+            'branch'      => ! empty( $input->getOption( 'branch' ) ) ? $input->getOption( 'branch' ) : 'develop',
         );
-
-        if( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
-            $server_config['name'] .= '-temporary-clone-' . time();
-        }
 
         // Set server config elements common to production and development environments.
         $server_config['server_path'] = 'wp-content';
@@ -196,7 +193,13 @@ class Create_Development_Site extends Command {
                     ),
                 )
             );
-            
+
+	    if ( empty( $server_info->host_key ) && ! empty( $server_info->branch ) ) {
+		$output->writeln( "" );
+		$output->writeln( "<error>Branch {$server_config['branch']} doesn't exist in GitHub! Please create it and try again. Aborting!</error>" );
+		exit;
+	    }
+
             $progress_bar->advance();
             sleep( 1 );
         }
@@ -219,7 +222,7 @@ class Create_Development_Site extends Command {
             $output->writeln( "<info>Successfully retrieved webhook URL from new DeployHQ project.</info>\n" );
         }
 
-        $output->writeln( "\n<info>Deploy HQ is now set up and ready to start receiving and deploying commits!</info>\n" );
+        $output->writeln( "\n<info>Deploy HQ is now set up and ready to start receiving and deploying commits to the new staging site https://$site_name.mystagingwebsite.com.</info>\n" );
         
         $output->writeln( "" );
 
