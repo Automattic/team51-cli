@@ -121,7 +121,8 @@ class API_Helper {
 				'header'  => $headers,
 				'method'  => $method,
 				'content' => $data,
-				'timeout' => 60
+				'timeout' => 60,
+				'ignore_errors' => true,
 			)
 		);
 
