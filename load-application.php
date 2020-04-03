@@ -1,5 +1,7 @@
 <?php
 
+define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
+
 require __DIR__ . '/vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
