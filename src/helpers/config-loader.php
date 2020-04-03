@@ -124,3 +124,9 @@ if( ! empty( $config->GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY ) ) {
 } else {
 	echo "Warning: GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY could not be set.\n";
 }
+
+if( ! empty( $config->ASCII_WELCOME_ART ) ) {
+	define( 'ASCII_WELCOME_ART', $config->ASCII_WELCOME_ART );
+} else {
+	echo "Warning: ASCII_WELCOME_ART could not be set.\n";
+}
