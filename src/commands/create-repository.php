@@ -48,6 +48,20 @@ class Create_Repository extends Command {
             $slug = $input->getOption( 'repo-slug');
         }
 
+        // Verify repo we're trying to create doesn't already exist.
+        $output->writeln( "<comment>Verifying $slug doesn't exist in GitHub org.</comment>" );
+
+        $repository_exists = $api_helper->call_github_api(
+            sprintf( 'repos/%s/%s', GITHUB_API_OWNER, $slug ),
+            '',
+            'GET'
+        );
+
+        if ( ! empty( $repository_exists->id ) ) {
+            $output->writeln( "<error>Repository $slug already exists in GitHub org. Please choose a different repository name. Aborting!</error>" );
+            exit;
+        }
+
         $output->writeln( "<comment>Creating scaffold/$slug directory.</comment>" );
         $filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 
