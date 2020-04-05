@@ -146,7 +146,7 @@ class Create_Development_Site extends Command {
         }
 	
 	// Verify 'develop' branch exists in the GitHub repo, otherwise adding the new development server to DeployHQ will fail.
-        $output->writeln( "<comment>Verifying 'develop' branch exists in GitHub repo.</comment>" );
+	$output->writeln( "<comment>Verifying 'develop' branch exists in GitHub repo.</comment>" );
 
 	$develop_branch = $api_helper->call_github_api(
 		sprintf( 'repos/%s/%s/git/ref/heads/develop', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
