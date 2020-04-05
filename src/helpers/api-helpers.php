@@ -90,6 +90,7 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => $method,
+				'ignore_errors' => true,
 			)
 		);
 

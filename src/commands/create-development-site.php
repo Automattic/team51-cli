@@ -144,6 +144,51 @@ class Create_Development_Site extends Command {
             $repository_url = $project_info->repository->url;
             $output->writeln( "<info>Successfully retrieved GitHub repo from the DeployHQ project.</info>" );
         }
+	
+	// Verify 'develop' branch exists in the GitHub repo, otherwise adding the new development server to DeployHQ will fail.
+	$output->writeln( "<comment>Verifying 'develop' branch exists in GitHub repo.</comment>" );
+
+	$develop_branch = $api_helper->call_github_api(
+		sprintf( 'repos/%s/%s/git/ref/heads/develop', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
+		'',
+		'GET'
+	);
+
+	if ( empty( $develop_branch->ref ) ) {
+		$output->writeln( "<comment>No 'develop' branch present. Creating one now.</comment>" );
+
+		// Grab SHA for master branch so we can use it to create the develop branch from that point.
+		$master_branch = $api_helper->call_github_api(
+			sprintf( 'repos/%s/%s/git/ref/heads/master', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
+			'',
+			'GET'
+		);
+		
+		if ( empty( $master_branch->object->sha ) ) {
+			$output->writeln( "<error>Failed to retrieve 'master' branch SHA. Aborting!</error>" );
+			exit;
+		}
+
+		
+		$develop_branch = $api_helper->call_github_api(
+			sprintf( 'repos/%s/%s/git/refs', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
+			array(
+				'ref' => 'refs/heads/develop',
+				'sha' => $master_branch->object->sha,
+
+			),
+			'POST'
+		);
+
+		if ( empty( $develop_branch->ref ) ) {
+			$output->writeln( "<error>Failed to create 'develop' branch. Aborting!</error>" );
+			exit;
+		} else {
+			$output->writeln( "<info>Successfully created 'develop' branch!</info>" );
+		}
+	} else {
+            $output->writeln( "<info>Verified 'develop' branch exists.</info>" );
+	}
 
         $output->writeln( "<comment>Connecting DeployHQ project to GitHub repository.</comment>" );
 
