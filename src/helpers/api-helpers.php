@@ -20,12 +20,21 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => $method,
-				'content' => $data
+				'content' => $data,
+				'ignore_errors' => true,
 			)
 		);
 
 		$context  = stream_context_create( $options );
 		$result = @file_get_contents( $api_request_url, false, $context );
+
+		preg_match( '/\d\d\d/', $http_response_header[0], $response_code );
+
+		$response_code = $response_code[0];
+
+		if ( '401' === $response_code ) {
+			echo "Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked." . PHP_EOL;
+		}
 
 		return json_decode( $result );
 	}
