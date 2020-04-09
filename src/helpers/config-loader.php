@@ -130,3 +130,9 @@ if( ! empty( $config->ASCII_WELCOME_ART ) ) {
 } else {
 	echo "Warning: ASCII_WELCOME_ART could not be set.\n";
 }
+
+if( ! empty( $config->GITHUB_DEFAULT_ISSUES_REPOSITORY ) ) {
+	define( 'GITHUB_DEFAULT_ISSUES_REPOSITORY', $config->GITHUB_DEFAULT_ISSUES_REPOSITORY );
+} else {
+	echo "Warning: GITHUB_DEFAULT_ISSUES_REPOSITORY could not be set.\n";
+}

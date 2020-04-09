@@ -295,6 +295,34 @@ class Create_Repository extends Command {
         $output->writeln( "<comment>Logging GitHub init script completion to Slack.</comment>" );
         $api_helper->log_to_slack( "INFO: GitHub repo init run for $html_url." );
 
+	// Copy issues from default issue repository if one is configured.
+	if ( defined( 'GITHUB_DEFAULT_ISSUES_REPOSITORY' ) && ! empty( GITHUB_DEFAULT_ISSUES_REPOSITORY ) ) {
+		$output->writeln( "<comment>Copying issues from " . GITHUB_DEFAULT_ISSUES_REPOSITORY . " to $slug</comment>" );
+		$issues = $api_helper->call_github_api(
+			sprintf( 'repos/%s/%s/issues', GITHUB_API_OWNER, GITHUB_DEFAULT_ISSUES_REPOSITORY ),
+			'',
+			'GET'
+		);
+
+		foreach( $issues as $issue ) {
+			$new_issue = $api_helper->call_github_api(
+				sprintf( 'repos/%s/%s/issues', GITHUB_API_OWNER, $slug ),
+				array(
+					'title' => $issue->title,
+					'body' => $issue->body,
+					'labels' => $issue->labels,
+				),
+				'POST'
+			);
+
+			if ( ! empty( $new_issue->id ) ) {
+				$output->writeln( "<info>Copying issue '{$issue->title}' into $slug.</info>" );
+			} else {
+				$output->writeln( "<error>Failed to copy issue '{$issue->title}' into $slug.</info>" );
+			}
+		}
+	}
+
         $output->writeln( "<info>GitHub repository creation and setup is complete! $html_url</info>" );
 
         if( $input->getOption( 'create-production-site' ) ) {
