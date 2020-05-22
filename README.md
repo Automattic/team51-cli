@@ -28,6 +28,7 @@ Be well, be kind, make things and set them free.
 
 ## Installation
 1. Clone this repository.
+1. Make sure [Composer](https://getcomposer.org/) is installed.
 1. From the cloned repository, run `./install-osx`. First off, we know the fruit company has changed the name of the desktop operating system. Secondly, there's probably nothing fruit company specific about this install script. We could have called it `./install-posix`, but nobody's perfect.
 1. Download the config.json file from a secure vault named `Team51-CLI Config File` to the root of the repository.
 1. That's all! Run commands!
