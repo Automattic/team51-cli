@@ -3,7 +3,7 @@
 namespace Team51\Helper;
 
 class API_Helper {
-	
+
 	public function call_pressable_api( $query, $method, $data ) {
 		$api_request_url = PRESSABLE_API_ENDPOINT . $query;
 
@@ -166,6 +166,35 @@ class API_Helper {
 
 		$context = stream_context_create( $options );
 		$result  = @file_get_contents( SLACK_WEBHOOK_URL, false, $context );
+
+		return json_decode( $result );
+	}
+
+	public function call_wpcom_api( $query, $data, $method = 'POST' ) {
+		$api_request_url = WPCOM_API_ENDPOINT . $query;
+
+		$headers = array(
+			'Accept: application/json',
+			'Content-Type: application/json',
+			'Authorization: Bearer '. WPCOM_API_ACCOUNT_TOKEN,
+			'User-Agent: PHP',
+		);
+
+		$options = array(
+			'http' => array(
+				'header'        => $headers,
+				'ignore_errors' => true,
+			)
+		);
+
+		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
+			$data = json_encode( $data );
+			$options['http']['content'] = $data;
+			$options['http']['method']  = $method;
+		}
+
+		$context = stream_context_create( $options );
+		$result = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
