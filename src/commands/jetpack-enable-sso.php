@@ -13,7 +13,7 @@ class Jetpack_Enable_SSO extends Command {
 
     protected function configure() {
         $this
-        ->setDescription( "Activated Jetpack SSO module and enables two-factor authentication." )
+        ->setDescription( "Activates Jetpack SSO module and enables two-factor authentication." )
 		->setHelp( "Connects to Jetpack site SSO module and Two Step authentication option." )
 		->addArgument( 'site-domain', InputArgument::REQUIRED, "The domain of the Jetpack connected site." );
     }
