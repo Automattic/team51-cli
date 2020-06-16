@@ -27,7 +27,7 @@ class Jetpack_Enable_SSO extends Command {
 
 		$site = $api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_domain, array() );
 
-		if ( ! $site || property_exists( $site, 'error' ) ) {
+		if ( empty( $site->ID ) ) {
 			$output->writeln( '<error>Failed to fetch site information.<error>' );
 			$output->writeln( '<info>Are you sure this site is connected to Jetpack and on the a8cteam51 account?<info>' );
 			exit;
@@ -46,7 +46,7 @@ class Jetpack_Enable_SSO extends Command {
 
 		$result = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site->ID . '/rest-api/', $data );
 
-		if ( ! $result || property_exists( $result, 'error' ) ) {
+		if ( ! empty( $result->error ) ) {
 			$output->writeln( '<error>Failed. ' . $result->message . '<error>' );
 			exit;
 		}
