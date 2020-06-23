@@ -60,13 +60,14 @@ class Front_Create_Export extends Command {
 			'end'   => $end_date,
 		);
 
+		$output->writeln( 'Asking Front to generate a new export...' );
+
 		$result = $api_helper->call_front_api( 'exports', $data, 'POST' );
 
 		if ( empty( $result->id ) || empty( $result->status ) ) {
 			$output->writeln( '<error>Oh no, something went wrong!</error>' );
 		}
 
-		$output->writeln( 'Asking Front to generate a new export...' );
 		$output->writeln( sprintf( '<info>A new export request was created with the ID %s. Current status is %s.</info>', $result->id, ucfirst( $result->status ) ) );
 		$output->writeln( '<comment>Use the `team51 front-list-exports` command to check on the export status and get a download link.</comment>' );
     }
