@@ -29,12 +29,7 @@ class Front_List_Exports extends Command {
 		$table_data = array();
 
 		foreach ( $exports->_results as $export ) {
-			$url = '';
-
-			if ( ! empty( $export->url ) ) {
-				preg_match( '/export-messages-wordpress_concierge-(.*)/', $export->url, $matches );
-				$url = sprintf( '<href=%s>%s</>', $export->url, $matches[1] );
-			}
+			$url = sprintf( '<href=%s>%s</>', $export->url, $export->url );
 
 			$table_data[] = array(
 				$export->id,
