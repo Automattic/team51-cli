@@ -164,3 +164,9 @@ if( ! empty( $config->GITHUB_DEFAULT_ISSUES_REPOSITORY ) ) {
 } else {
 	echo "Warning: GITHUB_DEFAULT_ISSUES_REPOSITORY could not be set.\n";
 }
+
+if( ! empty( $config->PRESSABLE_BOT_COLLABORATOR_EMAIL ) ) {
+	define( 'PRESSABLE_BOT_COLLABORATOR_EMAIL', $config->PRESSABLE_BOT_COLLABORATOR_EMAIL );
+} else {
+	echo "Warning: PRESSABLE_BOT_COLLABORATOR_EMAIL could not be set.\n";
+}
