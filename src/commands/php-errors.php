@@ -36,6 +36,13 @@ class Get_PHP_Errors extends Command {
 
         $site_domain = $input->getArgument( 'site-domain' );
 
+        // Strip out everything except the hostname if we detect a URL is passed.
+        if ( false !== strpos( $site_domain, 'http' ) ) {
+            $site_domain = parse_url( $site_domain, PHP_URL_HOST );
+        }
+
+        var_dump( $site_domain ); die();
+
         $output->writeln( "<comment>Finding $site_domain.</comment>" );
 
         $pressable_sites = $api_helper->call_pressable_api(
