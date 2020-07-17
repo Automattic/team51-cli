@@ -6,6 +6,7 @@ use Team51\Helper\API_Helper;
 use phpseclib\Net\SFTP;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -19,7 +20,8 @@ class Get_PHP_Errors extends Command {
         $this
         ->setDescription( "Pulls the 3 most recent fatal errors from the site's PHP error log." )
         ->setHelp( "Ex: team51 php-errors asia.si.edu" )
-        ->addArgument( 'site-domain', InputArgument::REQUIRED, "Site domain/URL (e.g. asia.si.edu)." );
+        ->addArgument( 'site-domain', InputArgument::REQUIRED, "Site domain/URL (e.g. asia.si.edu)." )
+        ->addOption( 'raw', null, InputOption::VALUE_NONE, "You can get an unprocessed dump to stdout of the entire php-errors log by passing --raw." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -130,6 +132,13 @@ class Get_PHP_Errors extends Command {
             'DELETE',
             array()
         );
+
+        // If they asked for the raw log, give it to them and bail.
+        if ( ! empty( $input->getOption( 'raw' ) ) ) {
+            passthru( 'clear' );
+            echo $php_errors;
+            exit;
+        }
 
         $output->writeln( "<comment>Parsing error log into something usable.</comment>" );
 
