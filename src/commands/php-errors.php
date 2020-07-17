@@ -22,7 +22,8 @@ class Get_PHP_Errors extends Command {
         ->setHelp( "Ex: team51 php-errors asia.si.edu" )
         ->addArgument( 'site-domain', InputArgument::REQUIRED, "Site domain/URL (e.g. asia.si.edu)." )
         ->addOption( 'raw', null, InputOption::VALUE_NONE, "You can get an unprocessed dump to stdout of the entire php-errors log by passing --raw." )
-        ->addOption( 'table', null, InputOption::VALUE_NONE, "Print the results in a table by using --table." );
+        ->addOption( 'table', null, InputOption::VALUE_NONE, "Print the results in a table by using --table." )
+        ->addOption( 'limit', null, InputOption::VALUE_REQUIRED, "You can choose the number of distinct PHP fatals to display with (ex: --limit=10). Default is 3." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -200,8 +201,9 @@ class Get_PHP_Errors extends Command {
             return strtotime( $b['timestamp'] ) - strtotime( $a['timestamp'] );
         });
 
-        // Only show the 3 most recent PHP errors.
-        $_php_error_stats_table = array_slice( $_php_error_stats_table, 0, 3 );
+        // Only show the 3 most recent PHP errors or the user specified limit.
+        $error_limit = ! empty( intval( $input->getOption( 'limit' ) ) ) ? intval( $input->getOption( 'limit' ) ) : 3;
+        $_php_error_stats_table = array_slice( $_php_error_stats_table, 0, $error_limit );
 
         /*
          * If --table isn't set, show the standard output and bail.
