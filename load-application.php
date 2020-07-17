@@ -7,7 +7,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 if ( defined( 'ASCII_WELCOME_ART' ) && ! empty( ASCII_WELCOME_ART ) ) {
 	// Respect -q and --quiet.
-	if ( ! in_array( '-q', $argv ) || ! in_array( '--quiet', $argv ) ) {
+	if ( ! in_array( '-q', $argv ) && ! in_array( '--quiet', $argv ) ) {
 		echo ASCII_WELCOME_ART . PHP_EOL;
 	}
 }
