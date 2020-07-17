@@ -21,11 +21,17 @@ class Get_PHP_Errors extends Command {
         ->setDescription( "Pulls the 3 most recent fatal errors from the site's PHP error log." )
         ->setHelp( "Ex: team51 php-errors asia.si.edu" )
         ->addArgument( 'site-domain', InputArgument::REQUIRED, "Site domain/URL (e.g. asia.si.edu)." )
-        ->addOption( 'raw', null, InputOption::VALUE_NONE, "You can get an unprocessed dump to stdout of the entire php-errors log by passing --raw." );
+        ->addOption( 'raw', null, InputOption::VALUE_NONE, "You can get an unprocessed dump to stdout of the entire php-errors log by passing --raw." )
+        ->addOption( 'table', null, InputOption::VALUE_NONE, "Print the results in a table by using --table." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
         $api_helper = new API_Helper;
+
+        if ( ! empty( $input->getOption( 'raw' ) ) && ! empty( $input->getOption( 'table' ) ) ) {
+            $output->writeln( "<error>You can't have --raw and --table. Pick one!</error>" );
+            exit;
+        }
 
         $site_domain = $input->getArgument( 'site-domain' );
 
@@ -196,6 +202,25 @@ class Get_PHP_Errors extends Command {
 
         // Only show the 3 most recent PHP errors.
         $_php_error_stats_table = array_slice( $_php_error_stats_table, 0, 3 );
+
+        /*
+         * If --table isn't set, show the standard output and bail.
+         * Otherwise, go on to build and output a table view of the data.
+         */
+        if ( empty( $input->getOption( 'table' ) ) ) {
+            // Add some padding to previous output before dumping data.
+            $output->writeln( "" );
+            $output->writeln( "-- The 3 most recent PHP Fatals --" );
+            $output->writeln( "" );
+            foreach( $_php_error_stats_table as $table_row ) {
+                $output->writeln( "<info>Timestamp: {$table_row['timestamp']}</info>" );
+                $output->writeln( "<info>Error Level: {$table_row['error_level']}</info>" );
+                $output->writeln( "<info>Number of repeated errors: {$table_row['error_count']}</info>" );
+                $output->writeln( "<fg=magenta>{$table_row['error_message']}</>" );
+                $output->writeln( "" );
+            }
+            exit;
+        }
 
         $php_error_stats_table = array();
 
