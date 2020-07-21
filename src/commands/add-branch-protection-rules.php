@@ -29,8 +29,7 @@ class Add_Branch_Protection_Rules extends Command {
             'required_status_checks' => array (
                 'strict' => true,
                 'contexts' => array (
-                    'Travis CI - Branch',
-                    'Travis CI - Pull Request',
+                    'Run PHPCS inspection',
                 ),
             ),
             'enforce_admins' => null,

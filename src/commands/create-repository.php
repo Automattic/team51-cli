@@ -72,11 +72,8 @@ class Create_Repository extends Command {
             $output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
-            $output->writeln( "<comment>Copying scaffold/templates/.travis.yml file to scaffold/$slug/.travis.yml.</comment>" );
-            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.travis.yml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.travis.yml" );
-
-            $output->writeln( "<comment>Copying scaffold/templates/Makefile file to scaffold/$slug/Makefile.</comment>" );
-            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/Makefile', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/Makefile" );
+            $output->writeln( "<comment>Copying scaffold/templates/.phpcs.xml file to scaffold/$slug/.phpcs.xml.</comment>" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.phpcs.xml" );
 
             $output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-README.md file to scaffold/$slug/README.md.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
@@ -89,7 +86,7 @@ class Create_Repository extends Command {
             }
 
             $readme = str_replace( array( 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL', 'EXAMPLE_REPO_NAME' ), array( $input->getOption( 'production-url'), $input->getOption( 'development-url'), $slug ), $readme );
-            
+
             $output->writeln( "<comment>Creating repository README.</comment>" );
             file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md", $readme );
 
@@ -113,7 +110,7 @@ class Create_Repository extends Command {
         }
 
         $output->writeln( "<info>Local setup complete! Now we need to create and populate the repository on GitHub.</info>" );
-    
+
         $output->writeln( "<comment>Creating GitHub repository.</comment>" );
         if( empty( $input->getOption( 'issue-repo-only' ) ) ) {
             $response = $api_helper->call_github_api( 'orgs/' . GITHUB_API_OWNER . '/repos', array(
@@ -280,8 +277,7 @@ class Create_Repository extends Command {
             'required_status_checks' => array (
                 'strict' => true,
                 'contexts' => array (
-                    'Travis CI - Branch',
-                    'Travis CI - Pull Request',
+                    'Run PHPCS inspection',
                 ),
             ),
             'enforce_admins' => null,
