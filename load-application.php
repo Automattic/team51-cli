@@ -24,5 +24,6 @@ $application->add( new Team51\Command\Jetpack_Enable_SSO() );
 $application->add( new Team51\Command\Front_Create_Export() );
 $application->add( new Team51\Command\Front_List_Exports() );
 $application->add( new Team51\Command\Get_PHP_Errors() );
+$application->add( new Team51\Command\Migrate_Phpcs() );
 
 $application->run();

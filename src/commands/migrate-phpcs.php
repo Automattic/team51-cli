@@ -14,7 +14,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
-class Command_Name extends Command {
+class Migrate_Phpcs extends Command {
   protected static $defaultName = 'migrate-phpcs';
 
   protected function configure() {
