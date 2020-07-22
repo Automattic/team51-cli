@@ -1,10 +1,8 @@
 <?xml version="1.0"?>
-<!--This entire file can be optionally deleted if this issue is fixed: https://github.com/rtCamp/action-phpcs-code-review/issues/35  -->
 <ruleset name="">
 	<description>PHPCS declaration for A8CTeam51</description>
 
-	<rule ref="WordPress-Extra" />
-	<rule ref="WordPress">
+	<rule ref="WordPress-Extra">
 		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
 	</rule>
