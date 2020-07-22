@@ -58,6 +58,8 @@ class Migrate_Phpcs extends Command {
 
           $output->writeln( "<comment>Cloning {$repository->full_name}</comment>" );
 
+          $this->execute_command( "mkdir -p repositories", TEAM51_CLI_ROOT_DIR );
+
           // Pull down the repo.
           $this->execute_command( "git clone {$repository->clone_url}", TEAM51_CLI_ROOT_DIR . '/repositories' );
 
@@ -96,8 +98,8 @@ class Migrate_Phpcs extends Command {
 
           // delete unwanted travis files
           $output->writeln( "<comment>Deleting Travis files.</comment>" );
-          $this->execute_command( "rm -f -- ", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.travis.yml" );
-          $this->execute_command( "rm -f -- ", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/Makefile" );
+          $this->execute_command( "rm -f -- .travis.yml", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+          $this->execute_command( "rm -f -- Makefile", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
           // TODO add conditional output if this fails or is skipped
 
           // create new GH Action files
