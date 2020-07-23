@@ -15,117 +15,122 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 class Migrate_Phpcs extends Command {
-  protected static $defaultName = 'migrate-phpcs';
+	protected static $defaultName = 'migrate-phpcs';
 
-  protected function configure() {
-    $this
-    ->setDescription( "Removes Travis and adds a GH Action for PHPCS code inspections." )
-    ->setHelp( "Allows the removal of Travis checks and adds in the GH Action equivalent PHPCS inspections..." );
-  }
+	protected function configure() {
+		$this
+		->setDescription( 'Removes Travis and adds a GH Action for PHPCS code inspections.' )
+		->setHelp( 'Allows the removal of Travis checks and adds in the GH Action equivalent PHPCS inspections...' );
+	}
 
-  protected function execute( InputInterface $input, OutputInterface $output ) {
-    $filesystem = new Filesystem;
+	protected function execute( InputInterface $input, OutputInterface $output ) {
+		$filesystem = new Filesystem();
 
-    $api_helper = new API_Helper;
+		$api_helper = new API_Helper();
 
-    $output->writeln( "<comment>Retrieving all repositories from GitHub org.</comment>" );
+		$output->writeln( '<comment>Creating local repositories folder.</comment>' );
+		$this->execute_command( 'mkdir -p repositories', TEAM51_CLI_ROOT_DIR );
 
-    $repositories = $api_helper->call_github_api(
-      sprintf( 'orgs/%s/repos', GITHUB_API_OWNER ),
-      '',
-      'GET'
-    );
+		$output->writeln( '<comment>Retrieving all repositories from GitHub org.</comment>' );
 
-    if ( empty( $repositories ) ) {
-      $output->writeln( "<error>Failed to retrieve repositories. Aborting!</error>" );
-      exit;
-    }
+		$repositories = $api_helper->call_github_api(
+			sprintf( 'orgs/%s/repos', GITHUB_API_OWNER ),
+			'',
+			'GET'
+		);
 
-    $page = 1;
+		if ( empty( $repositories ) ) {
+			$output->writeln( '<error>Failed to retrieve repositories. Aborting!</error>' );
+			exit;
+		}
 
-    while( ! empty( $repositories = $api_helper->call_github_api(
-      sprintf( 'orgs/%s/repos?per_page=100&page=%s', GITHUB_API_OWNER, $page ),
-      '',
-      'GET'
-      ) ) ) {
-        $page++;
-        foreach( $repositories as $repository ) {
+		$page = 1;
 
-          $output->writeln( $repository->name );
-          if ( 'deploytest' !== $repository->name ) {
-            continue;
-          }
+		while ( ! empty(
+			$repositories = $api_helper->call_github_api(
+				sprintf( 'orgs/%s/repos?per_page=100&page=%s', GITHUB_API_OWNER, $page ),
+				'',
+				'GET'
+			)
+		) ) {
+			$page++;
+			foreach ( $repositories as $repository ) {
 
-          $output->writeln( "<comment>Cloning {$repository->full_name}</comment>" );
+				$output->writeln( $repository->name );
+				if ( 'deploytest' !== $repository->name ) {
+					continue;
+				}
 
-          $this->execute_command( "mkdir -p repositories", TEAM51_CLI_ROOT_DIR );
+				$output->writeln( "<comment>Cloning {$repository->full_name}</comment>" );
+				// Pull down the repo.
+				$this->execute_command( "git clone {$repository->clone_url}", TEAM51_CLI_ROOT_DIR . '/repositories' );
 
-          // Pull down the repo.
-          $this->execute_command( "git clone {$repository->clone_url}", TEAM51_CLI_ROOT_DIR . '/repositories' );
+				// Create a new branch named new-branch from master.
+				$this->execute_command( 'git checkout -b migrate-phpcs master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git push -u origin migrate-phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 
-          // Create a new branch named new-branch from master.
-          $this->execute_command( "git checkout -b new-branch master", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-          $this->execute_command( "git push -u origin new-branch", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				// Remove branch protection.
+				$delete_branch_protection_rules_request = $api_helper->call_github_api(
+					sprintf( 'repos/%s/%s/branches/master/protection', GITHUB_API_OWNER, $repository->name ),
+					'',
+					'DELETE'
+				);
 
-          // Remove branch protection.
-          $delete_branch_protection_rules_request = $api_helper->call_github_api(
-            sprintf( 'repos/%s/%s/branches/master/protection', GITHUB_API_OWNER, $repository->name ),
-            '',
-            'DELETE'
-          );
+				// add new branch protection rule.
+				$branch_protection_rules = array(
+					'required_status_checks'        => array(
+						'strict'   => true,
+						'contexts' => array(
+							'Run PHPCS inspection',
+						),
+					),
+					'enforce_admins'                => null,
+					'required_pull_request_reviews' => null,
+					'restrictions'                  => null,
+				);
 
-          // add new branch protection rule.
-          $branch_protection_rules = array (
-            'required_status_checks' => array (
-              'strict' => true,
-              'contexts' => array (
-                'Run PHPCS inspection',
-              ),
-            ),
-            'enforce_admins' => null,
-            'required_pull_request_reviews' => null,
-            'restrictions' => null,
-          );
+				$output->writeln( "<comment>Adding branch protection rules to {$repository->name}.</comment>" );
+				$branch_protection_rules = $api_helper->call_github_api( 'repos/' . GITHUB_API_OWNER . "/{$repository->name}/branches/master/protection", $branch_protection_rules, 'PUT' );
 
-          $output->writeln( "<comment>Adding branch protection rules to {$repository->full_name}.</comment>" );
-          $branch_protection_rules = $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/{$repository->name}/branches/master/protection", $branch_protection_rules, 'PUT' );
+				if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
+					$output->writeln( "<info>Done. Added branch protection rules to {$repository->name}.</info>" );
+				} else {
+					$output->writeln( "<info>Failed to add branch protection rules to {$repository->name}.</info>" );
+				}
 
-          if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
-            $output->writeln( "<info>Done. Added branch protection rules to {$repository->full_name}.</info>" );
-          } else {
-            $output->writeln( "<info>Failed to add branch protection rules to {$repository->full_name}.</info>" );
-          }
+				// delete unwanted travis files
+				$output->writeln( '<comment>Deleting Travis files.</comment>' );
+				$this->execute_command( 'rm -f -- .travis.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'rm -f -- Makefile', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 
-          // delete unwanted travis files
-          $output->writeln( "<comment>Deleting Travis files.</comment>" );
-          $this->execute_command( "rm -f -- .travis.yml", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-          $this->execute_command( "rm -f -- Makefile", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-          // TODO add conditional output if this fails or is skipped
+				// create new GH Action files
+				$output->writeln( "<comment>Copying .phpcs.xml and phpcs.yml files to {$repository->name}.</comment>" );
+				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.phpcs.xml" );
+				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.github/workflows/phpcs.yml" );
 
-          // create new GH Action files
-          $output->writeln( "<comment>Copying .phpcs.xml and phpcs.yml files to {$repository->full_name}.</comment>" );
-          $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.phpcs.xml" );
-          $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/github/workflows/phpcs.yml" );
-          // TODO add conditional output if this fails or is skipped
+				// commit and merge the changes
+				$output->writeln( "<comment>Committing and merging the changes to {$repository->name}.</comment>" );
+				$this->execute_command( "git add -A", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( "git commit -m 'Migrate PHPCS checks'", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git merge migrate-phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+			}
+		}
 
-          // TODO create PR and merge it into master?
+		// clean up local folder with repos
+		$output->writeln( '<comment>Deleting local repositories folder.</comment>' );
+		$this->execute_command( 'rm -R repositories', TEAM51_CLI_ROOT_DIR );
 
-        }
-      }
+	}
 
+	protected function execute_command( $command, $working_directory = '.' ) {
+		$process = new Process( $command );
+		$process->setWorkingDirectory( $working_directory );
+		$process->run();
 
+		if ( ! $process->isSuccessful() ) {
+			throw new ProcessFailedException( $process );
+		}
 
-    }
-
-    protected function execute_command( $command, $working_directory = '.' ) {
-      $process = new Process( $command );
-      $process->setWorkingDirectory( $working_directory );
-      $process->run();
-
-      if( ! $process->isSuccessful() ) {
-        throw new ProcessFailedException( $process );
-      }
-
-      return $process->getOutput();
-    }
-  }
+		return $process->getOutput();
+	}
+}
