@@ -72,11 +72,11 @@ class Create_Repository extends Command {
             $output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
-            $output->writeln( "<comment>Copying scaffold/templates/.travis.yml file to scaffold/$slug/.travis.yml.</comment>" );
-            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.travis.yml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.travis.yml" );
+            $output->writeln( "<comment>Copying scaffold/templates/.phpcs.xml file to scaffold/$slug/.phpcs.xml.</comment>" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.phpcs.xml" );
 
-            $output->writeln( "<comment>Copying scaffold/templates/Makefile file to scaffold/$slug/Makefile.</comment>" );
-            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/Makefile', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/Makefile" );
+            $output->writeln( "<comment>Copying scaffold/templates/github/workflows/phpcs.yml file to scaffold/$slug/github/workflows/phpcs.yml.</comment>" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/github/workflows/phpcs.yml" );
 
 			$output->writeln( "<comment>Copying scaffold/templates/deployignore file to scaffold/$slug/.deployignore.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/deployignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.deployignore" );
@@ -283,8 +283,7 @@ class Create_Repository extends Command {
             'required_status_checks' => array (
                 'strict' => true,
                 'contexts' => array (
-                    'Travis CI - Branch',
-                    'Travis CI - Pull Request',
+                    'Run PHPCS inspection',
                 ),
             ),
             'enforce_admins' => null,
