@@ -54,16 +54,26 @@ class Migrate_Phpcs extends Command {
 			)
 		) ) {
 			$page++;
+			$migrated_repos = 0;
 			foreach ( $repositories as $repository ) {
 
 				$output->writeln( $repository->name );
-				if ( 'deploytest' !== $repository->name ) {
+				if ( 3 <= $migrated_repos ) {
+					continue;
+				}
+				if ( 'deployhq-test' === $repository->name ) {
 					continue;
 				}
 
 				$output->writeln( "<comment>Cloning {$repository->full_name}</comment>" );
 				// Pull down the repo.
 				$this->execute_command( "git clone {$repository->clone_url}", TEAM51_CLI_ROOT_DIR . '/repositories' );
+
+				// skip this repo if travis file doesn't exist.
+				if (! file_exists( TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.travis.yml" ) ) {
+					$output->writeln( "<comment>{$repository->name} doesn't have travis file. skipping.</comment>" );
+					continue;
+				}
 
 				// Create a new branch named migrate_phpcs from master.
 				$this->execute_command( 'git checkout -b migrate_phpcs master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
@@ -75,6 +85,26 @@ class Migrate_Phpcs extends Command {
 					'',
 					'DELETE'
 				);
+
+				// delete unwanted travis files
+				$output->writeln( '<comment>Deleting Travis files.</comment>' );
+				$this->execute_command( 'rm -f -- .travis.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'rm -f -- Makefile', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+
+				// create new GH Action files
+				$output->writeln( "<comment>Copying .phpcs.xml and phpcs.yml files to {$repository->name}.</comment>" );
+				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.phpcs.xml" );
+				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.github/workflows/phpcs.yml" );
+
+				// commit, push and merge the changes
+				$output->writeln( "<comment>Committing, pushing and merging the changes to {$repository->name}.</comment>" );
+				$this->execute_command( "git add -A", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( "git commit -m 'Migrate PHPCS checks'", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git push', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git checkout master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git merge migrate_phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git push origin master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git push origin --delete migrate_phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 
 				// add new branch protection rule.
 				$branch_protection_rules = array(
@@ -89,31 +119,16 @@ class Migrate_Phpcs extends Command {
 					'restrictions'                  => null,
 				);
 
-				$output->writeln( "<comment>Adding branch protection rules to {$repository->name}.</comment>" );
 				$branch_protection_rules = $api_helper->call_github_api( 'repos/' . GITHUB_API_OWNER . "/{$repository->name}/branches/master/protection", $branch_protection_rules, 'PUT' );
 
 				if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
-					$output->writeln( "<info>Done. Added branch protection rules to {$repository->name}.</info>" );
+					$output->writeln( "<comment>Added branch protection rules to {$repository->name}.</comment>" );
 				} else {
 					$output->writeln( "<info>Failed to add branch protection rules to {$repository->name}.</info>" );
 				}
 
-				// delete unwanted travis files
-				$output->writeln( '<comment>Deleting Travis files.</comment>' );
-				$this->execute_command( 'rm -f -- .travis.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-				$this->execute_command( 'rm -f -- Makefile', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-
-				// create new GH Action files
-				$output->writeln( "<comment>Copying .phpcs.xml and phpcs.yml files to {$repository->name}.</comment>" );
-				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.phpcs.xml" );
-				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}/.github/workflows/phpcs.yml" );
-
-				// commit and merge the changes
-				$output->writeln( "<comment>Committing and merging the changes to {$repository->name}.</comment>" );
-				$this->execute_command( "git add -A", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-				$this->execute_command( "git commit -m 'Migrate PHPCS checks'", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-				$this->execute_command( 'git push', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
-				$this->execute_command( 'git merge migrate_phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				// increment for number of repos migrated
+				$migrated_repos++;
 			}
 		}
 
@@ -121,6 +136,7 @@ class Migrate_Phpcs extends Command {
 		$output->writeln( '<comment>Deleting local repositories folder.</comment>' );
 		$this->execute_command( 'rm -R repositories', TEAM51_CLI_ROOT_DIR );
 
+		$output->writeln( '<info>Total repositories migrated: ' . $migrated_repos . '</info>' );
 	}
 
 	protected function execute_command( $command, $working_directory = '.' ) {
