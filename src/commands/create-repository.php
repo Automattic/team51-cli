@@ -78,6 +78,9 @@ class Create_Repository extends Command {
             $output->writeln( "<comment>Copying scaffold/templates/Makefile file to scaffold/$slug/Makefile.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/Makefile', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/Makefile" );
 
+			$output->writeln( "<comment>Copying scaffold/templates/deployignore file to scaffold/$slug/.deployignore.</comment>" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/deployignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.deployignore" );
+
             $output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-README.md file to scaffold/$slug/README.md.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
 
@@ -89,7 +92,7 @@ class Create_Repository extends Command {
             }
 
             $readme = str_replace( array( 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL', 'EXAMPLE_REPO_NAME' ), array( $input->getOption( 'production-url'), $input->getOption( 'development-url'), $slug ), $readme );
-            
+
             $output->writeln( "<comment>Creating repository README.</comment>" );
             file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md", $readme );
 
@@ -113,7 +116,7 @@ class Create_Repository extends Command {
         }
 
         $output->writeln( "<info>Local setup complete! Now we need to create and populate the repository on GitHub.</info>" );
-    
+
         $output->writeln( "<comment>Creating GitHub repository.</comment>" );
         if( empty( $input->getOption( 'issue-repo-only' ) ) ) {
             $response = $api_helper->call_github_api( 'orgs/' . GITHUB_API_OWNER . '/repos', array(
