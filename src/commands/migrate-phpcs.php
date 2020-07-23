@@ -45,6 +45,7 @@ class Migrate_Phpcs extends Command {
 		}
 
 		$page = 1;
+		$migrated_repos = 0;
 
 		while ( ! empty(
 			$repositories = $api_helper->call_github_api(
@@ -54,16 +55,12 @@ class Migrate_Phpcs extends Command {
 			)
 		) ) {
 			$page++;
-			$migrated_repos = 0;
 			foreach ( $repositories as $repository ) {
 
 				$output->writeln( $repository->name );
-				if ( 3 <= $migrated_repos ) {
-					continue;
-				}
-				if ( 'deployhq-test' === $repository->name ) {
-					continue;
-				}
+				// if ( 1 <= $migrated_repos ) {
+				// 	continue;
+				// }
 
 				$output->writeln( "<comment>Cloning {$repository->full_name}</comment>" );
 				// Pull down the repo.
