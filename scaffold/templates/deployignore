@@ -1,0 +1,32 @@
+## Visual Studio Code
+.vscode
+.vscode/**
+
+## Sublime
+.sublime-workspace
+
+## GitHub
+.github
+.github/**
+.gitignore
+
+## Composer
+composer.json
+composer.lock
+
+## Node
+package.json
+package-lock.json
+
+## Files
+LICENSE
+Makefile
+**/*.yml
+**/*.md
+.babelrc
+.editorconfig
+.eslintrc
+postcss.config.js
+phpcs.xml
+.phpcs.xml
+gulpfile.js
