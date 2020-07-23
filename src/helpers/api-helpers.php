@@ -103,13 +103,13 @@ class API_Helper {
 			)
 		);
 
-		if( in_array( $method, array( 'POST', 'PUT' ) ) ) {
+		if( in_array( $method, array( 'POST', 'PUT', 'PATCH' ) ) ) {
 			$data = json_encode( $data );
 			$options['http']['content'] = $data;
 		}
 
 		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$result = file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
