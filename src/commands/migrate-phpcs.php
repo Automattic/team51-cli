@@ -66,7 +66,7 @@ class Migrate_Phpcs extends Command {
 				$this->execute_command( "git clone {$repository->clone_url}", TEAM51_CLI_ROOT_DIR . '/repositories' );
 
 				// Create a new branch named migrate_phpcs from master.
-				$this->execute_command( 'git checkout -b migrate-phpcs master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git checkout -b migrate_phpcs master', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 				$this->execute_command( 'git push -u origin migrate_phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 
 				// Remove branch protection.
@@ -112,6 +112,7 @@ class Migrate_Phpcs extends Command {
 				$output->writeln( "<comment>Committing and merging the changes to {$repository->name}.</comment>" );
 				$this->execute_command( "git add -A", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 				$this->execute_command( "git commit -m 'Migrate PHPCS checks'", TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
+				$this->execute_command( 'git push', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 				$this->execute_command( 'git merge migrate_phpcs', TEAM51_CLI_ROOT_DIR . "/repositories/{$repository->name}" );
 			}
 		}
