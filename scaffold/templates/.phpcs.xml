@@ -8,7 +8,8 @@
 	</rule>
 
 	<arg name="extensions" value="php"/>
-	<arg value="s"/>
+	<arg value="sp"/>
+	<file>.</file>
 
 	<exclude-pattern>.github/</exclude-pattern>
 </ruleset>
