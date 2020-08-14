@@ -72,8 +72,8 @@ class Create_Repository extends Command {
             $output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
-            $output->writeln( "<comment>Copying scaffold/templates/.phpcs.xml file to scaffold/$slug/.phpcs.xml.</comment>" );
-            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/.phpcs.xml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.phpcs.xml" );
+            $output->writeln( "<comment>Copying scaffold/templates/phpcs.xml file to scaffold/$slug/phpcs.xml.</comment>" );
+            $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/phpcs.xml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/phpcs.xml" );
 
             $output->writeln( "<comment>Copying scaffold/templates/github/workflows/phpcs.yml file to scaffold/$slug/github/workflows/phpcs.yml.</comment>" );
             $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/github/workflows/phpcs.yml', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/github/workflows/phpcs.yml" );
