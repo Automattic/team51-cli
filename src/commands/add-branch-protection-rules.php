@@ -29,8 +29,7 @@ class Add_Branch_Protection_Rules extends Command {
             'required_status_checks' => array (
                 'strict' => true,
                 'contexts' => array (
-                    'Travis CI - Branch',
-                    'Travis CI - Pull Request',
+                    'Run PHPCS inspection',
                 ),
             ),
             'enforce_admins' => null,
@@ -39,7 +38,7 @@ class Add_Branch_Protection_Rules extends Command {
         );
 
         $output->writeln( "<comment>Adding branch protection rules to $slug.</comment>" );
-        $branch_protection_rules = $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/master/protection", $branch_protection_rules, 'PUT' );
+        $branch_protection_rules = $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/trunk/protection", $branch_protection_rules, 'PUT' );
 
 	if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
 		$output->writeln( "<info>Done. Added branch protection rules to $slug.</info>" );
