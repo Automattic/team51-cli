@@ -166,7 +166,7 @@ class Create_Repository extends Command {
         $this->execute_command( array( "git", "remote", "add", "origin", "$ssh_url" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
-        $this->execute_command( array( "git", "pull", "origin", "master" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+        $this->execute_command( array( "git", "pull", "origin", "trunk" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
         $progress_bar->advance();
 
         $this->execute_command( array( "git", "add", "." ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
@@ -292,7 +292,7 @@ class Create_Repository extends Command {
         );
 
         $output->writeln( "<comment>Adding branch protection rules.</comment>" );
-        $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/master/protection", $branch_protection_rules, 'PUT' );
+        $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/trunk/protection", $branch_protection_rules, 'PUT' );
 
         $output->writeln( "<comment>Logging GitHub init script completion to Slack.</comment>" );
         $api_helper->log_to_slack( "INFO: GitHub repo init run for $html_url." );
