@@ -157,15 +157,15 @@ class Create_Development_Site extends Command {
 	if ( empty( $develop_branch->ref ) ) {
 		$output->writeln( "<comment>No 'develop' branch present. Creating one now.</comment>" );
 
-		// Grab SHA for master branch so we can use it to create the develop branch from that point.
-		$master_branch = $api_helper->call_github_api(
-			sprintf( 'repos/%s/%s/git/ref/heads/master', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
+		// Grab SHA for trunk branch so we can use it to create the develop branch from that point.
+		$trunk_branch = $api_helper->call_github_api(
+			sprintf( 'repos/%s/%s/git/ref/heads/trunk', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
 			'',
 			'GET'
 		);
 		
-		if ( empty( $master_branch->object->sha ) ) {
-			$output->writeln( "<error>Failed to retrieve 'master' branch SHA. Aborting!</error>" );
+		if ( empty( $trunk_branch->object->sha ) ) {
+			$output->writeln( "<error>Failed to retrieve 'trunk' branch SHA. Aborting!</error>" );
 			exit;
 		}
 
@@ -174,7 +174,7 @@ class Create_Development_Site extends Command {
 			sprintf( 'repos/%s/%s/git/refs', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
 			array(
 				'ref' => 'refs/heads/develop',
-				'sha' => $master_branch->object->sha,
+				'sha' => $trunk_branch->object->sha,
 
 			),
 			'POST'
