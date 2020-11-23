@@ -33,11 +33,11 @@ foreach($dirs as $dir) {
 
 1. Make your fix in a new branch.
 1. Merge your `fix/` branch into the `develop` branch and test on the staging site.
-1. If all looks good, make a PR from your fix branch into `master`.
+1. If all looks good, make a PR from your fix branch into `trunk`.
 1. A member of the Special Projects Team will review, test, and merge it to the live site.
 
 ## Deployment
 
-- Prior to launch, during development, pushing to the `master` branch will automatically deploy to the in-progress site at https://EXAMPLE_REPO_PROD_URL
-- Once this project is launched, pushing to the `master` branch will be reviewed and deployed to the production site by a member of the Special Projects Team (see GitHub workflow above)
+- Prior to launch, during development, pushing to the `trunk` branch will automatically deploy to the in-progress site at https://EXAMPLE_REPO_PROD_URL
+- Once this project is launched, pushing to the `trunk` branch will be reviewed and deployed to the production site by a member of the Special Projects Team (see GitHub workflow above)
 - A new dev/staging site will then be created and pushing to the `develop` branch will then automatically deploy that dev/staging site at https://EXAMPLE_REPO_DEV_URL
