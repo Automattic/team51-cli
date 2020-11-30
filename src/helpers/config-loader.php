@@ -113,6 +113,34 @@ if( ! empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) ) {
 	die();
 }
 
+if( ! empty( $config->WPCOM_API_ENDPOINT ) ) {
+	define( 'WPCOM_API_ENDPOINT', $config->WPCOM_API_ENDPOINT );
+} else {
+	echo "Warning: WPCOM_API_ENDPOINT could not be set. Aborting!\n";
+	die();
+}
+
+if( ! empty( $config->WPCOM_API_ACCOUNT_TOKEN ) ) {
+	define( 'WPCOM_API_ACCOUNT_TOKEN', $config->WPCOM_API_ACCOUNT_TOKEN );
+} else {
+	echo "Warning: WPCOM_API_ACCOUNT_TOKEN could not be set. Aborting!\n";
+	die();
+}
+
+if( ! empty( $config->FRONT_API_ENDPOINT ) ) {
+	define( 'FRONT_API_ENDPOINT', $config->FRONT_API_ENDPOINT );
+} else {
+	echo "Warning: FRONT_API_ENDPOINT could not be set. Aborting!\n";
+	die();
+}
+
+if( ! empty( $config->FRONT_API_TOKEN ) ) {
+	define( 'FRONT_API_TOKEN', $config->FRONT_API_TOKEN );
+} else {
+	echo "Warning: FRONT_API_TOKEN could not be set. Aborting!\n";
+	die();
+}
+
 if( ! empty( $config->SLACK_WEBHOOK_URL ) ) {
 	define( 'SLACK_WEBHOOK_URL', $config->SLACK_WEBHOOK_URL );
 } else {
@@ -135,4 +163,10 @@ if( ! empty( $config->GITHUB_DEFAULT_ISSUES_REPOSITORY ) ) {
 	define( 'GITHUB_DEFAULT_ISSUES_REPOSITORY', $config->GITHUB_DEFAULT_ISSUES_REPOSITORY );
 } else {
 	echo "Warning: GITHUB_DEFAULT_ISSUES_REPOSITORY could not be set.\n";
+}
+
+if( ! empty( $config->PRESSABLE_BOT_COLLABORATOR_EMAIL ) ) {
+	define( 'PRESSABLE_BOT_COLLABORATOR_EMAIL', $config->PRESSABLE_BOT_COLLABORATOR_EMAIL );
+} else {
+	echo "Warning: PRESSABLE_BOT_COLLABORATOR_EMAIL could not be set.\n";
 }

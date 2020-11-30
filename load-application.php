@@ -6,7 +6,10 @@ require __DIR__ . '/src/helpers/config-loader.php';
 require __DIR__ . '/vendor/autoload.php';
 
 if ( defined( 'ASCII_WELCOME_ART' ) && ! empty( ASCII_WELCOME_ART ) ) {
-	echo ASCII_WELCOME_ART . PHP_EOL;
+	// Respect -q and --quiet.
+	if ( ! in_array( '-q', $argv ) && ! in_array( '--quiet', $argv ) ) {
+		echo ASCII_WELCOME_ART . PHP_EOL;
+	}
 }
 
 use Symfony\Component\Console\Application;
@@ -17,5 +20,9 @@ $application->add( new Team51\Command\Create_Production_Site() );
 $application->add( new Team51\Command\Create_Development_Site() );
 $application->add( new Team51\Command\Create_Repository() );
 $application->add( new Team51\Command\Add_Branch_Protection_Rules() );
+$application->add( new Team51\Command\Jetpack_Enable_SSO() );
+$application->add( new Team51\Command\Front_Create_Export() );
+$application->add( new Team51\Command\Front_List_Exports() );
+$application->add( new Team51\Command\Get_PHP_Errors() );
 
 $application->run();

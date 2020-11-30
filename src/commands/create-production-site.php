@@ -97,7 +97,7 @@ class Create_Production_Site extends Command {
         $server_config = array(
             'name'        => 'Production',
             'environment' => 'production',
-            'branch'      => 'master',
+            'branch'      => 'trunk',
         );
 
         // Set server config elements common to production and development environments.
@@ -169,7 +169,7 @@ class Create_Production_Site extends Command {
                 'repository' => array(
                     'scm_type' => 'git',
                     'url'      => $repository_url,
-                    'branch'   => 'master',
+                    'branch'   => 'trunk',
                     'username' => null,
                     'port'     => null,
                 ),

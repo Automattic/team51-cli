@@ -2,11 +2,10 @@
     "require": {
         "symfony/console": "^4.3",
         "symfony/filesystem": "^4.3",
-        "symfony/process": "^4.3"
+        "symfony/process": "^4.3",
+        "phpseclib/phpseclib": "^2.0"
     },
     "autoload": {
-	    "psr-4": {
-		"Team51\\": "src"
-	}
+	"classmap": ["src/"]
     }
 }
