@@ -7,7 +7,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
 
 class Manage_Collaborators extends Command {
@@ -18,7 +17,8 @@ class Manage_Collaborators extends Command {
         ->setDescription( "Manage Pressable collaborators." )
         ->setHelp( "This command allows you to bulk-manage Pressable collaborators via CLI." )
         ->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the collaborator you'd like to run operations on." )
-        ->addOption( 'remove', null, InputOption::VALUE_NONE, "Remove the collaborator from all sites." );
+        ->addOption( 'remove', null, InputOption::VALUE_NONE, "Remove the collaborator from all sites." )
+        ->addOption( 'no-prompt', null, InputOption::VALUE_NONE, "Don't prompt for confirmation before deletion." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -54,7 +54,7 @@ class Manage_Collaborators extends Command {
         }
 
         if ( empty( $collaborator_data ) ) {
-        	$output->writeln( "<error>No collaborators found with the email '$collaborator_email'. Aborting!</error>" );
+        	$output->writeln( "<info>No collaborators found with the email $collaborator_email. Aborting!</info>" );
             exit;
         }
 
@@ -80,15 +80,17 @@ class Manage_Collaborators extends Command {
 
         $output->writeln( "<comment>Deleting collaborator $collaborator_email from the sites listed. This process is not reversible. Are you sure you want to do this? (y|n)</comment>" );
 
-        $stdin = fopen ( "php://stdin","r" );
-        $answer = fgets( $stdin );
+        if ( empty( $input->getOption( 'no-prompt' ) ) ) {
+            $stdin = fopen ( "php://stdin","r" );
+            $answer = fgets( $stdin );
 
-        if( trim( $answer) !== 'y' ){
-        	$output->writeln( "<comment>Exiting!</comment>" );
-        	exit;
+            if( trim( $answer) !== 'y' ){
+            	$output->writeln( "<comment>Exiting!</comment>" );
+            	exit;
+            }
+
+            fclose( $stdin );
         }
-
-        fclose( $stdin );
 
         foreach( $collaborator_data as $collaborator ) {
             $output->writeln( "<info>Do you want to remove {$collaborator->email} from {$collaborator->siteName}?</info>" );
