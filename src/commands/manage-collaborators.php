@@ -80,29 +80,20 @@ class Manage_Collaborators extends Command {
 
         $output->writeln( "<comment>Deleting collaborator $collaborator_email from the sites listed. This process is not reversible. Are you sure you want to do this? (y|n)</comment>" );
 
-        if ( empty( $input->getOption( 'no-prompt' ) ) ) {
-            $stdin = fopen ( "php://stdin","r" );
-            $answer = fgets( $stdin );
-
-            if( trim( $answer) !== 'y' ){
-            	$output->writeln( "<comment>Exiting!</comment>" );
-            	exit;
-            }
-
-            fclose( $stdin );
-        }
-
         foreach( $collaborator_data as $collaborator ) {
             $output->writeln( "<info>Do you want to remove {$collaborator->email} from {$collaborator->siteName}?</info>" );
-            $stdin = fopen ( "php://stdin","r" );
-            $answer = fgets( $stdin );
 
-            if( trim( $answer) !== 'y' ){
-            	$output->writeln( "<comment>Skipping!</comment>" );
-            	continue;
+            if ( empty( $input->getOption( 'no-prompt' ) ) ) {
+                $stdin = fopen ( "php://stdin","r" );
+                $answer = fgets( $stdin );
+
+                if( trim( $answer) !== 'y' ){
+                	$output->writeln( "<comment>Skipping!</comment>" );
+                	continue;
+                }
+
+                fclose( $stdin );
             }
-
-            fclose( $stdin );
 
         	$removed_collaborator = $api_helper->call_pressable_api( "/sites/{$collaborator->siteId}/collaborators/{$collaborator->id}", 'DELETE', array() );
 
