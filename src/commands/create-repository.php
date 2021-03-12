@@ -160,7 +160,7 @@ class Create_Repository extends Command {
         $progress_bar = new ProgressBar( $output, 7 );
         $progress_bar->start();
 
-        $this->execute_command( array( "git", "init", TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" ) );
+        $this->execute_command( array( "git", "init", "--initial-branch", "trunk", TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" ) );
         $progress_bar->advance();
 
         $this->execute_command( array( "git", "remote", "add", "origin", "$ssh_url" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
@@ -184,7 +184,7 @@ class Create_Repository extends Command {
         $progress_bar->finish();
         $output->writeln( "" );
 
-	$output->writeln( "<comment>Cleaning up scaffold files.</comment>" );
+        $output->writeln( "<comment>Cleaning up scaffold files.</comment>" );
         $this->execute_command( array( "rm", "-rf", "$slug" ), TEAM51_CLI_ROOT_DIR . "/scaffold" );
 
         $output->writeln( "<comment>Configuring GitHub repository labels.</comment>" );
