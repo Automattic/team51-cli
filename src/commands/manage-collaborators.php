@@ -7,6 +7,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
 
 class Manage_Collaborators extends Command {
@@ -17,8 +18,7 @@ class Manage_Collaborators extends Command {
         ->setDescription( "Manage Pressable collaborators." )
         ->setHelp( "This command allows you to bulk-manage Pressable collaborators via CLI." )
         ->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the collaborator you'd like to run operations on." )
-        ->addOption( 'remove', null, InputOption::VALUE_NONE, "Remove the collaborator from all sites." )
-        ->addOption( 'no-prompt', null, InputOption::VALUE_NONE, "Don't prompt for confirmation before deletion." );
+        ->addOption( 'remove', null, InputOption::VALUE_NONE, "Remove the collaborator from all sites." );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -27,7 +27,7 @@ class Manage_Collaborators extends Command {
         $collaborator_email = $input->getOption( 'email' );
 
         if ( empty( $collaborator_email ) ) {
-            $output->writeln( '<error>Missing collaborator email (--email=user@domain.com).</error>');
+            $output->writeln( "<error>Missing collaborator email (--email=user@domain.com).</error>" );
             exit;
         }
 
@@ -42,8 +42,9 @@ class Manage_Collaborators extends Command {
             array()
         );
 
+        // TODO: This code is duplicated below for the site clone. Should be a function.
         if ( empty( $collaborators->data ) ) {
-            $output->writeln( "<error>Something has gone wrong while looking up the Pressable collaborators site. Aborting!</error>" );
+            $output->writeln( "<error>Something has gone wrong while looking up the Pressable collaborators site.</error>" );
             exit;
         }
 
@@ -54,7 +55,7 @@ class Manage_Collaborators extends Command {
         }
 
         if ( empty( $collaborator_data ) ) {
-        	$output->writeln( "<info>No collaborators found with the email $collaborator_email. Aborting!</info>" );
+        	$output->writeln( "<info>No collaborators found with the email '$collaborator_email'.</info>" );
             exit;
         }
 
@@ -73,34 +74,18 @@ class Manage_Collaborators extends Command {
         $site_info->setRows( $collaborator_sites );
         $site_info->render();
 
-        // Don't go any farther if we only want to get a collaborator site list.
-        if( empty( $input->getOption( 'remove' ) ) ) {
-        	die();
+        // Bail here unless the user has asked to remove the collaborator.
+        if ( empty( $input->getOption( 'remove' ) ) ) {
+            exit;
         }
 
-        $output->writeln( "<comment>Deleting collaborator $collaborator_email from the sites listed. This process is not reversible. Are you sure you want to do this? (y|n)</comment>" );
-
         foreach( $collaborator_data as $collaborator ) {
-            $output->writeln( "<info>Do you want to remove {$collaborator->email} from {$collaborator->siteName}?</info>" );
-
-            if ( empty( $input->getOption( 'no-prompt' ) ) ) {
-                $stdin = fopen ( "php://stdin","r" );
-                $answer = fgets( $stdin );
-
-                if( trim( $answer) !== 'y' ){
-                	$output->writeln( "<comment>Skipping!</comment>" );
-                	continue;
-                }
-
-                fclose( $stdin );
-            }
-
         	$removed_collaborator = $api_helper->call_pressable_api( "/sites/{$collaborator->siteId}/collaborators/{$collaborator->id}", 'DELETE', array() );
 
         	if( 'Success' === $removed_collaborator->message ) {
-                $output->writeln( "<info>--  Removed {$collaborator->email} from {$collaborator->siteName}</info>" );
+                $output->writeln( "<comment>* Removed {$collaborator->email} from {$collaborator->siteName}.</comment>" );
         	} else {
-                $output->writeln( "<info>--  Failed to remove {$collaborator->email} from '{$collaborator->siteName}</info>" );
+                $output->writeln( "<comment>* Failed to remove {$collaborator->email} from '{$collaborator->siteName}.</comment>" );
         	}
         }
     }
