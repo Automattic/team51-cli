@@ -3,7 +3,7 @@
 namespace Team51\Command;
 
 use Team51\Helper\API_Helper;
-use phpseclib\Net\SFTP;
+use phpseclib3\Net\SFTP;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
