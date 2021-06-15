@@ -26,7 +26,6 @@ class Create_Repository extends Command {
         ->addOption( 'production-url', null, InputOption::VALUE_REQUIRED, "The hostname of the intended production site (do not include http/https, e.g. example.com)." )
         ->addOption( 'development-url', null, InputOption::VALUE_REQUIRED, "The hostname of the intended development site (do not include http/https, e.g. development-example.com)." )
         ->addOption( 'repo-description', null, InputOption::VALUE_REQUIRED, "A short, human-friendly description for this project." )
-        ->addOption( 'reset', null, InputOption::VALUE_NONE, "Something go sideways? Start over from scratch and clean up any prior runs." )
         ->addOption( 'custom-theme-slug', null, InputOption::VALUE_REQUIRED, "If this project involves us building a custom WordPress theme, pass the theme-slug with --custom-theme-slug=theme-slug." )
         ->addOption( 'custom-plugin-slug', null, InputOption::VALUE_REQUIRED, "If this project involves us building a custom WordPress plugin, pass the plugin-slug with --custom-plugin-slug=plugin-slug." )
         ->addOption( 'create-production-site', null, InputOption::VALUE_NONE, "This script can optionally create a new Pressable production site and configure it in DeployHQ by passing --create-production-site." );
@@ -34,10 +33,6 @@ class Create_Repository extends Command {
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
         $filesystem = new Filesystem;
-
-        if( ! empty( $input->getOption( 'reset' ) ) ) {
-
-        }
 
         $api_helper = new API_Helper;
 
