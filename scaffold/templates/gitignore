@@ -17,6 +17,7 @@ templates/*
 # !themes/twentyseventeen
 #
 plugins/*
+!plugins/plugin-autoupdate-filter
 !plugins/EXAMPLE_PLUGIN_NAME
 
 mu-plugins/*
