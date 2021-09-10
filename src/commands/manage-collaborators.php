@@ -107,19 +107,18 @@ class Manage_Collaborators extends Command {
 		}
 
 		// Remove?
-		$confirm_remove = trim(readline("Are you sure you want to remove this user from WordPress.com and Pressable? (y/n)"));
+		$confirm_remove = trim(readline("Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) "));
 		if ( $confirm_remove !== 'y' ) {
 			exit;
 		}
 
 		// Remove from Pressable
 		foreach ( $collaborator_data as $collaborator ) {
-			$removed_collaborator = $this->api_helper->call_pressable_api( "/sites/{$collaborator->siteId}/collaborators/{$collaborator->id}", 'POST', array() );
-
+			$removed_collaborator = $this->api_helper->call_pressable_api( "/sites/{$collaborator->siteId}/collaborators/{$collaborator->id}", 'DELETE', array() );
 			if ( 'Success' === $removed_collaborator->message ) {
-				$output->writeln( "<comment>* Removed {$collaborator->email} from {$collaborator->siteName}.</comment>" );
+				$output->writeln( "<info>✓ Removed {$collaborator->email} from {$collaborator->siteName}. (Pressable site)</info>" );
 			} else {
-				$output->writeln( "<comment>* Failed to remove {$collaborator->email} from '{$collaborator->siteName}.</comment>" );
+				$output->writeln( "<comment>❌ Failed to remove from {$collaborator->email} from Pressable site '{$collaborator->siteName}.</comment>" );
 			}
 		}
 
@@ -128,9 +127,9 @@ class Manage_Collaborators extends Command {
 			$removed_collaborator = $this->api_helper->call_wpcom_api( "rest/v1.1/sites/{$collaborator->siteId}/users/{$collaborator->userId}/delete", array(), 'POST' );
 
 			if ( isset( $removed_collaborator->success ) && $removed_collaborator->success ) {
-				$output->writeln( "<comment>* Removed {$collaborator->email} from {$collaborator->siteName}.</comment>" );
+				$output->writeln( "<info>✓ Removed {$collaborator->email} from {$collaborator->siteName} (WordPress site).</info>" );
 			} else {
-				$output->writeln( "<comment>* Failed to remove {$collaborator->email} from '{$collaborator->siteName}.</comment>" );
+				$output->writeln( "<comment>❌ Failed to remove {$collaborator->email} from WordPress site '{$collaborator->siteName}.</comment>" );
 			}
 		}
 
