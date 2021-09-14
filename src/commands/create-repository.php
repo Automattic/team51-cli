@@ -68,12 +68,12 @@ class Create_Repository extends Command {
 			$output->writeln( "<comment>Creating scaffold/$slug/plugins directory.</comment>" );
 			$filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins" );
 
-      $output->writeln( "<comment>Creating scaffold/$slug/plugins/plugin-autoupdate-filter directory.</comment>" );
+			$output->writeln( "<comment>Creating scaffold/$slug/plugins/plugin-autoupdate-filter directory.</comment>" );
 			$filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter" );
-      $output->writeln( "<comment>Copying scaffold/plugin-autoupdate-filter plugin folder to scaffold/$slug/plugins/plugin-autoupdate-filter.</comment>" );
+			$output->writeln( "<comment>Copying scaffold/plugin-autoupdate-filter plugin folder to scaffold/$slug/plugins/plugin-autoupdate-filter.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/plugin-autoupdate-filter.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/plugin-autoupdate-filter.php" );
-      $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php" );
-      $filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/README.md" );
+			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php" );
+			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/README.md" );
 
 			$output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
@@ -89,6 +89,12 @@ class Create_Repository extends Command {
 
 			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-README.md file to scaffold/$slug/README.md.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
+			
+			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-vipgoci_phpcs_skip_folders file to scaffold/$slug/.vipgoci_phpcs_skip_folders.</comment>" );
+			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-vipgoci_phpcs_skip_folders', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.vipgoci_phpcs_skip_folders" );
+			
+			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-vipgoci_lint_skip_folders file to scaffold/$slug/.vipgoci_lint_skip_folders.</comment>" );
+			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-vipgoci_lint_skip_folders', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.vipgoci_lint_skip_folders" );
 
 			$readme = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
 
