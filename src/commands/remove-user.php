@@ -12,8 +12,8 @@ use Symfony\Component\Console\Helper\Table;
 use function Amp\ParallelFunctions\parallelMap;
 use function Amp\Promise\wait;
 
-class Manage_Collaborators extends Command {
-	protected static $defaultName = 'manage-collaborators';
+class Remove_User extends Command {
+	protected static $defaultName = 'remove-user';
 	private $api_helper;
 	private $output;
 
