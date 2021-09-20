@@ -19,10 +19,11 @@ class Remove_User extends Command {
 
 	protected function configure() {
 		$this
-		->setDescription( 'Manage Pressable and WordPress collaborators.' )
-		->setHelp( 'This command allows you to bulk-manage Pressable and WordPress collaborators via CLI.' )
-		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the collaborator you'd like to run operations on." )
-		->addOption( 'remove', null, InputOption::VALUE_NONE, 'Remove the collaborator from all sites.' );
+		->setDescription( 'Removes a Pressable collaborator and WordPress user based on email.' )
+		->setHelp( 'This command allows you to bulk-delete from all sites a Pressable collaborator and WordPress user via CLI.' )
+		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the user you'd like to remove access from sites." )
+		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' )
+		->addOption( 'remove', null, InputOption::VALUE_NONE, 'Remove the user from all sites.' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -30,11 +31,14 @@ class Remove_User extends Command {
 		$this->api_helper = new API_Helper();
 		$this->output = $output;
 
-		$collaborator_email = $input->getOption( 'email' );
+		$email = $input->getOption( 'email' );
 
-		if ( empty( $collaborator_email ) ) {
-			$output->writeln( '<error>Missing collaborator email (--email=user@domain.com).</error>' );
-			exit;
+		if ( empty( $email ) ) {
+			$email = trim(readline("Please provide the email of the user you want to remove: "));
+			if ( empty( $email ) ) {
+				$output->writeln( '<error>Missing collaborator email (--email=user@domain.com).</error>' );
+				exit;
+			}
 		}
 
 		$output->writeln( '<comment>Getting collaborator data from Pressable.</comment>' );
@@ -55,36 +59,35 @@ class Remove_User extends Command {
 		}
 
 		foreach ( $collaborators->data as $collaborator ) {
-			if ( $collaborator->email === $collaborator_email ) {
+			if ( $collaborator->email === $email ) {
 				$collaborator_data[] = $collaborator;
 			}
 		}
 
 		if ( empty( $collaborator_data ) ) {
-			$output->writeln( "<info>No collaborators found in Pressable with the email '$collaborator_email'.</info>" );
+			$output->writeln( "<info>No collaborators found in Pressable with the email '$email'.</info>" );
 		} else {
 			$site_info = new Table( $output );
 			$site_info->setStyle( 'box-double' );
 			$site_info->setHeaders( array( 'Default Pressable URL', 'Site ID' ) );
-	
+
 			$collaborator_sites = array();
-	
+
 			$output->writeln( '' );
-			$output->writeln( "<info>User $collaborator_email is a collaborator on the following Pressable sites:</info>" );
+			$output->writeln( "<info>User $email is a collaborator on the following Pressable sites:</info>" );
 			foreach ( $collaborator_data as $collaborator ) {
 				$collaborator_sites[] = array( $collaborator->siteName . '.mystagingwebsite.com', $collaborator->siteId );
 			}
-	
+
 			$site_info->setRows( $collaborator_sites );
 			$site_info->render();
 		}
 
-
 		// Get users from wordpress.com
-		$wpcom_collaborator_data = $this->get_wpcom_users( $collaborator_email );
+		$wpcom_collaborator_data = $this->get_wpcom_users( $email );
 
 		if ( empty( $wpcom_collaborator_data ) ) {
-			$output->writeln( "<info>No collaborators found in WordPress.com with the email '$collaborator_email'.</info>" );
+			$output->writeln( "<info>No collaborators found in WordPress.com with the email '$email'.</info>" );
 		} else {
 			$site_info = new Table( $output );
 			$site_info->setStyle( 'box-double' );
@@ -92,7 +95,7 @@ class Remove_User extends Command {
 			$wpcom_collaborator_sites = array();
 	
 			$output->writeln( '' );
-			$output->writeln( "<info>User $collaborator_email is a collaborator on the following WordPress sites:</info>" );
+			$output->writeln( "<info>User $email is a collaborator on the following WordPress sites:</info>" );
 			foreach ( $wpcom_collaborator_data as $collaborator ) {
 				$wpcom_collaborator_sites[] = array( $collaborator->siteName, $collaborator->siteId, $collaborator->userId );
 			}
