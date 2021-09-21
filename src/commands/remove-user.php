@@ -22,19 +22,17 @@ class Remove_User extends Command {
 		->setDescription( 'Removes a Pressable collaborator and WordPress user based on email.' )
 		->setHelp( 'This command allows you to bulk-delete from all sites a Pressable collaborator and WordPress user via CLI.' )
 		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the user you'd like to remove access from sites." )
-		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' )
-		->addOption( 'remove', null, InputOption::VALUE_NONE, 'Remove the user from all sites.' );
+		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		//$api_helper = new API_Helper();
 		$this->api_helper = new API_Helper();
-		$this->output = $output;
+		$this->output     = $output;
 
 		$email = $input->getOption( 'email' );
 
 		if ( empty( $email ) ) {
-			$email = trim(readline("Please provide the email of the user you want to remove: "));
+			$email = trim( readline( 'Please provide the email of the user you want to remove: ' ) );
 			if ( empty( $email ) ) {
 				$output->writeln( '<error>Missing collaborator email (--email=user@domain.com).</error>' );
 				exit;
@@ -74,7 +72,7 @@ class Remove_User extends Command {
 			$collaborator_sites = array();
 
 			$output->writeln( '' );
-			$output->writeln( "<info>User $email is a collaborator on the following Pressable sites:</info>" );
+			$output->writeln( "<info>$email is a collaborator on the following Pressable sites:</info>" );
 			foreach ( $collaborator_data as $collaborator ) {
 				$collaborator_sites[] = array( $collaborator->siteName . '.mystagingwebsite.com', $collaborator->siteId );
 			}
@@ -93,9 +91,9 @@ class Remove_User extends Command {
 			$site_info->setStyle( 'box-double' );
 			$site_info->setHeaders( array( 'WP URL', 'Site ID', 'WP User ID' ) );
 			$wpcom_collaborator_sites = array();
-	
+
 			$output->writeln( '' );
-			$output->writeln( "<info>User $email is a collaborator on the following WordPress sites:</info>" );
+			$output->writeln( "<info>$email is a user on the following WordPress sites:</info>" );
 			foreach ( $wpcom_collaborator_data as $collaborator ) {
 				$wpcom_collaborator_sites[] = array( $collaborator->siteName, $collaborator->siteId, $collaborator->userId );
 			}
@@ -103,15 +101,14 @@ class Remove_User extends Command {
 			$site_info->render();
 		}
 
-
 		// Bail here unless the user has asked to remove the collaborator.
-		if ( empty( $input->getOption( 'remove' ) ) ) {
+		if ( $input->getOption( 'list' ) ) {
 			exit;
 		}
 
 		// Remove?
-		$confirm_remove = trim(readline("Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) "));
-		if ( $confirm_remove !== 'y' ) {
+		$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) ' ) );
+		if ( 'y' !== $confirm_remove ) {
 			exit;
 		}
 
@@ -193,5 +190,5 @@ class Remove_User extends Command {
 
 		// flatten with array_merge.
 		return array_merge( ...$logins_to_be_banned );
-    }
+	}
 }
