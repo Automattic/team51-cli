@@ -4,6 +4,9 @@ namespace Team51\Helper;
 
 class API_Helper {
 
+	private const PRESABLE_TOKEN_FILE         = __DIR__ . '/pressable_token.json';
+	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-23 hours';
+
 	public function call_pressable_api( $query, $method, $data ) {
 		$api_request_url = PRESSABLE_API_ENDPOINT . $query;
 
@@ -40,12 +43,14 @@ class API_Helper {
 	}
 
 	public function get_pressable_api_token() {
-		static $access_token = '';
+		$access_token = $this->get_local_pressable_token();
 
 		if( ! empty( $access_token ) ) {
+			// Re-use access token
 			return $access_token;
 		}
-
+		
+		// Otherwise, generate a new token
 		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
 
 		$data = array(
@@ -82,6 +87,8 @@ class API_Helper {
 
 		$access_token = $result->access_token;
 
+		// Store pressable token for future use
+		$this->set_local_pressable_token( $access_token );
 		return $access_token;
 	}
 
@@ -256,5 +263,37 @@ class API_Helper {
 		$result = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
+	}
+
+	/**
+	 * Retrieves the last stored pressable token. If token is expired, returns false
+	 */
+	private function get_local_pressable_token() {
+		if ( ! file_exists( self::PRESABLE_TOKEN_FILE ) ) {
+			// No local token stored
+			return false;
+		}
+
+		$data = json_decode( file_get_contents( self::PRESABLE_TOKEN_FILE ) );
+
+		if( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
+			// Pressable token expired
+			return false;
+		}
+
+		return $data->pressable_token;
+	}
+
+	/**
+	 * Stores in local file the last generated pressable token
+	 */
+	private function set_local_pressable_token( $token ) {
+		$data = array(
+			'pressable_token'           => $token,
+			'pressable_token_timestamp' => time(),
+		);
+		file_put_contents( self::PRESABLE_TOKEN_FILE, json_encode( $data ) );
+
+		return true;
 	}
 }
