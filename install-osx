@@ -1,4 +1,5 @@
 #!/bin/bash
+ulimit -n 4096
 composer install
 composer dump-autoload -o
 sudo mkdir -p /usr/local/bin
