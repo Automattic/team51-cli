@@ -170,13 +170,13 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function call_wpcom_api( $query, $data, $method = 'POST' ) {
+	public function call_wpcom_api( $query, $data, $method = 'GET' ) {
 		$api_request_url = WPCOM_API_ENDPOINT . $query;
 
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: Bearer '. WPCOM_API_ACCOUNT_TOKEN,
+			'Authorization: Bearer ' . WPCOM_API_ACCOUNT_TOKEN,
 			'User-Agent: PHP',
 		);
 
@@ -184,13 +184,13 @@ class API_Helper {
 			'http' => array(
 				'header'        => $headers,
 				'ignore_errors' => true,
+				'method'        => $method,
 			)
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
 			$data = json_encode( $data );
 			$options['http']['content'] = $data;
-			$options['http']['method']  = $method;
 		}
 
 		$context = stream_context_create( $options );
@@ -214,6 +214,36 @@ class API_Helper {
 				'header'        => $headers,
 				'ignore_errors' => true,
 			)
+		);
+
+		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
+			$data = json_encode( $data );
+			$options['http']['content'] = $data;
+			$options['http']['method']  = $method;
+		}
+
+		$context = stream_context_create( $options );
+		$result = @file_get_contents( $api_request_url, false, $context );
+
+		return json_decode( $result );
+	}
+
+	public function call_generic_api( $api_request_url, $data, $method = 'GET', $bearer_token ) {
+		$headers = array(
+			'Accept: application/json',
+			'Content-Type: application/json',
+			'User-Agent: PHP',
+		);
+
+		if ( ! empty( $bearer_token ) ) {
+			$headers[] = 'Authorization: Bearer ' . $bearer_token;
+		}
+
+		$options = array(
+			'http' => array(
+				'header'        => $headers,
+				'ignore_errors' => true,
+			),
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
