@@ -18,7 +18,7 @@ class Create_Development_Site extends Command {
 		->setHelp( 'This command allows you to create a new development site.' )
 		->addOption( 'site-id', null, InputOption::VALUE_REQUIRED, "The site ID of the production Pressable site you'd like to clone." )
 		->addOption( 'temporary-clone', null, InputOption::VALUE_NONE, 'Creates a temporary clone of the production site for short-term development work. The site created is meant to be deleted after use.' )
-		->addOption( 'hostname', null, InputOption::VALUE_REQUIRED, 'Used to name the Pressable instance. If not specified, time() will be used.' )
+		->addOption( 'label', null, InputOption::VALUE_REQUIRED, 'Used to name the Pressable instance. If not specified, time() will be used.' )
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
 
@@ -55,13 +55,13 @@ class Create_Development_Site extends Command {
 		}
 
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
-			if ( ! empty( $input->getOption( 'hostname' ) ) ) {
+			if ( ! empty( $input->getOption( 'label' ) ) ) {
 				$site_name = str_replace( '-development', '', $site_name );
-				$hostname  = $input->getOption( 'hostname' );
+				$label  = $input->getOption( 'label' );
 			} else {
-				$hostname = time();
+				$label = time();
 			}
-			$site_name .= '-' . $hostname;
+			$site_name .= '-' . $label;
 		}
 
 		$pressable_site = $api_helper->call_pressable_api(
