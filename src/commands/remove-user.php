@@ -107,9 +107,11 @@ class Remove_User extends Command {
 		}
 
 		// Remove?
-		$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) ' ) );
-		if ( 'y' !== $confirm_remove ) {
-			exit;
+		if ( ! $input->getOption( 'no-interaction' ) ) {
+			$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) ' ) );
+			if ( 'y' !== $confirm_remove ) {
+				exit;
+			}
 		}
 
 		// Remove from Pressable
@@ -139,7 +141,7 @@ class Remove_User extends Command {
 	private function get_wpcom_users( $email ) {
 		$wp_bearer_token = WPCOM_API_ACCOUNT_TOKEN;
 
-		$this->output->writeln( '<comment>Fetching list of wpcom sites...</comment>' );
+		$this->output->writeln( '<comment>Fetching list of WordPress.com & Jetpack sites...</comment>' );
 
 		$result = $this->api_helper->call_wpcom_api( 'rest/v1.1/me/sites/?fields=ID,URL', array() );
 
@@ -148,7 +150,7 @@ class Remove_User extends Command {
 			exit;
 		}
 
-		$this->output->writeln( "<comment>Searching for '$email' across " . count( $result->sites ) . ' wpcom sites...</comment>' );
+		$this->output->writeln( "<comment>Searching for '$email' across " . count( $result->sites ) . ' WordPress.com & Jetpack sites...</comment>' );
 
 		// Prepare array with /sites/[siteID]/users/
 		$users_search_urls = array();
