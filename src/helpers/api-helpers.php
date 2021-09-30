@@ -42,21 +42,27 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function get_pressable_api_token() {
-		$access_token = $this->get_local_pressable_token();
+	public function get_pressable_api_token( $client_id = NULL, $client_secret = NULL ) {
+		$use_local_token = ( ! $client_secret && ! $client_id );
 
-		if( ! empty( $access_token ) ) {
-			// Re-use access token
-			return $access_token;
+		if ( $use_local_token ) {
+			$access_token = $this->get_local_pressable_token();
+			if( ! empty( $access_token ) ) {
+				// Re-use access token
+				$output->writeln( '<comment>Re-using OAuth token stored locally.</comment>' );
+				return $access_token;
+			}
 		}
-		
+
 		// Otherwise, generate a new token
 		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
+		$client_id = $client_id ?: PRESSABLE_API_APP_CLIENT_ID;
+		$client_secret = $client_secret ?: PRESSABLE_API_APP_CLIENT_SECRET;
 
 		$data = array(
 			'grant_type' => 'password',
-			'client_id' => PRESSABLE_API_APP_CLIENT_ID,
-			'client_secret' => PRESSABLE_API_APP_CLIENT_SECRET,
+			'client_id'  => $client_id,
+			'client_secret' => $client_secret,
 			'email' => PRESSABLE_ACCOUNT_EMAIL,
 			'password' => PRESSABLE_ACCOUNT_PASSWORD,
 		);
@@ -87,8 +93,10 @@ class API_Helper {
 
 		$access_token = $result->access_token;
 
-		// Store pressable token for future use
-		$this->set_local_pressable_token( $access_token );
+		// Store pressable token for future use (only when using local constants)
+		if ( $use_local_token ) {
+			$this->set_local_pressable_token( $access_token );
+		}
 		return $access_token;
 	}
 
@@ -275,6 +283,10 @@ class API_Helper {
 		}
 
 		$data = json_decode( file_get_contents( self::PRESABLE_TOKEN_FILE ) );
+
+		if ( ! $data ) {
+			return false;
+		}
 
 		if( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
 			// Pressable token expired
