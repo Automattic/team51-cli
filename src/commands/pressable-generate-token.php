@@ -45,21 +45,15 @@ class Pressable_Generate_Token extends Command {
 			}
 		}
 
-		$output->writeln( '<comment>Generating OAuth token on Pressable.</comment>' );
+		$output->writeln( '<comment>Generating Refresh Token from Pressable.</comment>' );
 
-		$token = $this->api_helper->get_pressable_api_token( $client_id, $client_secret );
+		$tokens = $this->api_helper->get_pressable_api_auth_tokens( $client_id, $client_secret );
 
-		$output->writeln( "<info>\nPressable OAuth Token:\n{$token}\n</info>" );
+		$output->writeln( "<info>\nPressable Refresh Token:\n{$tokens['refresh_token']}\n</info>" );
 
-		$table = new Table( $output );
-		$table->setStyle( 'box-double' );
-		$table->setHeaders( array( 'Key', 'Value' ) );
-		$table->setRows( array(
-			array( 'PRESSABLE_API_APP_CLIENT_ID', $client_id ),
-			array( 'PRESSABLE_API_APP_CLIENT_SECRET', $client_secret ),
-			array( 'PRESSABLE_API_OAUTH_TOKEN', $token ),
-		) );
-		$table->render();
+		$output->writeln( '"PRESSABLE_API_APP_CLIENT_ID":"' . $client_id . '",' );
+		$output->writeln( '"PRESSABLE_API_APP_CLIENT_SECRET":"' . $client_secret . '",' );
+		$output->writeln( '"PRESSABLE_API_REFRESH_TOKEN":"' . $tokens['refresh_token'] . '",' );
 
 		$output->writeln( "<info>\nAll done!<info>" );
 	}

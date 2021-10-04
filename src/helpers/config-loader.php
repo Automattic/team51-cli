@@ -107,23 +107,25 @@ if( ! empty( $config->PRESSABLE_API_APP_CLIENT_SECRET ) ) {
 	die();
 }
 
-if( empty( $config->PRESSABLE_ACCOUNT_EMAIL ) && empty( $config->PRESSABLE_OAUTH_TOKEN ) ) {
-	echo "Neither PRESSABLE_ACCOUNT_EMAIL or PRESSABLE_OAUTH_TOKEN could be set. Aborting!\n";
+if( empty( $config->PRESSABLE_ACCOUNT_EMAIL ) && empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
+	echo "Neither PRESSABLE_ACCOUNT_EMAIL or PRESSABLE_API_REFRESH_TOKEN could be set. Aborting!\n";
 	die();
 } else {
 	if ( ! empty( $config->PRESSABLE_ACCOUNT_EMAIL ) ) {
 		define( 'PRESSABLE_ACCOUNT_EMAIL', $config->PRESSABLE_ACCOUNT_EMAIL );
 	}
-	if ( ! empty( $config->PRESSABLE_OAUTH_TOKEN ) ) {
-		define( 'PRESSABLE_ACCOUNT_EMAIL', $config->PRESSABLE_OAUTH_TOKEN );
+	if ( ! empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
+		define( 'PRESSABLE_API_REFRESH_TOKEN', $config->PRESSABLE_API_REFRESH_TOKEN );
 	}
 }
 
-if( empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) && empty( $config->PRESSABLE_OAUTH_TOKEN ) ) {
-	echo "Neither PRESSABLE_ACCOUNT_PASSWORD or PRESSABLE_OAUTH_TOKEN could be set. Aborting!\n";
+if( empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) && empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
+	echo "Neither PRESSABLE_ACCOUNT_PASSWORD or PRESSABLE_API_REFRESH_TOKEN could be set. Aborting!\n";
 	die();
 } else {
-	define( 'PRESSABLE_ACCOUNT_PASSWORD', $config->PRESSABLE_ACCOUNT_PASSWORD );
+	if ( ! empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) ) {
+		define( 'PRESSABLE_ACCOUNT_PASSWORD', $config->PRESSABLE_ACCOUNT_PASSWORD );
+	}
 }
 
 if( ! empty( $config->WPCOM_API_ENDPOINT ) ) {
