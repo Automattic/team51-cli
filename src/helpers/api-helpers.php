@@ -228,7 +228,7 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function call_generic_api( $api_request_url, $data, $method = 'GET', $bearer_token ) {
+	public function call_generic_api( $api_request_url, $data, $method = 'GET', $bearer_token = null ) {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
