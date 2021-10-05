@@ -5,7 +5,7 @@ namespace Team51\Helper;
 class API_Helper {
 
 	private const PRESABLE_TOKEN_FILE         = __DIR__ . '/pressable_token.json';
-	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-23 hours';
+	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-8 hours';
 
 	public function call_pressable_api( $query, $method, $data ) {
 		$api_request_url = PRESSABLE_API_ENDPOINT . $query;
@@ -343,27 +343,24 @@ class API_Helper {
 	}
 
 	/**
-	 * Retrieves the last stored Pressable refresh token, or PRESSABLE_API_REFRESH_TOKEN by default
-	 * If token is expired, returns false
+	 * Retrieves the last stored Pressable refresh token, 
+	 * or PRESSABLE_API_REFRESH_TOKEN by default
 	 */
 	private function get_local_pressable_refresh_token() {
 		if ( ! file_exists( self::PRESABLE_TOKEN_FILE ) ) {
 			if ( defined( 'PRESSABLE_API_REFRESH_TOKEN' ) ) {
+				echo "Using PRESSABLE_API_REFRESH_TOKEN from config.json file\n";
 				return PRESSABLE_API_REFRESH_TOKEN;
 			} else {
 				// No local token stored in JSON nor config file
+				echo "No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file \n";
 				return false;
 			}
 		}
 
 		$data = json_decode( file_get_contents( self::PRESABLE_TOKEN_FILE ) );
-
 		if ( ! $data ) {
-			return false;
-		}
-
-		if( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
-			// Pressable token expired
+			echo "Could not read pressable_token.json file";
 			return false;
 		}
 
