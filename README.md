@@ -27,13 +27,14 @@ It's the nickname for our Special Projects team at Automattic.
 Be well, be kind, make things and set them free.
 
 ## Installation
-1. Clone this repository.
+1. Open the Terminal on your Mac and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
-1. Make sure [Composer](https://getcomposer.org/) is installed.
-    - `brew install composer`
-1. Run `cd team51-cli` to change directory to the cloned repository.
-1. From the cloned repository, run `./install-osx`. First off, we know the fruit company has changed the name of the desktop operating system. Secondly, there's probably nothing fruit company specific about this install script. We could have called it `./install-posix`, but nobody's perfect.
-1. Open 1Password and download the `config.json` file from a secure vault named `Team51-CLI Config File` to the root of the repository.
+    - It will ask you an SSH Passphrase, type it and hit Enter (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy)
+1. Make sure [Composer](https://getcomposer.org/) is installed on your computer.
+    - The easiest way to install composer is installing [brew](https://brew.sh/) first, and then running `brew install composer`
+1. Now let's install the CLI! From the `team51-cli` directory, run `./install-osx`.
+    - If you get an error `no such file or directory: ./install-osx`, try running `cd team51-cli` first.
+1. Open 1Password and download the `config.json` file from a secure vault named `Team51-CLI Config File`. Place this file inside `team51-cli` directory.
 1. To verify the tool was installed successfully, you can run `team51` from your Terminal
 
 ## Usage
@@ -45,7 +46,10 @@ A copy of that documentation possibly will land here in the future if it's usefu
 ## Troubleshooting
 
 ### `composer: command not found`
-If you get the error `./install-osx: line 2: composer: command not found`, please run `brew install composer` to install Composer on your computer.
+If you get the error `./install-osx: line 2: composer: command not found`, you can run `brew install composer` to install Composer on your computer.
+
+### `brew: command not found`
+If you don't have [brew](https://brew.sh/) yet, install it by executing this from your Terminal: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` — Tip: you can use brew to install all sort of apps on your Mac. Give it [a try](https://formulae.brew.sh/cask/zoom)
 
 ### `no such file or directory: ./install-osx`
 Most likely you are not inside the team51 directory. Try with `cd team51-cli`. If that doesn't work, verify where you are located by running `pwd` and then use the *change directory* command (`cd`) to navigate to the team51-cli directory we cloned in the steps above.
