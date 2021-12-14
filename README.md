@@ -67,3 +67,9 @@ To fix this issue, open 1Password and search for a file called `config.json`. Do
 For certain commands involving the use of PHP workers threads, you might need to increase the `ulimit` on your local computer. To increase this number, you can run on the terminal: `ulimit -n 4096`.
 
 A particular case where this might be needed is when using the `remove-user` command. If you get a `PHP Warning:` `failed to open stream: Too many open files...` try upgrading the ulimit as described above.
+
+### `env: php: No such file or directory`
+
+This is likely because you don't have PHP installed on your system. If you recently updated to MacOS Monterey, that could be the culprit as it doesn't come bundled with PHP anymore. If you have `brew` installed, it's easy to get PHP added by running the following command in the terminal: `brew install php@7.4 brew-php-switcher`. This will install the latest version of PHP 7.4 as well as a handy utility for switching between PHP versions if you need to.
+
+You will then need to run `brew link php@7.4` so that PHP gets symlinked properly to your system's PHP files. Running `team51` now should work just fine.
