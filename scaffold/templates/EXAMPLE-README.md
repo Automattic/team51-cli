@@ -34,8 +34,9 @@ foreach($dirs as $dir) {
 
 1. Make your fix in a new branch.
 1. Merge your `fix/` branch into the `develop` branch and test on the staging site.
-1. If all looks good, make a PR from your fix branch into `trunk`.
-1. A member of the Special Projects Team will review, test, and merge it to the live site.
+1. If all looks good, make a PR and merge from your fix branch into `trunk`.
+
+NOTE: While PRs are not required to be manually reviewed, we are happy to review any PR for any reason. Please ping us in Slack with a link to the PR.
 
 ## Deployment
 

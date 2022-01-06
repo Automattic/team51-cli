@@ -4,6 +4,8 @@
 .svn
 init.sh
 templates/*
+*/node_modules/*
+node_modules/
 
 # Theme and Plugin handling
 #
