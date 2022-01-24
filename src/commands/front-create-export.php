@@ -66,6 +66,7 @@ class Front_Create_Export extends Command {
 
 		if ( empty( $result->id ) || empty( $result->status ) ) {
 			$output->writeln( '<error>Oh no, something went wrong!</error>' );
+			exit;
 		}
 
 		$output->writeln( sprintf( '<info>A new export request was created with the ID %s. Current status is %s.</info>', $result->id, ucfirst( $result->status ) ) );
