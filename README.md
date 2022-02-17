@@ -45,14 +45,19 @@ A copy of that documentation possibly will land here in the future if it's usefu
 
 ## Troubleshooting
 
+### Before anything else
+If you haven't used the CLI in a while and you're getting a lot of `Deprecated` notices or PHP `Fatal error`, try running `./install-osx` again to make sure all the dependencies are up to date. 
+
+Remember: you need be inside the `team51-cli` directory in order to execute the install command.
+
+### `no such file or directory: ./install-osx`
+Most likely you are not inside the team51 directory. Try with `cd team51-cli`. If that doesn't work, verify where you are located by running `pwd` and then use the *change directory* command (`cd`) to navigate to the team51-cli directory we cloned in the steps above.
+
 ### `composer: command not found`
 If you get the error `./install-osx: line 2: composer: command not found`, you can run `brew install composer` to install Composer on your computer.
 
 ### `brew: command not found`
 If you don't have [brew](https://brew.sh/) yet, install it by executing this from your Terminal: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` — Tip: you can use brew to install all sort of apps on your Mac. Give it [a try](https://formulae.brew.sh/cask/zoom)
-
-### `no such file or directory: ./install-osx`
-Most likely you are not inside the team51 directory. Try with `cd team51-cli`. If that doesn't work, verify where you are located by running `pwd` and then use the *change directory* command (`cd`) to navigate to the team51-cli directory we cloned in the steps above.
 
 ### `Warning: file_get_contents: failed to open stream`
 ```
