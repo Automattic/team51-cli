@@ -47,11 +47,11 @@ class Create_Development_Site extends Command {
 
 		// If the production site was created with this script, follow the same naming convention.
 		if ( false !== strpos( $pressable_site->data->name, '-production' ) ) {
-			$site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
-			$project_name = str_replace( '-development', '', $site_name );
+      $site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
+      $project_name = str_replace( '-development', '', $site_name );
 		} else {
       $site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
-			$project_name = $pressable_site->data->name;
+      $project_name = $pressable_site->data->name;
 		}
 
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
