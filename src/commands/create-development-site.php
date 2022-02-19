@@ -50,7 +50,7 @@ class Create_Development_Site extends Command {
 			$site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
 			$project_name = str_replace( '-development', '', $site_name );
 		} else {
-			$site_name    = $pressable_site->data->name . '-development';
+      $site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
 			$project_name = $pressable_site->data->name;
 		}
 
@@ -71,6 +71,16 @@ class Create_Development_Site extends Command {
 				'name' => $site_name,
 			)
 		);
+
+    // catching and displaying useful errors here
+    if ( $pressable_site->errors ) {
+      $site_creation_errors = '';
+      foreach( $pressable_site->errors as $error ) {
+        $site_creation_errors .= $error;
+      }
+      $output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
+      exit;
+    }
 
 		// TODO this code is duplicated above
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
