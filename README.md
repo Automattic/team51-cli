@@ -69,7 +69,7 @@ To fix this issue, open 1Password and search for a file called `config.json`. Do
 
 ### `failed to open stream: Too many open files`
 
-For certain commands involving the use of PHP workers threads, you might need to increase the `ulimit` on your local computer. To increase this number, you can run on the terminal: `ulimit -n 4096`.
+For certain commands involving the use of PHP workers threads, you might need to increase the `ulimit` on your local computer. To increase this number, you can run on the terminal: `ulimit -n 8192`.
 
 A particular case where this might be needed is when using the `remove-user` command. If you get a `PHP Warning:` `failed to open stream: Too many open files...` try upgrading the ulimit as described above.
 
