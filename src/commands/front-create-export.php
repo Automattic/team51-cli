@@ -4,7 +4,7 @@ namespace Team51\Command;
 
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -15,12 +15,12 @@ class Front_Create_Export extends Command {
         $this
         ->setDescription( 'Creates an export request in Front for all messages or messages within a specific timeframe.' )
 		->setHelp( 'This command creates an export request in Front. Exports take some time to process, use the `team51 front-list-exports` command to see all available exports and their statuses.' )
-		->addArgument( 'start-date', InputArgument::OPTIONAL, 'The Start Date in YYYY-MM-DD format' )
-		->addArgument( 'end-date', InputArgument::OPTIONAL, 'The End Date in YYYY-MM-DD format' );
+		->addOption( 'start-date', null, InputOption::VALUE_OPTIONAL, 'The Start Date in YYYY-MM-DD format' )
+		->addOption( 'end-date', null, InputOption::VALUE_OPTIONAL, 'The End Date in YYYY-MM-DD format' );
     }
 
     protected function execute( InputInterface $input, OutputInterface $output ) {
-		$start_date = $input->getArgument( 'start-date' );
+		$start_date = $input->getOption( 'start-date' );
 
 		// Start date.
 		if ( ! empty( $start_date ) ) {
@@ -35,7 +35,7 @@ class Front_Create_Export extends Command {
 		}
 
 		// End date.
-		$end_date = $input->getArgument( 'end-date' );
+		$end_date = $input->getOption( 'end-date' );
 
 		if ( ! empty( $end_date ) ) {
 			$end_date = strtotime( $end_date );
@@ -58,18 +58,21 @@ class Front_Create_Export extends Command {
 		$data = array(
 			'start' => $start_date,
 			'end'   => $end_date,
+			'type'  => 'messages',
 		);
 
 		$output->writeln( 'Asking Front to generate a new export...' );
 
-		$result = $api_helper->call_front_api( 'exports', $data, 'POST' );
+		$result = $api_helper->call_front_api( 'analytics/exports', $data, 'POST' );
 
-		if ( empty( $result->id ) || empty( $result->status ) ) {
+		if ( empty( $result->_links->self ) || empty( $result->status ) ) {
 			$output->writeln( '<error>Oh no, something went wrong!</error>' );
 			exit;
 		}
 
-		$output->writeln( sprintf( '<info>A new export request was created with the ID %s. Current status is %s.</info>', $result->id, ucfirst( $result->status ) ) );
-		$output->writeln( '<comment>Use the `team51 front-list-exports` command to check on the export status and get a download link.</comment>' );
+		$id = str_replace( 'https://wordpress-concierge.api.frontapp.com/analytics/exports/', '', $result->_links->self );
+
+		$output->writeln( sprintf( '<info>A new export request was created with the ID %s. Current status is %s.</info>', $id, ucfirst( $result->status ) ) );
+		$output->writeln( sprintf( '<comment>Use the `team51 front-get-export --export-id=%s` command to check on the export status and get a download link.</comment>', $id ) );
     }
 }
