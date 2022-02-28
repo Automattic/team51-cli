@@ -26,5 +26,6 @@ $application->add( new Team51\Command\Front_Create_Export() );
 $application->add( new Team51\Command\Front_Get_Export() );
 $application->add( new Team51\Command\Get_PHP_Errors() );
 $application->add( new Team51\Command\Remove_User() );
+$application->add( new Team51\Command\Rotate_GitHub_Secrets() );
 
 $application->run();
