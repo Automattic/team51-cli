@@ -1,4 +1,3 @@
 config.json
 vendor/
 .DS_Store
-!/scaffold/anonymizer/vendor
