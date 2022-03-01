@@ -52,6 +52,7 @@ class DevQueue_Triage_Digest extends Command {
 			);
 
 			$issue->due_in = 9999;
+			$issue->random_tags = array();
 
 			if ( sizeof( $issue->labels ) ) {
 				foreach ( $issue->labels as $issue_label ) {
@@ -59,6 +60,8 @@ class DevQueue_Triage_Digest extends Command {
 						// If we have a due date, set how many days until then.
 						$duedate_timestamp = strtotime( substr( $issue_label->name, 11 ) );
 						$issue->due_in = ( $duedate_timestamp - strtotime( 'today' ) ) / ( 24 * 60 * 60 );
+					} else {
+						$issue->random_tags[] = $issue_label->name;
 					}
 				}
 			}
@@ -101,14 +104,22 @@ class DevQueue_Triage_Digest extends Command {
 					break;
 			}
 
+			$tags = '';
+			if ( sizeof ( $issue->random_tags ) ) {
+				foreach ( $issue->random_tags as $tag_name ) {
+					$tags .= "*{$tag_name}* ";
+				}
+			}
+
 			$output->writeln(
 				sprintf(
-					'<%1$s>* %2$d: [%3$s](%5$s) (%4$s)</%1$s>',
+					'<%1$s>* %2$d: %6$s[%3$s](%5$s) (%4$s)</%1$s>',
 					$type,
 					$issue->number,
 					$issue->title,
 					$how_long,
-					$issue->html_url
+					$issue->html_url,
+					$tags
 				)
 			);
 		}
