@@ -37,7 +37,7 @@ class DevQueue_Triage_Digest extends Command {
 
 		$output->writeln( sprintf( '<comment>Triage currently has %d cards.</comment>', sizeof( $cards ) ) );
 
-		$urgent_issues = array();
+		$issues = array();
 
 		$progress_bar = new ProgressBar( $output, sizeof( $cards ) );
 		$progress_bar->start();
@@ -51,19 +51,20 @@ class DevQueue_Triage_Digest extends Command {
 				'GET'
 			);
 
+			$issue->due_in = 9999;
+
 			if ( sizeof( $issue->labels ) ) {
 				foreach ( $issue->labels as $issue_label ) {
 					if ( '[DUE DATE]' === strtoupper( substr( $issue_label->name, 0, 10 ) ) ) {
+						// If we have a due date, set how many days until then.
 						$duedate_timestamp = strtotime( substr( $issue_label->name, 11 ) );
-
-						// If it's due before two days from now ...
 						$issue->due_in = ( $duedate_timestamp - strtotime( 'today' ) ) / ( 24 * 60 * 60 );
-						if ( $issue->due_in <= 2 ) {
-							$urgent_issues[ $issue->id ] = $issue;
-						}
 					}
 				}
 			}
+
+			// Add it to the issues array.
+			$issues[ $issue->id ] = $issue;
 
 			$progress_bar->advance();
 		}
@@ -72,15 +73,13 @@ class DevQueue_Triage_Digest extends Command {
 		$output->writeln( '' );
 		$output->writeln( '' );
 
-		$output->writeln( sprintf( '<info>Found %d issues pending triage due in the next few days!</info>', sizeof( $urgent_issues ) ) );
-
-		usort( $urgent_issues, function( $a, $b ) {
+		usort( $issues, function( $a, $b ) {
 			return $a->due_in - $b->due_in;
 		});
 
-		foreach ( $urgent_issues as $issue ) {
+		foreach ( $issues as $issue ) {
 			$type = 'comment';
-			if ( $issue->due_in < 0 ) {
+			if ( $issue->due_in <= 0 ) {
 				$type = 'error';
 			}
 
@@ -93,6 +92,9 @@ class DevQueue_Triage_Digest extends Command {
 					break;
 				case '1':
 					$how_long = 'Due Tomorrow';
+					break;
+				case 9999:
+					$how_long = 'No Due Date Specified';
 					break;
 				default:
 					$how_long = "Due in {$issue->due_in} days";
