@@ -44,6 +44,14 @@ if( ! empty( $config->GITHUB_API_ENDPOINT ) ) {
 	die();
 }
 
+if ( ! empty( $config->GITHUB_DEVQUEUE_TRIAGE_COLUMN ) ) {
+	define( 'GITHUB_DEVQUEUE_TRIAGE_COLUMN', $config->GITHUB_DEVQUEUE_TRIAGE_COLUMN );
+} else {
+	echo "GITHUB_DEVQUEUE_TRIAGE_COLUMN not set in config.\n";
+	echo "NBD unless you're trying to generate the triage digest.\n";
+	// No need to die() this isn't required for most folks!
+}
+
 if( ! empty( $config->GITHUB_API_TOKEN ) ) {
 	define( 'GITHUB_API_TOKEN', $config->GITHUB_API_TOKEN );
 } else {
