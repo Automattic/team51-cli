@@ -59,6 +59,13 @@ if( ! empty( $config->GITHUB_API_TOKEN ) ) {
 	die();
 }
 
+if( ! empty( $config->GITHUB_API_BOT_SECRETS_TOKEN ) ) {
+	define( 'GH_BOT_TOKEN', $config->GITHUB_API_BOT_SECRETS_TOKEN );
+} else {
+	echo "GH_BOT_TOKEN could not be set. Aborting!\n";
+	die();
+}
+
 if( ! empty( $config->PRESSABLE_SFTP_HOSTNAME ) ) {
 	define( 'PRESSABLE_SFTP_HOSTNAME', $config->PRESSABLE_SFTP_HOSTNAME );
 } else {
