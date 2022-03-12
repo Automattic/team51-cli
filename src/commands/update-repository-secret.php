@@ -221,7 +221,7 @@ class Update_Repository_Secret extends Command {
 	 */
 	private function verify_public_key( $public_key ): void {
 		if ( false === $public_key ) {
-			$this->output->writeln( "<error>Repository key for {$this->repo_name} is empty. Aborting!</error>" );
+			$this->output->writeln( "<error>Repository key for {$this->repo_name} is empty.</error>" );
 			$this->exit();
 		}
 	}
