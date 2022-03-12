@@ -44,6 +44,7 @@ class Update_Repository_Secret extends Command {
 	 */
 	protected $output;
 
+
 	public function __construct() {
 		parent::__construct();
 
@@ -56,7 +57,6 @@ class Update_Repository_Secret extends Command {
 			->setHelp( 'This command allows you to update Github repository secret or create one if it is missing.' )
 			->addOption( 'repo-slug', null, InputOption::VALUE_REQUIRED, 'Repository name in slug form (e.g. client-name)?' )
 			->addOption( 'secret-name', null, InputOption::VALUE_REQUIRED, 'Secret name in all caps (e.g. GH_BOT_TOKEN)?' );
-			// Figure out how to pass the secret. Force defined in json??
 	}
 
 	/**
@@ -69,12 +69,26 @@ class Update_Repository_Secret extends Command {
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 
-		$this->output = $output;
+		$config = json_decode( file_get_contents( TEAM51_CLI_ROOT_DIR . '/config.json' ) );
 
-		$this->verify_input_repo_name( $input );
-		$this->verify_input_secret_name( $input );
+		$this->output   = $output;
+		$success_repo   = $this->verify_input_repo_name( $input );
+		$success_secret = $this->verify_input_secret_name( $input );
+
+		if ( false === $success_repo || false === $success_secret ) {
+			return 1;
+		}
+
 		$this->repo_name   = $input->getOption( 'repo-slug' );
 		$this->secret_name = $input->getOption( 'secret-name' );
+		$success_secret_exists = $this->verify_secret_exists( $this->secret_name, $config );
+
+		if ( false === $success_secret_exists ) {
+			return 1;
+		}
+
+		$output->writeln( "<info>Secret for {$this->secret_name} found.</info>" );
+
 		$this->verify_repo_on_github();
 
 		$output->writeln( "<info>Repository {$this->repo_name} found.</info>" );
@@ -84,7 +98,12 @@ class Update_Repository_Secret extends Command {
 
 		$output->writeln( "<info>Using repository key {$repo_key['key_id']}.</info>" );
 
-		$new_secret         = GH_BOT_TOKEN;
+		$new_secret = $this->get_secret_key( $this->secret_name, $config );
+
+		if ( empty( $new_secret ) ) {
+			return 1;
+		}
+
 		$repo_public_key_id = $repo_key['key_id'];
 		$repo_public_key    = base64_decode( $repo_key['key'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 
@@ -164,17 +183,36 @@ class Update_Repository_Secret extends Command {
 	private function verify_input_repo_name( InputInterface $input ) {
 		if ( true === empty( $input->getOption( 'repo-slug' ) ) ) {
 			$this->output->writeln( '<error>You must pass a repository slug with --repo-slug.</error>' );
-			$this->exit();
+			return false;
 		}
 	}
 
 	private function verify_input_secret_name( InputInterface $input ) {
 		if ( true === empty( $input->getOption( 'secret-name' ) ) ) {
 			$this->output->writeln( '<error>You must pass a secret name with --secret-name.</error>' );
-			$this->exit();
+			return false;
 		}
 	}
 
+	private function verify_secret_exists( string $secret_name, $config ) {
+		if ( 'GH_BOT_TOKEN' !== $secret_name && empty( $config->$secret_name ) ) { // Legacy is a beach!
+			$this->output->writeln( '<error>Secret does not exist in config.json file.</error>' );
+			return false;
+		}
+	}
+
+	private function get_secret_key( string $secret_name, $config ) {
+		if ( 'GH_BOT_TOKEN' === $secret_name && empty( $config->GH_BOT_TOKEN ) ) { // Legacy is a beach!
+			$secret_name = 'GITHUB_API_BOT_SECRETS_TOKEN';
+			$this->verify_secret_exists( $secret_name, $config );
+		}
+		if ( ! empty( $config->$secret_name ) ) {
+			$secret = $config->$secret_name;
+		} else {
+			$this->output->writeln( '<error>Secret could not be retrieved. Aborting!</error>' );
+		}
+		return $secret;
+	}
 
 	/**
 	 * @param string|bool $public_key

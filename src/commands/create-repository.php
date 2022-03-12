@@ -354,8 +354,7 @@ class Create_Repository extends Command {
 		if ( 0 === $add_gh_bot_secret_success ) {
 			$output->writeln( '<info>Successfully added GH_BOT_TOKEN to (' . GITHUB_API_OWNER . "/$slug).</info>" );
 		} else {
-			$output->writeln( '<error>Failed to add GitHub GH_BOT_TOKEN to (' . GITHUB_API_OWNER . "/$slug). Aborting!</error>" );
-			//exit;
+			$output->writeln( '<error>Failed to automatically add GitHub GH_BOT_TOKEN to (' . GITHUB_API_OWNER . "/$slug).</error>" );
 		}
 
 		$output->writeln( "<info>GitHub repository creation and setup is complete! $html_url</info>" );
