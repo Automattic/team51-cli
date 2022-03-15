@@ -10,24 +10,21 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Plugin_List extends Command {
-    protected static $defaultName = 'plugin-list';
+	protected static $defaultName = 'plugin-list';
 
-    protected function configure() {
-        $this
-        ->setDescription( "Shows list of plugins on a specified site." )
-		->setHelp( "Use this command to show a list of installed plugins on a site. This command requires a Jetpack site connected to the a8cteam51 account." )
-		->addArgument( 'site-domain', InputArgument::REQUIRED, "The domain of the Jetpack connected site." );
-    }
+	protected function configure() {
+		$this
+		->setDescription( 'Shows list of plugins on a specified site.' )
+		->setHelp( 'Use this command to show a list of installed plugins on a site. This command requires a Jetpack site connected to the a8cteam51 account.' )
+		->addArgument( 'site-domain', InputArgument::REQUIRED, 'The domain of the Jetpack connected site.' );
+	}
 
-    protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$site_domain = $input->getArgument( 'site-domain' );
 
 		$api_helper = new API_Helper;
 
-		$output->writeln( '<info>Fetching site information...<info>' );
-
 		$site = $api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_domain, array() );
-		//var_dump ( $site );
 
 		if ( empty( $site->ID ) ) {
 			$output->writeln( '<error>Failed to fetch site information.<error>' );
@@ -35,14 +32,9 @@ class Plugin_List extends Command {
 			exit;
 		}
 
-		$output->writeln( '<info>Getting list of plugins...<info>' );
+		$output->writeln( "<info>Plugins installed on {$site_domain}<info>" );
 
-		$data = array(
-			//'path' => '/jetpack/v4/plugins',
-		);
-		//var_dump( $data );
-		$plugin_data = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site->ID . '/rest-api/?path=/jetpack/v4/plugins', $data );
-		//var_dump( $result );
+		$plugin_data = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site->ID . '/rest-api/?path=/jetpack/v4/plugins', array() );
 
 		if ( ! empty( $plugin_data->error ) ) {
 			$output->writeln( '<error>Failed. ' . $result->message . '<error>' );
@@ -55,12 +47,11 @@ class Plugin_List extends Command {
 
 		$plugin_list = array();
 		foreach ( $plugin_data->data as $plugin ) {
-				$plugin_list[] = array( $plugin->TextDomain, ($plugin->active ? 'Active' : 'Inactive'), $plugin->Version );
-			}
+				$plugin_list[] = array( $plugin->TextDomain, ( $plugin->active ? 'Active' : 'Inactive' ), $plugin->Version );
+		}
 
 		$plugin_table->setRows( $plugin_list );
 		$plugin_table->render();
 
-		$output->writeln( '<info>All done! :)<info>' );
-    }
+	}
 }
