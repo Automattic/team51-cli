@@ -79,24 +79,18 @@ class Update_Repository_Secret extends Command {
 			return 1;
 		}
 
-		$this->repo_name   = $input->getOption( 'repo-slug' );
-		$this->secret_name = $input->getOption( 'secret-name' );
+		$this->repo_name       = $input->getOption( 'repo-slug' );
+		$this->secret_name     = $input->getOption( 'secret-name' );
 		$success_secret_exists = $this->verify_secret_exists( $this->secret_name, $config );
 
 		if ( false === $success_secret_exists ) {
 			return 1;
 		}
 
-		$output->writeln( "<info>Secret for {$this->secret_name} found.</info>" );
-
 		$this->verify_repo_on_github();
-
-		$output->writeln( "<info>Repository {$this->repo_name} found.</info>" );
 
 		$repo_key = $this->get_repo_public_key();
 		$this->verify_repo_key( $repo_key );
-
-		$output->writeln( "<info>Using repository key {$repo_key['key_id']}.</info>" );
 
 		$new_secret = $this->get_secret_key( $this->secret_name, $config );
 
@@ -137,8 +131,6 @@ class Update_Repository_Secret extends Command {
 	 * @return array
 	 */
 	private function get_repo_public_key(): array {
-		$this->output->writeln( "<comment>Fetching repository key for {$this->repo_name}.</comment>" );
-
 		$key_response = $this->api_helper->call_github_api(
 			sprintf( 'repos/%s/%s/actions/secrets/public-key', GITHUB_API_OWNER, $this->repo_name ),
 			array(),
@@ -159,8 +151,6 @@ class Update_Repository_Secret extends Command {
 	 * @param string $secret_name Secret name to be used.
 	 */
 	private function update_repo_secret( string $sealbox, int $key_id, string $secret_name ) {
-		$this->output->writeln( "<comment>Updating repository secret for {$this->repo_name}.</comment>" );
-
 		$update_response = $this->api_helper->call_github_api(
 			sprintf( 'repos/%s/%s/actions/secrets/%s', GITHUB_API_OWNER, $this->repo_name, $secret_name ),
 			array(
@@ -231,8 +221,6 @@ class Update_Repository_Secret extends Command {
 	 */
 	private function verify_repo_on_github(): void {
 		// Verify repo we're trying to update secret exist.
-		$this->output->writeln( "<comment>Verifying {$this->repo_name} does exist in GitHub org.</comment>" );
-
 		if ( false === $this->is_valid_repo() ) {
 			$this->output->writeln( "<error>Repository {$this->repo_name} doesn't exist in GitHub org. Please choose a different repository name. Aborting!</error>" );
 			$this->exit();
