@@ -49,6 +49,7 @@ class Plugin_List extends Command {
 		foreach ( $plugin_data->data as $plugin ) {
 				$plugin_list[] = array( ( empty( $plugin->TextDomain ) ? $plugin->Name  . ' - (No slug)' : $plugin->TextDomain ), ( $plugin->active ? 'Active' : 'Inactive' ), $plugin->Version );
 		}
+		asort( $plugin_list );
 
 		$plugin_table->setRows( $plugin_list );
 		$plugin_table->render();
