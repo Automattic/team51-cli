@@ -45,12 +45,12 @@ class Site_List extends Command {
 			'com/',
 			'org/',
 			'mdrovdahl',
+			'/dev.',
 		);
 
-		$filtered_site_list = array();
+		$filtered_sites = array();
 		foreach ( $all_sites as $site ) {
 			$found = false;
-			//var_dump( $site->URL);
 			foreach ( $ignore as $word ) {
 				if ( false !== strpos( $site->URL, $word ) ) {
 					$found = true;
@@ -58,11 +58,16 @@ class Site_List extends Command {
 				}
 			}
 			if ( false === $found && false === $site->is_private ) {
-				$filtered_site_list[] = $site;
+				$filtered_sites[] = $site;
 			}
 		}
 
-		// Remove private sites
+		$filtered_site_list = array_filter(
+			$filtered_sites,
+			function( $site ) {
+				return false === $site->is_coming_soon;
+			}
+		);
 
 		$final_site_list = array();
 		foreach ( $filtered_site_list as $site ) {
@@ -98,9 +103,7 @@ class Site_List extends Command {
 		$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
 
 		$filtered_site_count = count( $filtered_site_list );
-		$output->writeln( "<info>{$filtered_site_count} sites filtered.<info>" );
-
-		//var_dump( $filtered_site_list );
+		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
 	}
 
@@ -116,6 +119,4 @@ class Site_List extends Command {
 
 }
 
-// https://killscreen.com/previously (and /versions) ??? this is being filtered out, FYI.
-// Flawed logic in classifying sites. Every site that's not Atomic, or doesn't have a Jetpack connection, is Simple. This is not necessarily true. Need to find another verifier.
 

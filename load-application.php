@@ -29,6 +29,5 @@ $application->add( new Team51\Command\Remove_User() );
 $application->add( new Team51\Command\DevQueue_Triage_Digest() );
 $application->add( new Team51\Command\Plugin_List() );
 $application->add( new Team51\Command\Site_List() );
-$application->add( new Team51\Command\Site_List2() );
 
 $application->run();
