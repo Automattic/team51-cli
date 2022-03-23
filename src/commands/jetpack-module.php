@@ -62,7 +62,7 @@ class Jetpack_Module_Search extends Command {
 		$progress_bar->start();
 
 		$module_match_status = array();
-		$sites_not_checked = array();
+		$sites_not_checked   = array();
 		foreach ( $site_list as $site ) {
 			$progress_bar->advance();
 			$module_list = $this->get_list_of_modules( $site[0] );
@@ -80,26 +80,23 @@ class Jetpack_Module_Search extends Command {
 		}
 		$progress_bar->finish();
 
-		var_dump( $module_match_status );
-
 		$sites_with_module = array_filter(
 			$module_match_status,
-			function ( $site ) {
+			function ( $site ) use ( $module_status ) {
 				return $module_status === $site[1];
 			}
 		);
 
-		var_dump( $sites_with_module );
-
 		$output->writeln( '<info>  Yay!</info>' );
+		$output->writeln( "<info>Sites with the Jetpack module \"{$module_slug}\" turned \"{$module_status}\":</info>" );
 
 		$site_table = new Table( $output );
 		$site_table->setStyle( 'box-double' );
-		$site_table->setHeaders( array( 'Site URL' ) );
-		$site_table->setRows( $sites_with_module[0] );
+		$site_table->setHeaders( array( 'Site URL', 'Module Status' ) );
+		$site_table->setRows( $sites_with_module );
 		$site_table->render();
 
-		$output->writeln( '<info>Ignored sites - either not a Jetpack connected site, or the connection is broken.<info>' );
+		$output->writeln( '<info>Ignored sites - either not a Jetpack connected site, or the connection is broken:<info>' );
 		$not_found_table = new Table( $output );
 		$not_found_table->setStyle( 'box-double' );
 		$not_found_table->setHeaders( array( 'Site URL', 'Site ID' ) );
@@ -111,7 +108,7 @@ class Jetpack_Module_Search extends Command {
 	}
 
 	private function get_list_of_modules( $site_id ) {
-		$module_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/modules/all', array() );
+		$module_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/module/all', array() );
 		if ( ! empty( $module_list->error ) ) {
 			$module_list = null;
 		}
