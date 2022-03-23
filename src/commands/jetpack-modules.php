@@ -47,7 +47,7 @@ class Jetpack_Modules extends Command {
 
 		$module_list = array();
 		foreach ( $module_data->data as $module ) {
-				$module_list[] = array( $module->module, ( $module->activated ? 'Active' : 'Inactive' ) );
+				$module_list[] = array( $module->module, ( $module->activated ? 'on' : 'off' ) );
 		}
 		asort( $module_list );
 
