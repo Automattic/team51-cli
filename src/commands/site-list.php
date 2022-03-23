@@ -80,7 +80,7 @@ class Site_List extends Command {
 			}
 
 			$final_site_list[] = array(
-				$site->name,
+				preg_replace( '/[^a-zA-Z0-9\s&!\/|\'#.()-:]/', '', $site->name ),
 				$site->URL,
 				$site->ID,
 				$server,
