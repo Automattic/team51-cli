@@ -4,8 +4,7 @@
         "symfony/filesystem": "^4.3",
         "symfony/process": "^4.3",
         "phpseclib/phpseclib": "^3.0.7",
-        "amphp/parallel-functions": "^1.0",
-        "phpseclib/phpseclib": "^3.0.7"
+        "amphp/parallel-functions": "^1.0"
     },
     "autoload": {
 	    "classmap": ["src/"]
