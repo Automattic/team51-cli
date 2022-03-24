@@ -28,5 +28,6 @@ $application->add( new Team51\Command\Get_PHP_Errors() );
 $application->add( new Team51\Command\Remove_User() );
 $application->add( new Team51\Command\DevQueue_Triage_Digest() );
 $application->add( new Team51\Command\Update_Repository_Secret() );
+$application->add( new Team51\Command\Plugin_List() );
 
 $application->run();
