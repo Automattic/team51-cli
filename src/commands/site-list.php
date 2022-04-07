@@ -48,13 +48,28 @@ class Site_List extends Command {
 			'/dev.',
 		);
 
+		$free_pass = array(
+			'wpspecialprojects.wordpress.com',
+			'tumblr.wordpress.com',
+			'tonyconrad.wordpress.com',
+		);
+
 		$filtered_sites = array();
 		foreach ( $all_sites as $site ) {
 			$found = false;
 			foreach ( $ignore as $word ) {
 				if ( false !== strpos( $site->URL, $word ) ) {
-					$found = true;
-					break;
+					$passed = false;
+					foreach ( $free_pass as $pass ) {
+						if ( false !== strpos( $site->URL, $pass ) ) {
+							$passed = true;
+							break;
+						}
+					}
+					if ( false === $passed ) {
+						$found = true;
+						break;
+					}
 				}
 			}
 			if ( false === $found && false === $site->is_private ) {
@@ -102,7 +117,7 @@ class Site_List extends Command {
 		$output->writeln( "<info>{$pressable_count} Pressable (or other) sites.<info>" );
 		$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
 
-		$filtered_site_count = count( $filtered_site_list );
+		$filtered_site_count = count( $final_site_list );
 		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
 	}
