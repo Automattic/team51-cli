@@ -37,7 +37,7 @@ class Plugin_List extends Command {
 		$plugin_data = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site->ID . '/rest-api/?path=/jetpack/v4/plugins', array() );
 
 		if ( ! empty( $plugin_data->error ) ) {
-			$output->writeln( '<error>Failed. ' . $result->message . '<error>' );
+			$output->writeln( '<error>Failed. ' . $plugin_data->message . '<error>' );
 			exit;
 		}
 
@@ -47,7 +47,7 @@ class Plugin_List extends Command {
 
 		$plugin_list = array();
 		foreach ( $plugin_data->data as $plugin ) {
-				$plugin_list[] = array( ( empty( $plugin->TextDomain ) ? $plugin->Name  . ' - (No slug)' : $plugin->TextDomain ), ( $plugin->active ? 'Active' : 'Inactive' ), $plugin->Version );
+				$plugin_list[] = array( ( empty( $plugin->TextDomain ) ? $plugin->Name . ' - (No slug)' : $plugin->TextDomain ), ( $plugin->active ? 'Active' : 'Inactive' ), $plugin->Version );
 		}
 		asort( $plugin_list );
 
