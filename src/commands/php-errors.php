@@ -88,7 +88,6 @@ class Get_PHP_Errors extends Command {
             $output->writeln( "<error>Error creating temporary bot collaborator. Aborting!</error>" );
             exit;
         }
-        //sleep(10);
         // Get new collaborator id.
         $max_tries = 0;
         while ( empty( $collaborator_id ) || 3 >= $max_tries ) {
