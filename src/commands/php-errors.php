@@ -101,12 +101,11 @@ class Get_PHP_Errors extends Command {
             foreach ( $get_collaborator_list->data as $collaborator ) {
                 if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $collaborator->email ) {
                     $collaborator_id = $collaborator->id;
-                    break;
-                } else {
-                    sleep( 1 );
-                    $max_tries++;
+                    break( 2 );
                 }
             }
+            sleep( 1 );
+            $max_tries++;
         }
 
         if ( empty( $collaborator_id ) ) {
