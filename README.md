@@ -26,6 +26,10 @@ It's the nickname for our Special Projects team at Automattic.
 
 Be well, be kind, make things and set them free.
 
+## Dependencies
+- Composer (instructions below)
+- GitHub CLI (`gh`) for certaing user related tasks
+
 ## Installation
 1. Open the Terminal on your Mac and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
