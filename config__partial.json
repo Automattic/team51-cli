@@ -1,0 +1,12 @@
+{
+	"PRESSABLE_API_ENDPOINT": "https://my.pressable.com/v1/",
+	"PRESSABLE_API_TOKEN_ENDPOINT": "https://my.pressable.com/auth/token",
+	
+	"PRESSABLE_API_APP_CLIENT_ID":"Ut_XiqyWqMTsighUa6Z0PYd3df0yGyak5ySM_NuUc9w",
+	"PRESSABLE_API_APP_CLIENT_SECRET":"BypoQA6adyO-xFud7kOkp4cjt_NScUosZVSvlLCRZ-M",
+	"PRESSABLE_API_REFRESH_TOKEN":"gYtmrAYGS_3OtwYlQdYPif1B4aFLnE_-8v81MGiIlcw",
+	
+	"PRESSABLE_BOT_COLLABORATOR_EMAIL": "concierge+cli@a8c.com",
+	"PRESSABLE_BOT_COLLABORATOR_ACCOUNT_ID": "1412875",
+	"ASCII_WELCOME_ART": "\n ______                                ______     _\n/\\__  _\\                              /\\  ___\\  /' \\\n\\/_/\\ \\/    __     __      ___ ___    \\ \\ \\__/ /\\_, \\\n   \\ \\ \\  /'__`\\ /'__`\\  /' __` __`\\   \\ \\___``\\/_/\\ \\\n    \\ \\ \\/\\  __//\\ \\L\\.\\_/\\ \\/\\ \\/\\ \\   \\/\\ \\L\\ \\ \\ \\ \\\n     \\ \\_\\ \\____\\ \\__/.\\_\\ \\_\\ \\_\\ \\_\\   \\ \\____/  \\ \\_\\\n      \\/_/\\/____/\\/__/\\/_/\\/_/\\/_/\\/_/    \\/___/    \\/_/\n\n\n"
+}
