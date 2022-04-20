@@ -89,8 +89,10 @@ class Get_PHP_Errors extends Command {
             exit;
         }
         // Get new collaborator id.
-        $max_tries = 0;
-        while ( empty( $collaborator_id ) || 3 >= $max_tries ) {
+        $tries           = 0;
+        $delay           = 1;
+        $collaborator_id = null;
+        while ( empty( $collaborator_id ) || $tries <= 3 ) {
 
             $get_collaborator_list = $api_helper->call_pressable_api(
                     "/sites/{$pressable_site->id}/collaborators",
@@ -104,13 +106,13 @@ class Get_PHP_Errors extends Command {
                     break( 2 );
                 }
             }
-            sleep( 1 );
-            $max_tries++;
+            sleep( $delay );
+            $tries++;
+            $delay = $delay * 2;
         }
 
         if ( empty( $collaborator_id ) ) {
-            $output->writeln( "<error>Error finding temporary bot collaborator. Aborting!</error>" );
-            exit;
+            $output->writeln( "<error>Trouble finding temporary bot collaborator, may need to be removed manually.</error>" );
         }
 
         $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
@@ -169,6 +171,10 @@ class Get_PHP_Errors extends Command {
             'DELETE',
             array()
         );
+
+        if ( is_null( $collaborator_id ) ) {
+            $output->writeln( "<error>Unable to remove temporary bot collaborator. Please remove manually.</error>" );
+        }
 
         // If they asked for the raw log, give it to them and bail.
         if ( ! empty( $input->getOption( 'raw' ) ) ) {
