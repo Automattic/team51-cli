@@ -16,7 +16,7 @@ class Pressable_Grant_Access extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Grants user access to a Pressable site' )
-		->setHelp( 'Requires --client_id and --client_secret. This command allows you to generate a Pressable OAuth token for a given API Application Client ID and Client Secret. This allows external collaborators to have access to Pressable functionality using Team51 CLI.' )
+		->setHelp( 'Requires --email and --site. Grants access to Pressable a site, using site ID or site domain.' )
 		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The user email." )
 		->addOption( 'site', null, InputOption::VALUE_REQUIRED, "The Pressable site. Can be a numeric site ID or by domain." );
 	}
@@ -46,13 +46,26 @@ class Pressable_Grant_Access extends Command {
 
 		$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site . '.</comment>' );
 
-		$site_id;
+		$site_id = null;
 		if ( is_numeric( $site ) ) {
 			$site_id = $site;
 		} else {
-			$search_site = $this->api_helper->call_pressable_api( sprintf('sites?per_page=5&tag_name=%s', $site), 'GET', array() );
-			var_dump($search_site);
-			// TODO: loop and find site_id by domain
+			$search_site = $this->api_helper->call_pressable_api( sprintf('sites', $site), 'GET', array() );
+			$output->writeln( '<comment>Looping through ' . count($search_site->data) . ' domains searching for ' . $site . '.</comment>' );
+
+			// Loop to find site_id by domain
+			foreach ( $search_site->data as $key => $val ) {
+				if ( $val->url === $site) {
+					$site_id = $val->id;
+					$output->writeln( "<comment>Found it! It's site ID {$site_id}</comment>" );
+					break;
+				}
+			}
+		}
+
+		if ( ! $site_id ) {
+			$output->writeln( "<error>We couldn't find any site ID or domain similar to '{$site}'</error>" );
+			exit;
 		}
 
 		// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
@@ -62,7 +75,7 @@ class Pressable_Grant_Access extends Command {
 			'POST',
 			array(
 				'email' => $email,
-				'siteIds' => [$site],
+				'siteIds' => [$site_id],
 				'roles' => [ 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'wp_access' ]
 			)
 		);

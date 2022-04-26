@@ -17,7 +17,7 @@ class Pressable_Generate_Token extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Generates a Pressable token based on Client ID and Client Secret, to be used on config.json' )
-		->setHelp( 'Requires --client_id and --client_secret. This command allows you to generate a Pressable OAuth token for a given API Application Client ID and Client Secret. This allows external collaborators to have access to Pressable functionality using Team51 CLI.' )
+		->setHelp( 'Requires --client_id and --client_secret. This command allows you to generate a Pressable OAuth token for a given API Application Client ID and Client Secret. This allows outside collaborators to have access to Pressable functionality using Team51 CLI.' )
 		->addOption( 'client_id', null, InputOption::VALUE_REQUIRED, "The Client ID." )
 		->addOption( 'client_secret', null, InputOption::VALUE_REQUIRED, "The Client Secret." );
 	}
@@ -49,7 +49,7 @@ class Pressable_Generate_Token extends Command {
 
 		$tokens = $this->api_helper->get_pressable_api_auth_tokens( $client_id, $client_secret );
 
-		$output->writeln( "<info>\nProvide the following lines to the external collaborator. These should be placed on their config.json file:\n</info>" );
+		$output->writeln( "<info>\nProvide the following lines to the outside collaborator. These should be placed on their config.json file:\n</info>" );
 
 		$output->writeln( '"PRESSABLE_API_APP_CLIENT_ID":"' . $client_id . '",' );
 		$output->writeln( '"PRESSABLE_API_APP_CLIENT_SECRET":"' . $client_secret . '",' );
