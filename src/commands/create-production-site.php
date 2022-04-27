@@ -308,8 +308,6 @@ class Create_Production_Site extends Command {
 			$output->writeln( "<info>Successfully added DeployHQ webhook URL to GitHub repository.</info>\n" );
 		}
 
-		$manual_task_notices[] = 'On DeployHQ for this project, visit Integrations -> New Integration -> HTTP Post -> set Endpoint to https://webhooks.wpspecialprojects.com/hooks/deployhq-event and then Create.';
-
 		$output->writeln( "\n<info>Deploy HQ is now set up and ready to start receiving and deploying commits!</info>\n" );
 
 		$output->writeln( '<comment>IMPORTANT: there are now some tasks you must perform manually:</comment>' );
