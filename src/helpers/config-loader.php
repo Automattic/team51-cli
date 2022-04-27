@@ -30,6 +30,13 @@ if( ! empty( $config->DEPLOY_HQ_API_ENDPOINT ) ) {
 	die();
 }
 
+if( ! empty( $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE ) ) {
+	define( 'DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE', $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE );
+} else {
+	echo "DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE could not be set. Aborting!\n";
+	die();
+}
+
 if( ! empty( $config->GITHUB_API_OWNER ) ) {
 	define( 'GITHUB_API_OWNER', $config->GITHUB_API_OWNER );
 } else {
