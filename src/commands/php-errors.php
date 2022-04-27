@@ -73,17 +73,46 @@ class Get_PHP_Errors extends Command {
         $output->writeln( "<comment>Adding temporary bot collaborator to $site_domain.</comment>" );
 
         $add_collaborator_request = $api_helper->call_pressable_api(
-                "sites/{$pressable_site->id}/collaborators",
+                "collaborators/batch_create",
                 'POST',
                 array(
-                    'siteId' => $pressable_site->id,
-                    'email' => PRESSABLE_BOT_COLLABORATOR_EMAIL,
+                    'siteIds' => array(
+                        $pressable_site->id,
+                    ),
+                    'email'   => PRESSABLE_BOT_COLLABORATOR_EMAIL,
+                    'roles'   => 'sftp_access',
                 )
         );
 
-        if ( empty( $add_collaborator_request->data->accountId ) ) {
-            $output->writeln( "<error>Failed to create a temporary bot collaborator. Aborting!</error>" );
+        if ( ! is_null( $add_collaborator_request->errors ) ) {
+            $output->writeln( "<error>Error creating temporary bot collaborator. Aborting!</error>" );
             exit;
+        }
+        // Get new collaborator id.
+        $tries           = 0;
+        $delay           = 1;
+        $collaborator_id = null;
+        while ( empty( $collaborator_id ) || $tries <= 3 ) {
+
+            $get_collaborator_list = $api_helper->call_pressable_api(
+                    "/sites/{$pressable_site->id}/collaborators",
+                    'GET',
+                    array()
+            );
+
+            foreach ( $get_collaborator_list->data as $collaborator ) {
+                if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $collaborator->email ) {
+                    $collaborator_id = $collaborator->id;
+                    break( 2 );
+                }
+            }
+            sleep( $delay );
+            $tries++;
+            $delay = $delay * 2;
+        }
+
+        if ( empty( $collaborator_id ) ) {
+            $output->writeln( "<error>Trouble finding temporary bot collaborator, may need to be removed manually.</error>" );
         }
 
         $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
@@ -91,22 +120,20 @@ class Get_PHP_Errors extends Command {
         // Grab SFTP connection info from Pressable bot collaborator.
         $ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp", 'GET', array() );
 
-        if( empty( $ftp_data->data ) ) {
+        if ( empty( $ftp_data->data ) ) {
             $output->writeln( "<error>Failed to retrieve FTP users. Aborting!</error>" );
             exit;
         }
 
-        $ftp_user_id = max( array_column( $ftp_data->data, 'id' ) );
-
         $ftp_config = array();
 
-        foreach( $ftp_data->data as $ftp_user ) {
-            if( $ftp_user->id === $ftp_user_id ) { // We found the bot collaborator we created, grab the info.
+        foreach ( $ftp_data->data as $ftp_user ) {
+            if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
                 $ftp_config['sftp_username'] = $ftp_user->username;
                 $ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
 
                 $password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-                if( ! empty( $password_reset->data ) ) {
+                if ( ! empty( $password_reset->data ) ) {
                     $ftp_config['sftp_password'] = $password_reset->data;
                 } else {
                     $output->writeln( "<error>Failed to retrieve password for temporary bot collaborator. Aborting!</error>" );
@@ -140,10 +167,14 @@ class Get_PHP_Errors extends Command {
         $output->writeln( "<comment>Removing bot collaborator.</comment>" );
 
         $delete_contributor_request = $api_helper->call_pressable_api(
-            "sites/{$pressable_site->id}/collaborators/{$add_collaborator_request->data->id}",
+            "sites/{$pressable_site->id}/collaborators/{$collaborator_id}",
             'DELETE',
             array()
         );
+
+        if ( is_null( $collaborator_id ) ) {
+            $output->writeln( "<error>Unable to remove temporary bot collaborator. Please remove manually.</error>" );
+        }
 
         // If they asked for the raw log, give it to them and bail.
         if ( ! empty( $input->getOption( 'raw' ) ) ) {
