@@ -27,7 +27,8 @@ class Create_Production_Site extends Command {
 		->setHelp( 'This command allows you to create a new production site.' )
 		->addOption( 'site-name', null, InputOption::VALUE_REQUIRED, 'This is root name that will be given to the site. Think of it as really the project name. No need to specifiy "prod" or "development" in the naming here. The script will take care of that for you -- no spaces, hyphens, non-alphanumeric characters, or capitalized letters.' )
 		->addOption( 'connect-to-repo', null, InputOption::VALUE_REQUIRED, "The repository you'd like to have automatically configured in DeployHQ to work with the new site. This accepts the repository slug.\nOnly GitHub repositories are supported and they must be in the a8cteam51 organization, otherwise the script won't have access." )
-		->addOption( 'zone-id', null, InputOption::VALUE_REQUIRED, "The datacenter zone to be setup on Pressable and DeployHQ. Can be EU or US. By default it's US Central. Additionally, you can use US-East or US-West" );
+		->addOption( 'zone-id', null, InputOption::VALUE_REQUIRED, "The datacenter zone to be setup on Pressable and DeployHQ. Can be EU or US. By default it's US Central. Additionally, you can use US-East or US-West" )
+		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, "The template that will be used while creating the project on DeployHQ. By default the DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE config param is used." );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -75,6 +76,11 @@ class Create_Production_Site extends Command {
 				$pressable_zone_id = self::PRESSABLE_ZONE_US_EAST;
 			}
 
+		}
+
+		$deployhq_template_id = DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE;
+		if ( ! empty( $input->getOption( 'template-id' ) ) ) {
+			$deployhq_template_id = $input->getOption( 'template-id' );
 		}
 
 		// We call the command line parameter 'site-name' for readability, but it's really our project name.
@@ -167,6 +173,7 @@ class Create_Production_Site extends Command {
 		$project_info = $api_helper->call_deploy_hq_api( 'projects', 'POST', array(
 			'name'    => $project_name,
 			'zone_id' => $deployhq_zone_id,
+			'template_id' => $deployhq_template_id
 		) );
 
 		if ( empty( $project_info ) || empty( $project_info->permalink ) ) {
