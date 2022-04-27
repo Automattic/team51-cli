@@ -78,6 +78,7 @@ class Create_Production_Site extends Command {
 
 		}
 
+//		Assign default DeployHQ Project Template
 		$deployhq_template_id = DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE;
 		if ( ! empty( $input->getOption( 'template-id' ) ) ) {
 			$deployhq_template_id = $input->getOption( 'template-id' );
