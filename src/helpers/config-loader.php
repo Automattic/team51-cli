@@ -6,7 +6,7 @@ $config = json_decode( file_get_contents( TEAM51_CLI_ROOT_DIR . '/config.json' )
 $warning_config_keys = array();
 
 if( empty( $config ) ) {
-	echo "Config file couldn't be read. Aborting!\n";
+	echo "Config file couldn't be read. Please make sure it is properly formatted. Aborting!\n";
 	die();
 }
 
@@ -31,8 +31,7 @@ if( ! empty( $config->DEPLOY_HQ_API_ENDPOINT ) ) {
 if( ! empty( $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE ) ) {
 	define( 'DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE', $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE );
 } else {
-	echo "DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE could not be set. Aborting!\n";
-	die();
+	$warning_config_keys[] = "DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE";
 }
 
 if( ! empty( $config->GITHUB_API_OWNER ) ) {
