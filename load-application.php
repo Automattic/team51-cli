@@ -32,5 +32,6 @@ $application->add( new Team51\Command\Plugin_List() );
 $application->add( new Team51\Command\Pressable_Generate_Token() );
 $application->add( new Team51\Command\Pressable_Grant_Access() );
 $application->add( new Team51\Command\Onboard_Collaborator() );
+$application->add( new Team51\Command\Github_Repos_To_Teams() );
 
 $application->run();
