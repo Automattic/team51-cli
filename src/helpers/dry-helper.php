@@ -5,6 +5,20 @@ namespace Team51\Helper;
 class DRY_Helper {
 	private $api_helper;
 
+	// Github Access Levels
+	public $GH_ACCESS_1 = array(
+		'team_slug' => 'triage',
+		'team_permission' => 'triage',
+	);
+	public $GH_ACCESS_2 = array(
+		'team_slug' => 'deploy',
+		'team_permission' => 'push',
+	);
+	public $GH_ACCESS_3 = array(
+		'team_slug' => 'admin',
+		'team_permission' => 'admin',
+	);
+
 	function __construct() {
 		$this->api_helper = new API_Helper();
 	}
