@@ -9,23 +9,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
-class Github_Repos_To_Teams extends Command {
-	protected static $defaultName = 'github-repos-to-teams';
+class Github_Team_Add_Repos extends Command {
+	protected static $defaultName = 'github-team-add-repos';
 	private $api_helper;
 	private $output;
-
-	private $ACCESS_1 = array(
-		'team_slug' => 'triage',
-		'team_permission' => 'triage',
-	);
-	private $ACCESS_2 = array(
-		'team_slug' => 'deploy',
-		'team_permission' => 'push',
-	);
-	private $ACCESS_3 = array(
-		'team_slug' => 'admin',
-		'team_permission' => 'admin',
-	);
 
 	protected function configure() {
 		$this
@@ -65,9 +52,9 @@ class Github_Repos_To_Teams extends Command {
 		$output->writeln( "<comment>{$total_repos} repositories will be added to each of our Github Teams.</comment>" );
 
 		// Populate Teams with Repositories
-		$this->dry_helper->populate_team_with_repos( $repo_names, $this->ACCESS_1['team_slug'], $this->ACCESS_1['team_permission'] );
-		$this->dry_helper->populate_team_with_repos( $repo_names, $this->ACCESS_2['team_slug'], $this->ACCESS_2['team_permission'] );
-		$this->dry_helper->populate_team_with_repos( $repo_names, $this->ACCESS_3['team_slug'], $this->ACCESS_3['team_permission'] );
+		$this->dry_helper->populate_team_with_repos( $repo_names, $this->dry_helper->GH_ACCESS_1['team_slug'], $this->dry_helper->GH_ACCESS_1['team_permission'] );
+		$this->dry_helper->populate_team_with_repos( $repo_names, $this->dry_helper->GH_ACCESS_2['team_slug'], $this->dry_helper->GH_ACCESS_2['team_permission'] );
+		$this->dry_helper->populate_team_with_repos( $repo_names, $this->dry_helper->GH_ACCESS_3['team_slug'], $this->dry_helper->GH_ACCESS_3['team_permission'] );
 
 		$output->writeln( "<comment>All done.</comment>" );
 	}

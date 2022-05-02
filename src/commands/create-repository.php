@@ -3,6 +3,7 @@
 namespace Team51\Command;
 
 use Team51\Helper\API_Helper;
+use Team51\Helper\DRY_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,6 +36,7 @@ class Create_Repository extends Command {
 		$filesystem = new Filesystem();
 
 		$api_helper = new API_Helper();
+		$dry_helper = new DRY_Helper();
 
 		if ( empty( $input->getOption( 'repo-slug' ) ) ) {
 			$output->writeln( '<error>You must pass a repository slug with --repo-slug.</error>' );
@@ -166,6 +168,14 @@ class Create_Repository extends Command {
 			$output->writeln( "<error>Failed to create GitHub repository $slug. Aborting!</error>" );
 			//exit;
 		}
+
+		// Adding repo to all required teams
+		// TODO: TEST
+		$output->writeln( "<info>Adding '{$slug}' to the corresponding Github Teams.</info>" );
+		$repo_names = array( $slug );
+		$dry_helper->populate_team_with_repos( $repo_names, $dry_helper->GH_ACCESS_1['team_slug'], $dry_helper->GH_ACCESS_1['team_permission'] );
+		$dry_helper->populate_team_with_repos( $repo_names, $dry_helper->GH_ACCESS_2['team_slug'], $dry_helper->GH_ACCESS_2['team_permission'] );
+		$dry_helper->populate_team_with_repos( $repo_names, $dry_helper->GH_ACCESS_3['team_slug'], $dry_helper->GH_ACCESS_3['team_permission'] );
 
 		$ssh_url  = $response->ssh_url;
 		$html_url = $response->html_url;
