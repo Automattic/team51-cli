@@ -59,9 +59,9 @@ class Get_PHP_Errors extends Command {
         foreach( $pressable_sites->data as $_pressable_site ) {
             if ( ! empty( $site_domain ) && $site_domain !== $_pressable_site->url ) {
                 continue;
-            } else {
-                $pressable_site = $_pressable_site;
             }
+
+			$pressable_site = $_pressable_site;
             break;
         }
 
@@ -100,12 +100,15 @@ class Get_PHP_Errors extends Command {
                     array()
             );
 
-            foreach ( $get_collaborator_list->data as $collaborator ) {
-                if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $collaborator->email ) {
-                    $collaborator_id = $collaborator->id;
-                    break( 2 );
-                }
-            }
+			if ( ! empty( $get_collaborator_list->data ) ) {
+				foreach ( $get_collaborator_list->data as $collaborator ) {
+					if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $collaborator->email ) {
+						$collaborator_id = $collaborator->id;
+						break( 2 );
+					}
+				}
+			}
+
             sleep( $delay );
             $tries++;
             $delay = $delay * 2;
@@ -118,30 +121,12 @@ class Get_PHP_Errors extends Command {
         $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
 
         // Grab SFTP connection info from Pressable bot collaborator.
-        $ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp", 'GET', array() );
+		$ftp_config = $this->grab_sftp_connection_data( $api_helper, $pressable_site->id );
 
-        if ( empty( $ftp_data->data ) ) {
-            $output->writeln( "<error>Failed to retrieve FTP users. Aborting!</error>" );
-            exit;
-        }
-
-        $ftp_config = array();
-
-        foreach ( $ftp_data->data as $ftp_user ) {
-            if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
-                $ftp_config['sftp_username'] = $ftp_user->username;
-                $ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
-
-                $password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-                if ( ! empty( $password_reset->data ) ) {
-                    $ftp_config['sftp_password'] = $password_reset->data;
-                } else {
-                    $output->writeln( "<error>Failed to retrieve password for temporary bot collaborator. Aborting!</error>" );
-                    exit;
-                }
-                break;
-            }
-        }
+		if ( ! empty( $ftp_config['error'] )) {
+			$output->writeln( sprintf('<error>%s</error>', $ftp_config['error'] ) );
+			exit;
+		}
 
         $output->writeln( "<comment>Opening SFTP connection to $site_domain.</comment>" );
 
@@ -222,7 +207,6 @@ class Get_PHP_Errors extends Command {
                 if ( strtotime( $parsed_php_error['timestamp'] ) > strtotime( $_php_error_stats_table[ $parsed_php_error['error_message'] ]['timestamp'] ) ) {
                     $_php_error_stats_table[ $parsed_php_error['error_message'] ]['timestamp'] = $parsed_php_error['timestamp'];
                 }
-                continue;
             } else {
                 $_php_error_stats_table[ $parsed_php_error['error_message'] ] = array(
                     'timestamp' => $parsed_php_error['timestamp'],
@@ -274,4 +258,33 @@ class Get_PHP_Errors extends Command {
         $site_info->render();
 
     }
+
+	private function grab_sftp_connection_data( $api_helper, $pressable_site_id ) {
+		$ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site_id}/ftp", 'GET', array() );
+
+		$ftp_config = array();
+
+		if ( empty( $ftp_data->data ) ) {
+			$ftp_config['error'] = 'Failed to retrieve FTP users. Aborting!';
+			return $ftp_config;
+		}
+
+		foreach ( $ftp_data->data as $ftp_user ) {
+			if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
+				$ftp_config['sftp_username'] = $ftp_user->username;
+				$ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
+
+				$password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site_id}/ftp/password/{$ftp_user->username}", 'POST', array() );
+				if ( ! empty( $password_reset->data ) ) {
+					$ftp_config['sftp_password'] = $password_reset->data;
+					break;
+				} else {
+					$ftp_config['error'] = 'Failed to retrieve password for temporary bot collaborator. Aborting!';
+					return $ftp_config;
+				}
+			}
+		}
+
+		return $ftp_config;
+	}
 }
