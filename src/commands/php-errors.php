@@ -147,20 +147,6 @@ class Get_PHP_Errors extends Command {
             exit;
         }
 
-        $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
-
-        $output->writeln( "<comment>Removing bot collaborator.</comment>" );
-
-        $delete_contributor_request = $api_helper->call_pressable_api(
-            "sites/{$pressable_site->id}/collaborators/{$collaborator_id}",
-            'DELETE',
-            array()
-        );
-
-        if ( is_null( $collaborator_id ) ) {
-            $output->writeln( "<error>Unable to remove temporary bot collaborator. Please remove manually.</error>" );
-        }
-
         // If they asked for the raw log, give it to them and bail.
         if ( ! empty( $input->getOption( 'raw' ) ) ) {
             passthru( 'clear' );
