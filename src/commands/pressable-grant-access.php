@@ -150,15 +150,6 @@ class Pressable_Grant_Access extends Command {
 	}
 
 	/**
-	 * Returns the question for looking for a site.
-	 *
-	 * @return \Symfony\Component\Console\Question\Question
-	 */
-	private function ask_for_search_term(): Question {
-		return new Question( 'Please enter the search term: ', false );
-	}
-
-	/**
 	 * Returns the question to ask for the email.
 	 *
 	 * @return \Symfony\Component\Console\Question\Question
