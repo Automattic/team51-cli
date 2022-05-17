@@ -5,7 +5,7 @@ namespace Team51\Helper;
 class API_Helper {
 
 	private const PRESABLE_TOKEN_FILE         = __DIR__ . '/pressable_token.json';
-	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-8 hours';
+	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-59 minutes';
 
 	public function call_pressable_api( $query, $method, $data ) {
 		$api_request_url = PRESSABLE_API_ENDPOINT . $query;
@@ -37,6 +37,7 @@ class API_Helper {
 
 		if ( '401' === $response_code ) {
 			echo "Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked." . PHP_EOL;
+			exit;
 		}
 
 		return json_decode( $result );
