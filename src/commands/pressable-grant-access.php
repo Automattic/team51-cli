@@ -99,11 +99,6 @@ class Pressable_Grant_Access extends Command {
 		// Attempt to get search term from Input.
 		$search_term = $input->getOption( 'search' );
 
-		// If we don't have a search term, prompt the user.
-		if ( empty( $search_term ) ) {
-			$search_term = $this->get_question_helper()->ask( $input, $output, $this->ask_for_search_term() );
-		}
-
 		// If we still don't have a search term fail.
 		if ( empty( $search_term ) ) {
 			$output->writeln( '<error>You must supply a valid search term to look for matching domains.</error>' );
@@ -151,7 +146,7 @@ class Pressable_Grant_Access extends Command {
 	 * @return \Symfony\Component\Console\Question\Question
 	 */
 	private function ask_site_name(): Question {
-		return new Question( 'Please enter the site?', false );
+		return new Question( 'Please enter the sites url or ID: ', false );
 	}
 
 	/**
@@ -160,7 +155,7 @@ class Pressable_Grant_Access extends Command {
 	 * @return \Symfony\Component\Console\Question\Question
 	 */
 	private function ask_for_search_term(): Question {
-		return new Question( 'Please enter the search term?', false );
+		return new Question( 'Please enter the search term: ', false );
 	}
 
 	/**
@@ -169,7 +164,7 @@ class Pressable_Grant_Access extends Command {
 	 * @return \Symfony\Component\Console\Question\Question
 	 */
 	private function ask_for_email_address(): Question {
-		return new Question( 'Please enter the email?', false );
+		return new Question( 'Please enter the email: ', false );
 	}
 
 	/**
@@ -178,7 +173,7 @@ class Pressable_Grant_Access extends Command {
 	 * @return \Symfony\Component\Console\Question\ConfirmationQuestion
 	 */
 	private function ask_to_grant_access_for_site( string $site_name ): ConfirmationQuestion {
-		return new ConfirmationQuestion( 'Grant access to ' . $site_name . '? [y|yes|n|no]', false );
+		return new ConfirmationQuestion( 'Grant access to ' . $site_name . '? [y|yes|n|no] ', false );
 	}
 
 	/*************************************
