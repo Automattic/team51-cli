@@ -2,91 +2,362 @@
 
 namespace Team51\Command;
 
+use stdClass;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class Pressable_Grant_Access extends Command {
 	protected static $defaultName = 'pressable-grant-access';
 	private $api_helper;
 	private $output;
 
+	/**
+	 * Access to the QuestionHelper
+	 *
+	 * @return \Symfony\Component\Console\Helper\QuestionHelper
+	 */
+	private function get_question_helper(): QuestionHelper {
+		return $this->getHelper( 'question' );
+	}
+
+	/** @inheritDoc */
 	protected function configure() {
 		$this
 		->setDescription( 'Grants user access to a Pressable site' )
 		->setHelp( 'Requires --email and --site. Grants access to Pressable a site, using site ID or site domain.' )
-		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The user email." )
-		->addOption( 'site', null, InputOption::VALUE_REQUIRED, "The Pressable site. Can be a numeric site ID or by domain." );
+		->addOption( 'email', null, InputOption::VALUE_REQUIRED, 'The user email.' )
+		->addOption( 'site', null, InputOption::VALUE_OPTIONAL, 'The Pressable site. Can be a numeric site ID or by domain.' )
+		->addOption( 'search', null, InputOption::VALUE_OPTIONAL, 'Search for any site by domain.' );
 	}
 
+	/**
+	 * Main callback for the command.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return void
+	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$this->api_helper = new API_Helper();
 		$this->output     = $output;
 
-		$email = $input->getOption( 'email' );
-		$site = $input->getOption( 'site' );
-
-		if ( empty( $email ) ) {
-			$email = trim( readline( 'Please enter the email: ' ) );
-			if ( empty( $email ) ) {
-				$output->writeln( '<error>Missing email (--email=someone@a8c.com).</error>' );
-				exit;
-			}
-		}
-
-		if ( empty( $site ) ) {
-			$site = trim( readline( 'Please enter the site: ' ) );
-			if ( empty( $site ) ) {
-				$output->writeln( '<error>Missing site (--site=my-webiste.com).</error>' );
-				exit;
-			}
-		}
-
-		$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site . '.</comment>' );
-
-		$site_id = null;
-		if ( is_numeric( $site ) ) {
-			$site_id = $site;
+		// Handle if searching by domain or using the passed site name.
+		if ( $input->getOption( 'search' ) ) {
+			$this->handle_search_for_site( $input, $output );
 		} else {
-			$search_site = $this->api_helper->call_pressable_api( sprintf('sites', $site), 'GET', array() );
-			$output->writeln( '<comment>Looping through ' . count($search_site->data) . ' domains searching for ' . $site . '.</comment>' );
-
-			// Loop to find site_id by domain
-			foreach ( $search_site->data as $key => $val ) {
-				if ( $val->url === $site) {
-					$site_id = $val->id;
-					$output->writeln( "<comment>Found it! It's site ID {$site_id}</comment>" );
-					break;
-				}
-			}
+			$this->handle_site_by_name( $input, $output );
 		}
 
-		if ( ! $site_id ) {
-			$output->writeln( "<error>We couldn't find any site ID or domain similar to '{$site}'</error>" );
+		$output->writeln( "<info>\nAll done!<info>" );
+	}
+
+	/***********************************
+	 ***********************************
+	 *          INPUT GETTERS          *
+	 ***********************************
+	 ***********************************/
+
+	/**
+	 * Gets the email address either form Input or prompted for.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return string
+	 */
+	private function get_email( InputInterface $input, OutputInterface $output ): string {
+		// Attempt to get the email from the Input.
+		$email = $input->getOption( 'email' );
+
+		// If we don't have an email, prompt the user.
+		if ( empty( $email ) ) {
+			$email = $this->get_question_helper()->ask( $input, $output, $this->ask_for_email_address() );
+		}
+
+		// If we still don't have en email fail.
+		if ( empty( $email ) ) {
+			$output->writeln( '<error>You must supply a valid email address.</error>' );
 			exit;
 		}
 
-		// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
-		// POST /sites/{site_id}/collaborators would be a better fit if it allowed the `roles` parame
-		$async_result = $this->api_helper->call_pressable_api(
-			'collaborators/batch_create',
-			'POST',
-			array(
-				'email' => $email,
-				'siteIds' => [$site_id],
-				'roles' => [ 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'wp_access' ]
-			)
-		);
+		return $email;
+	}
 
-		if ( $async_result->errors === NULL ) {
-			$output->writeln( "<info>\nCollaborator added to the site. Pressable says: {$async_result->message}<info>" );
-		} else {
-			$output->writeln( "<error>\nSomething went wrong while running collaborators/batch_create! Message: {$async_result->message}<error>" );
+	/**
+	 * Gets the search term either form Input or prompted for.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return string
+	 */
+	private function get_search_term( InputInterface $input, OutputInterface $output ): string {
+		// Attempt to get search term from Input.
+		$search_term = $input->getOption( 'search' );
+
+		// If we don't have a search term, prompt the user.
+		if ( empty( $search_term ) ) {
+			$search_term = $this->get_question_helper()->ask( $input, $output, $this->ask_for_search_term() );
 		}
 
+		// If we still don't have a search term fail.
+		if ( empty( $search_term ) ) {
+			$output->writeln( '<error>You must supply a valid search term to look for matching domains.</error>' );
+			exit;
+		}
 
-		$output->writeln( "<info>\nAll done!<info>" );
+		return $search_term;
+	}
+
+	/**
+	 * Gets the site url either form Input or prompted for.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return string
+	 */
+	private function get_site( InputInterface $input, OutputInterface $output ): string {
+		// Attempt to get site name from Input.
+		$site_name = $input->getOption( 'site' );
+
+		// If we don't have a site name, prompt the user.
+		if ( empty( $site_name ) ) {
+			$site_name = $this->get_question_helper()->ask( $input, $output, $this->ask_site_name() );
+		}
+
+		// If we still don't have a site name fail.
+		if ( empty( $site_name ) ) {
+			$output->writeln( '<error>You must supply a valid site URL.</error>' );
+			exit;
+		}
+
+		return $site_name;
+	}
+
+	/*************************************
+	 *************************************
+	 *             QUESTIONS             *
+	 *************************************
+	 *************************************/
+
+
+	/**
+	 * Returns the question for looking for a site.
+	 *
+	 * @return \Symfony\Component\Console\Question\Question
+	 */
+	private function ask_site_name(): Question {
+		return new Question( 'Please enter the site?', false );
+	}
+
+	/**
+	 * Returns the question for looking for a site.
+	 *
+	 * @return \Symfony\Component\Console\Question\Question
+	 */
+	private function ask_for_search_term(): Question {
+		return new Question( 'Please enter the search term?', false );
+	}
+
+	/**
+	 * Returns the question to ask for the email.
+	 *
+	 * @return \Symfony\Component\Console\Question\Question
+	 */
+	private function ask_for_email_address(): Question {
+		return new Question( 'Please enter the email?', false );
+	}
+
+	/**
+	 * Returns the confirmation question for if a site should be granted access to.
+	 *
+	 * @return \Symfony\Component\Console\Question\ConfirmationQuestion
+	 */
+	private function ask_to_grant_access_for_site( string $site_name ): ConfirmationQuestion {
+		return new ConfirmationQuestion( 'Grant access to ' . $site_name . '? [y|yes|n|no]', false );
+	}
+
+	/*************************************
+	 *************************************
+	 *             HANDLERS              *
+	 *************************************
+	 *************************************/
+
+	/**
+	 * Handles if we are searching for a site by domain/name.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return void
+	 */
+	private function handle_search_for_site( InputInterface $input, OutputInterface $output ): void {
+		// Get the email address.
+		$email = $this->get_email( $input, $output );
+
+		// Find all matching sites.
+		$search_term = $this->get_search_term( $input, $output );
+		$sites       = $this->search_for_matching_sites( $search_term );
+
+		// If we have no sites, fail.
+		if ( empty( $sites ) ) {
+			$output->writeln( '<error>No sites found matching the search term.</error>' );
+			exit;
+		}
+
+		// Callback for granting permission
+		$grant_access = $this->grant_access_to_site( $input, $output );
+
+		$output->writeln( sprintf( '<info>Searching for all sites containing "%s"</info>', $search_term ) );
+
+		// Iterate through all sites and prompt.
+		foreach ( $sites as $site ) {
+			// Check if we should grant access to this site.
+			if ( $this->get_question_helper()->ask( $input, $output, $this->ask_to_grant_access_for_site( $site->url ) ) ) {
+				$output->writeln( sprintf( '<info>Attempting to grant access to: %s for: %s</info>', $site->url, $email ) );
+				$grant_access( $email, $site->id );
+			} else {
+				$output->writeln( sprintf( '<error>User chose to not give access to: %s for: %s</error>', $site->url, $email ) );
+			}
+		}
+	}
+
+	/**
+	 * Handles if we are granting access to a site by siteID or domain.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return void
+	 */
+	private function handle_site_by_name( InputInterface $input, OutputInterface $output ): void {
+		// Get the email address.
+		$email = $this->get_email( $input, $output );
+
+		$site_name = $this->get_site( $input, $output );
+
+		// Find the site by name. Fail if we can't find it.
+		$site = $this->search_for_site_url( $site_name );
+		if ( ! $site ) {
+			$output->writeln( '<error>Site not found.</error>' );
+			exit;
+		}
+
+		// Callback for granting permission
+		$output->writeln( sprintf( '<info>Attempting to grant access to: %s for: %s</info>', $site->url, $email ) );
+
+		$grant_access = $this->grant_access_to_site( $input, $output );
+		$grant_access( $email, $site->id );
+	}
+
+	/************************************
+	 ************************************
+	 *         PRESSABLE ACCESS         *
+	 ************************************
+	 ************************************/
+
+	/**
+	 * Gets an array of all sites from Pressable
+	 *
+	 * @return \stdClass[]|null
+	 */
+	private function pressable_sites(): ?array {
+		$sites = $this->api_helper->call_pressable_api( 'sites', 'GET', array() );
+
+		// If we have no results, return an empty null.
+		if ( is_null( $sites ) || empty( $sites->data ) ) {
+			return null;
+		}
+
+		return $sites->data;
+	}
+
+	/**
+	 * Attempts to find a site by domain.
+	 *
+	 * @param string $site_url
+	 * @return null|stdClass
+	 */
+	private function search_for_site_url( string $site_url ): ?\stdClass {
+		// Get all sites from Pressable.
+		$sites = $this->pressable_sites();
+
+		// If we have no results.
+		if ( is_null( $sites ) ) {
+			return null;
+		}
+
+		foreach ( $sites as $site ) {
+			// if $site_url is the end of site url
+			if ( substr( $site->url, - strlen( $site_url ) ) === $site_url ) {
+				return $site;
+			}
+		}
+
+		// Return null if not found.
+		return null;
+	}
+
+	/**
+	 * Searches all sites for any which have a name/domain matching the search term.
+	 *
+	 * @param string $search_term
+	 * @return \stdClass[]
+	 */
+	private function search_for_matching_sites( string $search_term ): array {
+		// Get all sites from Pressable.
+		$sites = $this->pressable_sites();
+
+		// If we have no results.
+		if ( is_null( $sites ) ) {
+			return array();
+		}
+
+		return array_filter(
+			$sites,
+			function( \stdClass $site ) use ( $search_term ): bool {
+				return ( strpos( $site->name, $search_term ) !== false
+				|| strpos( $site->url, $search_term ) !== false );
+			}
+		);
+	}
+
+	/**
+	 * Creates a closure that can be used to grant access to a site by url or siteID.
+	 *
+	 * @param \Symfony\Component\Console\Input\InputInterface $input
+	 * @param \Symfony\Component\Console\Output\OutputInterface $output
+	 * @return \Closure(string $email, string $site): void
+	 */
+	private function grant_access_to_site( InputInterface $input, OutputInterface $output ): \Closure {
+		/**
+		 * @param string $email The users email
+		 * @param int $site_id The site to grant access to
+		 * @return void
+		 */
+		return function( string $email, $site_id ) use ( $input, $output ): void {
+			$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site_id . '.</comment>' );
+
+			// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
+			// POST /sites/{site_id}/collaborators would be a better fit if it allowed the `roles` parame
+			$async_result = $this->api_helper->call_pressable_api(
+				'collaborators/batch_create',
+				'POST',
+				array(
+					'email'   => $email,
+					'siteIds' => array( $site_id ),
+					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'wp_access' ),
+				)
+			);
+
+			if ( $async_result->errors === null ) {
+				$output->writeln( "<info>\nCollaborator added to the site. Pressable says: {$async_result->message}<info>" );
+			} else {
+				$output->writeln( "<error>\nSomething went wrong while running collaborators/batch_create! Message: {$async_result->message}<error>" );
+			}
+
+		};
 	}
 }
