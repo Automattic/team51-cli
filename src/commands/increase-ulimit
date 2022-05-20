@@ -1,0 +1,2 @@
+#!/bin/bash
+ulimit -n 16000

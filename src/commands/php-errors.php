@@ -59,9 +59,9 @@ class Get_PHP_Errors extends Command {
         foreach( $pressable_sites->data as $_pressable_site ) {
             if ( ! empty( $site_domain ) && $site_domain !== $_pressable_site->url ) {
                 continue;
-            } else {
-                $pressable_site = $_pressable_site;
             }
+
+            $pressable_site = $_pressable_site;
             break;
         }
 
@@ -70,51 +70,32 @@ class Get_PHP_Errors extends Command {
             exit;
         }
 
-        $output->writeln( "<comment>Adding temporary bot collaborator to $site_domain.</comment>" );
-
-        $add_collaborator_request = $api_helper->call_pressable_api(
-                "sites/{$pressable_site->id}/collaborators",
-                'POST',
-                array(
-                    'siteId' => $pressable_site->id,
-                    'email' => PRESSABLE_BOT_COLLABORATOR_EMAIL,
-                )
-        );
-
-        if ( empty( $add_collaborator_request->data->accountId ) ) {
-            $output->writeln( "<error>Failed to create a temporary bot collaborator. Aborting!</error>" );
-            exit;
-        }
-
         $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
 
-        // Grab SFTP connection info from Pressable bot collaborator.
-        $ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp", 'GET', array() );
+		$ftp_config = $this->get_sftp_connection_data( $api_helper, $pressable_site->id );
 
-        if( empty( $ftp_data->data ) ) {
-            $output->writeln( "<error>Failed to retrieve FTP users. Aborting!</error>" );
-            exit;
-        }
+		if ( empty( $ftp_config ) ) {
+			// Bot collaborator does not exist, add him and grab SFTP data.
+			$output->writeln( "<comment>Bot collaborator SFTP credentials do not exist.</comment>" );
 
-        $ftp_user_id = max( array_column( $ftp_data->data, 'id' ) );
+			$output->writeln( "<comment>Adding bot collaborator to $site_domain.</comment>" );
 
-        $ftp_config = array();
+			$add_collaborator_request = $this->add_bot_collaborator_to_site( $api_helper, $pressable_site->id );
 
-        foreach( $ftp_data->data as $ftp_user ) {
-            if( $ftp_user->id === $ftp_user_id ) { // We found the bot collaborator we created, grab the info.
-                $ftp_config['sftp_username'] = $ftp_user->username;
-                $ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
+			if ( ! empty( $add_collaborator_request['error'] )) {
+				$output->writeln( sprintf('<error>%s</error>', $add_collaborator_request['error'] ) );
+				exit;
+			}
 
-                $password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-                if( ! empty( $password_reset->data ) ) {
-                    $ftp_config['sftp_password'] = $password_reset->data;
-                } else {
-                    $output->writeln( "<error>Failed to retrieve password for temporary bot collaborator. Aborting!</error>" );
-                    exit;
-                }
-                break;
-            }
-        }
+			$output->writeln( "<comment>Getting bot collaborator SFTP credentials after adding user.</comment>" );
+
+			$ftp_config = $this->get_sftp_connection_data_after_adding( $api_helper, $pressable_site->id );
+		}
+
+	    if ( ! empty( $ftp_config['error'] )) {
+		    $output->writeln( sprintf('<error>%s</error>', $ftp_config['error'] ) );
+		    exit;
+	    }
 
         $output->writeln( "<comment>Opening SFTP connection to $site_domain.</comment>" );
 
@@ -134,16 +115,6 @@ class Get_PHP_Errors extends Command {
             $output->writeln( "<info>The PHP errors log appears to be empty. Go make some errors and try again.</info>" );
             exit;
         }
-
-        $output->writeln( "<comment>Getting bot collaborator SFTP credentials.</comment>" );
-
-        $output->writeln( "<comment>Removing bot collaborator.</comment>" );
-
-        $delete_contributor_request = $api_helper->call_pressable_api(
-            "sites/{$pressable_site->id}/collaborators/{$add_collaborator_request->data->id}",
-            'DELETE',
-            array()
-        );
 
         // If they asked for the raw log, give it to them and bail.
         if ( ! empty( $input->getOption( 'raw' ) ) ) {
@@ -191,7 +162,6 @@ class Get_PHP_Errors extends Command {
                 if ( strtotime( $parsed_php_error['timestamp'] ) > strtotime( $_php_error_stats_table[ $parsed_php_error['error_message'] ]['timestamp'] ) ) {
                     $_php_error_stats_table[ $parsed_php_error['error_message'] ]['timestamp'] = $parsed_php_error['timestamp'];
                 }
-                continue;
             } else {
                 $_php_error_stats_table[ $parsed_php_error['error_message'] ] = array(
                     'timestamp' => $parsed_php_error['timestamp'],
@@ -243,4 +213,100 @@ class Get_PHP_Errors extends Command {
         $site_info->render();
 
     }
+
+	/**
+	 * Getting of sftp connection data for bot collaborator
+	 * @param $api_helper
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function get_sftp_connection_data( $api_helper, $pressable_site_id ) {
+
+		$ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site_id}/ftp", 'GET', array() );
+
+		$ftp_config = array();
+
+		if ( empty( $ftp_data->data ) ) {
+			$ftp_config['error'] = 'Failed to retrieve FTP users. Aborting!';
+			return $ftp_config;
+		}
+
+		foreach ( $ftp_data->data as $ftp_user ) {
+			if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
+				$ftp_config['sftp_username'] = $ftp_user->username;
+				$ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
+
+				$password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site_id}/ftp/password/{$ftp_user->username}", 'POST', array() );
+				if ( ! empty( $password_reset->data ) ) {
+					$ftp_config['sftp_password'] = $password_reset->data;
+				} else {
+					$ftp_config['error'] = 'Failed to retrieve password for temporary bot collaborator. Aborting!';
+				}
+				break;
+			}
+		}
+
+		return $ftp_config;
+	}
+
+	/**
+	 * Add bot collaborator to site
+	 * Using batch_create, so we can set sftp_access role
+	 * @param $api_helper
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function add_bot_collaborator_to_site( $api_helper, $pressable_site_id ) {
+
+		$response = array();
+
+		$add_collaborator_request = $api_helper->call_pressable_api(
+			"collaborators/batch_create",
+			'POST',
+			array(
+				'siteIds' => array(
+					$pressable_site_id,
+				),
+				'email'   => PRESSABLE_BOT_COLLABORATOR_EMAIL,
+				'roles'   => 'sftp_access',
+			)
+		);
+
+		if ( ! is_null( $add_collaborator_request->errors ) ) {
+			$response['error'] = 'Error creating temporary bot collaborator. Aborting!';
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Try to get sftp data after adding the user.
+	 * Adding of the user takes some time, so we need to check a few times.
+	 * @param $api_helper
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function get_sftp_connection_data_after_adding( $api_helper, $pressable_site_id ) {
+		$ftp_config = array();
+
+		$tries           = 0;
+		$delay           = 1;
+		while ( empty( $ftp_config ) && $tries <= 3 ) {
+
+			$ftp_config = $this->get_sftp_connection_data( $api_helper, $pressable_site_id );
+
+			sleep( $delay );
+			$tries++;
+			$delay = $delay * 2;
+		}
+
+		if ( empty( $ftp_config ) ) {
+			$ftp_config['error'] = 'Trouble finding temporary bot collaborator after adding.';
+		}
+
+		return $ftp_config;
+	}
 }
