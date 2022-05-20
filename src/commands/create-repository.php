@@ -86,10 +86,10 @@ class Create_Repository extends Command {
 
 			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-README.md file to scaffold/$slug/README.md.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/README.md" );
-			
+
 			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-vipgoci_phpcs_skip_folders file to scaffold/$slug/.vipgoci_phpcs_skip_folders.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-vipgoci_phpcs_skip_folders', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.vipgoci_phpcs_skip_folders" );
-		
+
 			$output->writeln( "<comment>Copying scaffold/templates/EXAMPLE-vipgoci_lint_skip_folders file to scaffold/$slug/.vipgoci_lint_skip_folders.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/EXAMPLE-vipgoci_lint_skip_folders', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.vipgoci_lint_skip_folders" );
 
@@ -338,6 +338,23 @@ class Create_Repository extends Command {
 					$output->writeln( "<error>Failed to copy issue '{$issue->title}' into $slug.</info>" );
 				}
 			}
+		}
+
+		$add_gh_bot_secret = $this->getApplication()->find( 'update-repository-secret' );
+
+		$gh_bot_arguments = array(
+			'command'       => 'update-repository-secret',
+			'--repo-slug'   => $slug,
+			'--secret-name' => 'GH_BOT_TOKEN',
+		);
+
+		$add_gh_bot_input = new ArrayInput( $gh_bot_arguments );
+		$output->writeln( '<comment>Adding GH_BOT_TOKEN for phpcs check.</comment>' );
+		$add_gh_bot_secret_success = $add_gh_bot_secret->run( $add_gh_bot_input, $output );
+		if ( 0 === $add_gh_bot_secret_success ) {
+			$output->writeln( '<info>Successfully added GH_BOT_TOKEN to (' . GITHUB_API_OWNER . "/$slug).</info>" );
+		} else {
+			$output->writeln( '<error>Failed to automatically add GitHub GH_BOT_TOKEN to (' . GITHUB_API_OWNER . "/$slug).</error>" );
 		}
 
 		$output->writeln( "<info>GitHub repository creation and setup is complete! $html_url</info>" );
