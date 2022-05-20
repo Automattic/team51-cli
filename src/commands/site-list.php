@@ -22,9 +22,9 @@ class Site_List extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper;
 
-		$output->writeln( '<info>Fetching sites, approx. 2 minutes...<info>' );
+		$output->writeln( '<info>Fetching sites...<info>' );
 
-		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites', array() );
+		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack', array() );
 
 		if ( empty( $all_sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
