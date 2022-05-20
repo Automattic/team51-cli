@@ -24,7 +24,7 @@ class Jetpack_Modules extends Command {
 
 		$api_helper = new API_Helper;
 
-		$site = $api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_domain, array() );
+		$site = $api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_domain . '?fields=ID', array() );
 
 		if ( empty( $site->ID ) ) {
 			$output->writeln( '<error>Failed to fetch site information.<error>' );
