@@ -12,7 +12,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 
 class Jetpack_Module_Search extends Command {
-	protected static $defaultName = 'module-search';
+	protected static $defaultName = 'jetpack-module-search';
 
 	/**
 	 * @var Api_Helper|null API Helper instance.
