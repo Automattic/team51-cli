@@ -8,6 +8,7 @@ if ( ! in_array( '-q', $argv ) && ! in_array( '--quiet', $argv ) ) {
 
 exec( sprintf( "git -C %s %s",  __DIR__, 'pull' ) );
 // TODO: Only run this when there are updates.
+exec( sprintf( "composer install -o --working-dir %s", __DIR__ ) );
 exec( sprintf( "composer dump-autoload -o --working-dir %s", __DIR__ ) );
 echo PHP_EOL;
 
