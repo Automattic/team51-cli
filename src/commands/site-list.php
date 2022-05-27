@@ -5,6 +5,7 @@ namespace Team51\Command;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -16,7 +17,9 @@ class Site_List extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
-		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' );
+		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
+		->addArgument( 'csv-export', InputArgument::OPTIONAL, 'Optional, output the results to a csv file by using --csv-export.' )
+		->addOption( 'ex-column', null, InputOption::VALUE_NONE, 'Optional, exclude columns from csv output (e.g. --ex-column=Site Name,Host). Possible values: Site Name, Domain, Site ID, Host' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -120,6 +123,24 @@ class Site_List extends Command {
 		$filtered_site_count = count( $final_site_list );
 		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
+		$csv_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$csv_summary = array(
+			array( $atomic_count . ' Atomic sites.' ),
+			array( $pressable_count . ' Pressable (or other) sites.' ),
+			array( $simple_count . ' Simple sites.' ),
+			array( $filtered_site_count . ' sites total.' ),
+		);
+
+		array_unshift( $final_site_list, $csv_header );
+		foreach ( $csv_summary as $item ) {
+			$final_site_list[] = $item;
+		}
+
+		$fp = fopen( 'sites.csv', 'w' );
+		foreach ( $final_site_list as $fields ) {
+			fputcsv( $fp, $fields );
+		}
+		fclose( $fp );
 	}
 
 	protected function count_sites( $site_list, $term ) {
