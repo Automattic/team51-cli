@@ -18,7 +18,7 @@ class Site_List extends Command {
 		$this
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
-		->addArgument( 'csv-export', InputArgument::OPTIONAL, 'Optional, output the results to a csv file by using --csv-export.' )
+		->addArgument( 'export', InputArgument::OPTIONAL, 'Optional, output the results to a csv or json file by using csv-export or json-export.' )
 		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, 'Optional, exclude columns from csv output (e.g. --exclude="Site Name","Host"). Possible values: Site Name, Domain, Site ID, Host' );
 	}
 
@@ -49,6 +49,7 @@ class Site_List extends Command {
 			'org/',
 			'mdrovdahl',
 			'/dev.',
+			'woocommerce.com',
 		);
 
 		$free_pass = array(
@@ -87,12 +88,32 @@ class Site_List extends Command {
 			}
 		);
 
+		$pressable_data = $api_helper->call_pressable_api(
+			'sites/',
+			'GET',
+			array()
+		);
+
+		if ( empty( $pressable_data->data ) ) {
+			$output->writeln( "<error>Failed to retrieve Pressable sites. Aborting!</error>" );
+			exit;
+		}
+
+		$pressable_sites = array();
+		foreach ( $pressable_data->data as $_pressable_site ) {
+			$pressable_sites[] = $_pressable_site->url;
+		}
+
 		$final_site_list = array();
 		foreach ( $filtered_site_list as $site ) {
 			if ( true === $site->is_wpcom_atomic ) {
 				$server = 'Atomic';
 			} elseif ( true === $site->jetpack ) {
-				$server = 'Pressable';
+				if ( in_array( parse_url( $site->URL, PHP_URL_HOST  ), $pressable_sites ) ) {
+					$server = 'Pressable';
+				} else {
+					$server = 'Other';
+				}
 			} else {
 				$server = 'Simple';
 			}
@@ -114,23 +135,35 @@ class Site_List extends Command {
 
 		$atomic_count    = $this->count_sites( $final_site_list, 'Atomic' );
 		$pressable_count = $this->count_sites( $final_site_list, 'Pressable' );
+		$other_count     = $this->count_sites( $final_site_list, 'Other' );
 		$simple_count    = $this->count_sites( $final_site_list, 'Simple' );
 
 		$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
-		$output->writeln( "<info>{$pressable_count} Pressable (or other) sites.<info>" );
+		$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
 		$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
+		$output->writeln( "<info>{$other_count} sites hosted elsewhere.<info>" );
 
 		$filtered_site_count = count( $final_site_list );
 		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
-		if ( 'csv-export' === $input->getArgument( 'csv-export' ) ) {
+		if ( 'csv-export' === $input->getArgument( 'export' ) ) {
 			if ( $input->getOption( 'exclude' ) ) {
 				$csv_ex_columns = $input->getOption( 'exclude' );
 			} else {
 				$csv_ex_columns = null;
 			}
-			$this->create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $filtered_site_count, $csv_ex_columns );
+			$this->create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $csv_ex_columns );
 			$output->writeln( '<info>Exported to sites.csv in the team51 root folder.<info>' );
+		}
+
+		if ( 'json-export' === $input->getArgument( 'export' ) ) {
+			if ( $input->getOption( 'exclude' ) ) {
+				$json_ex_columns = $input->getOption( 'exclude' );
+			} else {
+				$json_ex_columns = null;
+			}
+			$this->create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns );
+			$output->writeln( '<info>Exported to sites.json in the team51 root folder.<info>' );
 		}
 	}
 
@@ -144,12 +177,13 @@ class Site_List extends Command {
 		return count( $sites );
 	}
 
-	protected function create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $filtered_site_count, $csv_ex_columns ) {
+	protected function create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $csv_ex_columns ) {
 		$csv_header  = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
 		$csv_summary = array(
 			array( $atomic_count . ' Atomic sites.' ),
 			array( $pressable_count . ' Pressable (or other) sites.' ),
 			array( $simple_count . ' Simple sites.' ),
+			array( $other_count . ' sites hosted elsewhere.' ),
 			array( $filtered_site_count . ' sites total.' ),
 		);
 		if ( null !== $csv_ex_columns ) {
@@ -172,6 +206,38 @@ class Site_List extends Command {
 		foreach ( $final_site_list as $fields ) {
 			fputcsv( $fp, $fields );
 		}
+		fclose( $fp );
+	}
+
+	protected function create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns ) {
+		// To-do: After stripping columns, re-index, then build as an associative array.
+		// Reformat summary as a proper pair.
+		$json_header  = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$json_summary = array(
+			array( $atomic_count . ' Atomic sites.' ),
+			array( $pressable_count . ' Pressable (or other) sites.' ),
+			array( $simple_count . ' Simple sites.' ),
+			array( $other_count . ' sites hosted elsewhere.' ),
+			array( $filtered_site_count . ' sites total.' ),
+		);
+		if ( null !== $json_ex_columns ) {
+			$exclude_columns = explode( ',', $json_ex_columns );
+			foreach ( $exclude_columns as $column ) {
+				$column_index = array_search( $column, $json_header, true );
+				unset( $json_header[ $column_index ] );
+				foreach ( $final_site_list as &$site ) {
+					unset( $site[ $column_index ] );
+				}
+				unset( $site );
+			}
+		}
+		array_unshift( $final_site_list, $json_header );
+		foreach ( $json_summary as $item ) {
+			$final_site_list[] = $item;
+		}
+
+		$fp = fopen( 'sites.json', 'w' );
+		fwrite( $fp, json_encode( $final_site_list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_FORCE_OBJECT ) );
 		fclose( $fp );
 	}
 
