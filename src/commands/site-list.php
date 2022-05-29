@@ -19,7 +19,7 @@ class Site_List extends Command {
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
 		->addArgument( 'csv-export', InputArgument::OPTIONAL, 'Optional, output the results to a csv file by using --csv-export.' )
-		->addOption( 'ex-column', null, InputOption::VALUE_NONE, 'Optional, exclude columns from csv output (e.g. --ex-column=Site Name,Host). Possible values: Site Name, Domain, Site ID, Host' );
+		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, 'Optional, exclude columns from csv output (e.g. --exclude="Site Name","Host"). Possible values: Site Name, Domain, Site ID, Host' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -123,24 +123,15 @@ class Site_List extends Command {
 		$filtered_site_count = count( $final_site_list );
 		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
-		$csv_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
-		$csv_summary = array(
-			array( $atomic_count . ' Atomic sites.' ),
-			array( $pressable_count . ' Pressable (or other) sites.' ),
-			array( $simple_count . ' Simple sites.' ),
-			array( $filtered_site_count . ' sites total.' ),
-		);
-
-		array_unshift( $final_site_list, $csv_header );
-		foreach ( $csv_summary as $item ) {
-			$final_site_list[] = $item;
+		if ( 'csv-export' === $input->getArgument( 'csv-export' ) ) {
+			if ( $input->getOption( 'exclude' ) ) {
+				$csv_ex_columns = $input->getOption( 'exclude' );
+			} else {
+				$csv_ex_columns = null;
+			}
+			$this->create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $filtered_site_count, $csv_ex_columns );
+			$output->writeln( '<info>Exported to sites.csv in the team51 root folder.<info>' );
 		}
-
-		$fp = fopen( 'sites.csv', 'w' );
-		foreach ( $final_site_list as $fields ) {
-			fputcsv( $fp, $fields );
-		}
-		fclose( $fp );
 	}
 
 	protected function count_sites( $site_list, $term ) {
@@ -151,6 +142,37 @@ class Site_List extends Command {
 			}
 		);
 		return count( $sites );
+	}
+
+	protected function create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $filtered_site_count, $csv_ex_columns ) {
+		$csv_header  = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$csv_summary = array(
+			array( $atomic_count . ' Atomic sites.' ),
+			array( $pressable_count . ' Pressable (or other) sites.' ),
+			array( $simple_count . ' Simple sites.' ),
+			array( $filtered_site_count . ' sites total.' ),
+		);
+		if ( null !== $csv_ex_columns ) {
+			$exclude_columns = explode( ',', $csv_ex_columns );
+			foreach ( $exclude_columns as $column ) {
+				$column_index = array_search( $column, $csv_header, true );
+				unset( $csv_header[ $column_index ] );
+				foreach ( $final_site_list as &$site ) {
+					unset( $site[ $column_index ] );
+				}
+				unset( $site );
+			}
+		}
+		array_unshift( $final_site_list, $csv_header );
+		foreach ( $csv_summary as $item ) {
+			$final_site_list[] = $item;
+		}
+
+		$fp = fopen( 'sites.csv', 'w' );
+		foreach ( $final_site_list as $fields ) {
+			fputcsv( $fp, $fields );
+		}
+		fclose( $fp );
 	}
 
 }
