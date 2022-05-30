@@ -3,3 +3,5 @@ vendor/
 .DS_Store
 src/helpers/pressable_token.json
 .idea
+sites.csv
+sites.json

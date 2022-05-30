@@ -19,7 +19,7 @@ class Site_List extends Command {
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
 		->addArgument( 'export', InputArgument::OPTIONAL, 'Optional, output the results to a csv or json file by using csv-export or json-export.' )
-		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, 'Optional, exclude columns from csv output (e.g. --exclude="Site Name","Host"). Possible values: Site Name, Domain, Site ID, Host' );
+		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, 'Optional, exclude columns from csv output (e.g. --exclude="Site name, Host"). Possible values: Site Name, Domain, Site ID, and Host. Case not important.' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -178,18 +178,25 @@ class Site_List extends Command {
 	}
 
 	protected function create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $csv_ex_columns ) {
-		$csv_header  = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$csv_header         = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$csv_header_compare = array_map(
+			function ( $column ) {
+				return strtoupper( preg_replace( '/\s+/', '', $column ) );
+			},
+			$csv_header
+		);
+
 		$csv_summary = array(
-			array( $atomic_count . ' Atomic sites.' ),
-			array( $pressable_count . ' Pressable (or other) sites.' ),
-			array( $simple_count . ' Simple sites.' ),
-			array( $other_count . ' sites hosted elsewhere.' ),
-			array( $filtered_site_count . ' sites total.' ),
+			array( 'Atomic sites', $atomic_count ),
+			array( 'Pressable sites', $pressable_count ),
+			array( 'Simple sites', $simple_count ),
+			array( 'Other hosts', $other_count ),
+			array( 'Total sites', $filtered_site_count ),
 		);
 		if ( null !== $csv_ex_columns ) {
-			$exclude_columns = explode( ',', $csv_ex_columns );
+			$exclude_columns = explode( ',', preg_replace( '/\s+/', '', $csv_ex_columns ) );
 			foreach ( $exclude_columns as $column ) {
-				$column_index = array_search( $column, $csv_header, true );
+				$column_index = array_search( strtoupper( $column ), $csv_header_compare, true );
 				unset( $csv_header[ $column_index ] );
 				foreach ( $final_site_list as &$site ) {
 					unset( $site[ $column_index ] );
@@ -209,35 +216,44 @@ class Site_List extends Command {
 		fclose( $fp );
 	}
 
-	protected function create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns ) {
+	protected function create_json( $site_list_array, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns ) {
 		// To-do: After stripping columns, re-index, then build as an associative array.
 		// Reformat summary as a proper pair.
-		$json_header  = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
-		$json_summary = array(
-			array( $atomic_count . ' Atomic sites.' ),
-			array( $pressable_count . ' Pressable (or other) sites.' ),
-			array( $simple_count . ' Simple sites.' ),
-			array( $other_count . ' sites hosted elsewhere.' ),
-			array( $filtered_site_count . ' sites total.' ),
+		$json_header         = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$json_header_compare = array_map(
+			function ( $column ) {
+				return strtoupper( preg_replace( '/\s+/', '', $column ) );
+			},
+			$json_header
 		);
-		if ( null !== $json_ex_columns ) {
-			$exclude_columns = explode( ',', $json_ex_columns );
-			foreach ( $exclude_columns as $column ) {
+
+		$json_summary = array(
+			'Atomic sites'    => $atomic_count,
+			'Pressable sites' => $pressable_count,
+			'Simple sites'    => $simple_count,
+			'Other hosts'     => $other_count,
+			'Total sites'     => $filtered_site_count,
+		);
+
+		$exclude_columns = explode( ',', strtoupper( preg_replace( '/\s+/', '', $json_ex_columns ) ) );
+		$site_list       = array();
+		$final_site_list = array();
+
+		foreach ( $site_list_array as &$site ) {
+			foreach ( $json_header as $column ) {
 				$column_index = array_search( $column, $json_header, true );
-				unset( $json_header[ $column_index ] );
-				foreach ( $final_site_list as &$site ) {
-					unset( $site[ $column_index ] );
+				if ( in_array( $json_header_compare[ $column_index ], $exclude_columns, true ) ) {
+					continue;
 				}
-				unset( $site );
+				$site_list[ $json_header[ $column_index ] ] = $site[ $column_index ];
 			}
-		}
-		array_unshift( $final_site_list, $json_header );
-		foreach ( $json_summary as $item ) {
-			$final_site_list[] = $item;
+			$final_site_list[] = $site_list;
 		}
 
+		$final_site_list[] = $json_summary;
+
 		$fp = fopen( 'sites.json', 'w' );
-		fwrite( $fp, json_encode( $final_site_list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_FORCE_OBJECT ) );
+		fwrite( $fp, json_encode( $final_site_list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
 		fclose( $fp );
 	}
 
