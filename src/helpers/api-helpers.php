@@ -2,6 +2,12 @@
 
 namespace Team51\Helper;
 
+use Amp\Http\Client\HttpClientBuilder;
+use Amp\Http\Client\Request;
+use function Amp\Promise\wait;
+use function Amp\Promise\all;
+use function Amp\call;
+
 class API_Helper {
 
 	private const PRESABLE_TOKEN_FILE         = __DIR__ . '/pressable_token.json';
@@ -290,34 +296,46 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function call_generic_api( $api_request_url, $data, $method = 'GET', $bearer_token = null ) {
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/json',
-			'User-Agent: PHP',
-		);
+	/**
+	 * This function makes async HTTP requests to the WP API,
+	 * and returns unified response for each of the endpoints
+	 * Implemented with AMPHP: https://amphp.org/http-client/concurrent
+	 * 
+	 * @param string[] $endpoints a list of endpoints to be invoked. The string must include WPCOM_API_ENDPOINT
+	 */
+	public function call_wpcom_api_concurrent( $endpoints, $data = array(), $method = 'GET' ) {
+		$client = HttpClientBuilder::buildDefault();
+		$promises = array();
 
-		if ( ! empty( $bearer_token ) ) {
-			$headers[] = 'Authorization: Bearer ' . $bearer_token;
+		foreach ( $endpoints as $endpoint ) {
+			$promises[ $endpoint ] = call(
+				static function () use ( $method, $client, $endpoint ) {
+					$request = new Request( $endpoint, $method );
+					$request->setHeader( 'Accept', 'application/json' );
+					$request->setHeader( 'Content-Type', 'application/json' );
+					$request->setHeader( 'Authorization', 'Bearer ' . WPCOM_API_ACCOUNT_TOKEN );
+					$request->setHeader( 'User-Agent', 'PHP' );
+
+					if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
+						$request->setBody( $data );
+					}
+
+					$response = yield $client->request( $request );
+					$body     = yield $response->getBody()->buffer();
+					return $body;
+				}
+			);
 		}
 
-		$options = array(
-			'http' => array(
-				'header'        => $headers,
-				'ignore_errors' => true,
-			),
+		$response = wait( all( $promises ) );
+		$response = array_map(
+			function( $res ) {
+				return json_decode( $res );
+			},
+			$response
 		);
 
-		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
-			$options['http']['content'] = $data;
-			$options['http']['method']  = $method;
-		}
-
-		$context = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
-
-		return json_decode( $result );
+		return $response;
 	}
 
 	/**

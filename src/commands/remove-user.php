@@ -9,8 +9,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
-use function Amp\ParallelFunctions\parallelMap;
-use function Amp\Promise\wait;
 
 class Remove_User extends Command {
 	protected static $defaultName = 'remove-user';
@@ -135,62 +133,60 @@ class Remove_User extends Command {
 			}
 		}
 
+		// TODO: Remove user from Github too?
+
 		$output->writeln( '<info>All done!<info>' );
 	}
 
+	/**
+	 * Given an email, return the list of sites w
+	 */
 	private function get_wpcom_users( $email ) {
 		$wp_bearer_token = WPCOM_API_ACCOUNT_TOKEN;
 
 		$this->output->writeln( '<comment>Fetching list of WordPress.com & Jetpack sites...</comment>' );
 
-		$result = $this->api_helper->call_wpcom_api( 'rest/v1.1/me/sites/?fields=ID,URL', array() );
+		$all_sites = $this->api_helper->call_wpcom_api( 'rest/v1.1/me/sites/?fields=ID,URL', array() );
 
-		if ( ! empty( $result->error ) ) {
-			$this->output->writeln( '<error>Failed. ' . $result->message . '<error>' );
+		if ( ! empty( $all_sites->error ) ) {
+			$this->output->writeln( '<error>Failed. ' . $all_sites->message . '<error>' );
 			exit;
 		}
 
-		$this->output->writeln( "<comment>Searching for '$email' across " . count( $result->sites ) . ' WordPress.com & Jetpack sites...</comment>' );
+		$this->output->writeln( "<comment>Searching for '$email' across " . count( $all_sites->sites ) . ' WordPress.com & Jetpack sites...</comment>' );
 
-		// Prepare array with /sites/[siteID]/users/
-		$users_search_urls = array();
-		foreach ( $result->sites as $k => $site ) {
-			$users_search_urls[] = array(
-				'site_id'     => $site->ID,
-				'site_url'    => $site->URL,
-				'wp_endpoint' => WPCOM_API_ENDPOINT . "rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL",
-			);
-		}
-
-		$logins_to_be_banned = wait(
-			parallelMap(
-				$users_search_urls,
-				function ( $user_search_url ) use ( $wp_bearer_token, $site ) {
-					// Need to pass the Bearer and full URL as arguments
-					// because async workers won't have access to globally defined constants
-					$users_per_site = $this->api_helper->call_generic_api( $user_search_url['wp_endpoint'], array(), 'GET', $wp_bearer_token );
-
-					if ( ! isset( $users_per_site ) || isset( $users_per_site->error ) ) {
-						return array();
-					}
-
-					$logins = array();
-					if ( $users_per_site->found > 0 ) {
-						foreach ( $users_per_site->users as $u ) {
-							$logins[] = (object) array(
-								'userId'   => $u->ID,
-								'email'    => $u->email,
-								'siteId'   => $user_search_url['site_id'],
-								'siteName' => $user_search_url['site_url'],
-							);
-						}
-					}
-					return $logins;
-				}
-			)
+		$site_users_endpoints = array_map(
+			function( $site ) use ( $email ) {
+				return WPCOM_API_ENDPOINT . "rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
+			},
+			$all_sites->sites
 		);
 
-		// flatten with array_merge.
-		return array_merge( ...$logins_to_be_banned );
+		// concurrent call for all endpoints.
+		$sites_users = $this->api_helper->call_wpcom_api_concurrent( $site_users_endpoints );
+
+		// clean up data by removing entries were user was not found.
+		$sites_users = array_filter(
+			$sites_users,
+			function( $user ) {
+				return ( isset( $user ) && ! isset( $user->error ) && $user->found > 0 );
+			}
+		);
+
+		$data = array();
+		foreach ( $all_sites->sites as $site ) {
+			foreach ( $site_users_endpoints as $endpoint ) {
+				if ( str_contains( $endpoint, $site->ID ) && isset( $sites_users[ $endpoint ] ) ) {
+					$data[] = (object) array(
+						'userId'   => $sites_users[ $endpoint ]->users[0]->ID,
+						'email'    => $sites_users[ $endpoint ]->users[0]->email,
+						'siteId'   => $site->ID,
+						'siteName' => $site->URL,
+					);
+				}
+			}
+		}
+
+		return $data;
 	}
 }
