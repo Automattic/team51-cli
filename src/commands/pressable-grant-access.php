@@ -334,7 +334,7 @@ class Pressable_Grant_Access extends Command {
 				array(
 					'email'   => $email,
 					'siteIds' => array( $site_id ),
-					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'wp_access' ),
+					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance' ),
 				)
 			);
 
