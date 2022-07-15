@@ -257,7 +257,7 @@ class Pressable_Grant_Access extends Command {
 		$sites = $this->api_helper->call_pressable_api( 'sites', 'GET', array() );
 
 		// If we have no results, return an empty null.
-		if ( is_null( $sites ) || empty( $sites->data ) ) {
+		if ( empty( $sites->data ) ) {
 			return null;
 		}
 
@@ -296,7 +296,7 @@ class Pressable_Grant_Access extends Command {
 	private function get_site_by_id( int $site_id ): ?\stdClass {
 		$site = $this->api_helper->call_pressable_api( "sites/$site_id", 'GET', array() );
 		// If we have no results, return an empty null.
-		if ( is_null( $site ) || empty( $site->data ) ) {
+		if ( empty( $site->data ) ) {
 			return null;
 		}
 
