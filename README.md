@@ -26,6 +26,9 @@ It's the nickname for our Special Projects team at Automattic.
 
 Be well, be kind, make things and set them free.
 
+## Dependencies
+- Composer (instructions below)
+
 ## Installation
 1. Open the Terminal on your Mac and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
@@ -58,6 +61,9 @@ If you get the error `./install-osx: line 2: composer: command not found`, you c
 
 ### `brew: command not found`
 If you don't have [brew](https://brew.sh/) yet, install it by executing this from your Terminal: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` — Tip: you can use brew to install all sort of apps on your Mac. Give it [a try](https://formulae.brew.sh/cask/zoom)
+
+### `gh: command not found`
+If you're onboarding/offboarding users, you will need access to Github CLI. Please refer to the [installation instructions](https://cli.github.com/), and then follow the instructions on the Terminal for authentication.
 
 ### `Warning: file_get_contents: failed to open stream`
 ```
