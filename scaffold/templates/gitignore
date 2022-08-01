@@ -23,6 +23,7 @@ plugins/*
 !plugins/EXAMPLE_PLUGIN_NAME
 
 mu-plugins/*
+!mu-plugins/mu-autoloader.php
 
 themes/*
 !themes/EXAMPLE_THEME_NAME
