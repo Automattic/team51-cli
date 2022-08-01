@@ -75,6 +75,12 @@ class Create_Repository extends Command {
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/README.md" );
 
+			$output->writeln( "<comment>Creating scaffold/$slug/mu-plugins directory.</comment>" );
+			$filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins" );
+
+			$output->writeln( "<comment>Creating scaffold/$slug/mu-plugins/ directory.</comment>" );
+			$filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins" );
+
 			$output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
