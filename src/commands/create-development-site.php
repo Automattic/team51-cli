@@ -27,6 +27,8 @@ class Create_Development_Site extends Command {
 
 		$production_site_id = $input->getOption( 'site-id' );
 
+		$branch_name = ! empty( $input->getOption( 'branch' ) ) ? $input->getOption( 'branch' ) : 'develop';
+
 		if ( empty( $input->getOption( 'site-id' ) ) ) {
 			$output->writeln( '<error>Site ID is required for development site creation.</error>' );
 			exit;
@@ -39,7 +41,7 @@ class Create_Development_Site extends Command {
 			array()
 		);
 
-		if ( ! $this->is_pressable_site($pressable_site) ) {
+		if ( ! $this->is_pressable_site( $pressable_site ) ) {
 			$output->writeln( '<error>Something has gone wrong while looking up the Pressable production site. Aborting!</error>' );
 			exit;
 		}
@@ -116,7 +118,7 @@ class Create_Development_Site extends Command {
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
 			'environment' => 'development',
-			'branch'      => ! empty( $input->getOption( 'branch' ) ) ? $input->getOption( 'branch' ) : 'develop',
+			'branch'      => $branch_name,
 		);
 
 		// Set server config elements common to production and development environments.
@@ -160,11 +162,11 @@ class Create_Development_Site extends Command {
 			$output->writeln( '<info>Successfully retrieved GitHub repo from the DeployHQ project.</info>' );
 		}
 
-		// Verify 'develop' branch exists in the GitHub repo, otherwise adding the new development server to DeployHQ will fail.
+		// Verify the development branch exists in the GitHub repo, otherwise adding the new development server to DeployHQ will fail.
 		$output->writeln( "<comment>Verifying 'develop' branch exists in GitHub repo.</comment>" );
 
 		$develop_branch = $api_helper->call_github_api(
-			sprintf( 'repos/%s/%s/git/ref/heads/develop', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
+			sprintf( 'repos/%s/%s/git/ref/heads/%s', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ), $branch_name ),
 			'',
 			'GET'
 		);
@@ -187,7 +189,7 @@ class Create_Development_Site extends Command {
 			$develop_branch = $api_helper->call_github_api(
 				sprintf( 'repos/%s/%s/git/refs', GITHUB_API_OWNER, basename( $project_info->repository->url, '.git' ) ),
 				array(
-					'ref' => 'refs/heads/develop',
+					'ref' => sprintf( 'refs/heads/%s', $branch_name ),
 					'sha' => $trunk_branch->object->sha,
 
 				),
@@ -195,13 +197,13 @@ class Create_Development_Site extends Command {
 			);
 
 			if ( empty( $develop_branch->ref ) ) {
-				$output->writeln( "<error>Failed to create 'develop' branch. Aborting!</error>" );
+				$output->writeln( "<error>Failed to create $branch_name branch. Aborting!</error>" );
 				exit;
 			} else {
-				$output->writeln( "<info>Successfully created 'develop' branch!</info>" );
+				$output->writeln( "<info>Successfully created $branch_name branch!</info>" );
 			}
 		} else {
-			$output->writeln( "<info>Verified 'develop' branch exists.</info>" );
+			$output->writeln( "<info>Verified $branch_name branch exists.</info>" );
 		}
 
 		$output->writeln( '<comment>Connecting DeployHQ project to GitHub repository.</comment>' );
@@ -213,7 +215,7 @@ class Create_Development_Site extends Command {
 				'repository' => array(
 					'scm_type' => 'git',
 					'url'      => $repository_url,
-					'branch'   => 'develop',
+					'branch'   => $branch_name,
 					'username' => null,
 					'port'     => null,
 				),
