@@ -39,25 +39,24 @@ class Create_Development_Site extends Command {
 			array()
 		);
 
-		// TODO: This code is duplicated below for the site clone. Should be a function.
-		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
+		if ( ! $this->is_pressable_site($pressable_site) ) {
 			$output->writeln( '<error>Something has gone wrong while looking up the Pressable production site. Aborting!</error>' );
 			exit;
 		}
 
 		// If the production site was created with this script, follow the same naming convention.
 		if ( false !== strpos( $pressable_site->data->name, '-production' ) ) {
-      $site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
-      $project_name = str_replace( '-development', '', $site_name );
+			$site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
+			$project_name = str_replace( '-development', '', $site_name );
 		} else {
-      $site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
-      $project_name = $pressable_site->data->name;
+			$site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
+			$project_name = $pressable_site->data->name;
 		}
 
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
 			if ( ! empty( $input->getOption( 'label' ) ) ) {
 				$site_name = str_replace( '-development', '', $site_name );
-				$label  = $input->getOption( 'label' );
+				$label     = $input->getOption( 'label' );
 			} else {
 				$label = time();
 			}
@@ -72,18 +71,17 @@ class Create_Development_Site extends Command {
 			)
 		);
 
-    // catching and displaying useful errors here
-    if ( $pressable_site->errors ) {
-      $site_creation_errors = '';
-      foreach( $pressable_site->errors as $error ) {
-        $site_creation_errors .= $error;
-      }
-      $output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
-      exit;
-    }
+		// catching and displaying useful errors here
+		if ( $pressable_site->errors ) {
+			$site_creation_errors = '';
+			foreach ( $pressable_site->errors as $error ) {
+				$site_creation_errors .= $error;
+			}
+			$output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
+			exit;
+		}
 
-		// TODO this code is duplicated above
-		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
+		if ( ! $this->is_pressable_site( $pressable_site ) ) {
 			$output->writeln( '<error>Failed to create new Pressable site. Aborting!</error>' );
 			exit;
 		} else {
@@ -96,7 +94,7 @@ class Create_Development_Site extends Command {
 		do {
 			$pressable_site_check = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}", 'GET', array() );
 
-			if ( empty( $pressable_site_check->data ) || empty( $pressable_site_check->data->id ) ) {
+			if ( ! $this->is_pressable_site( $pressable_site_check ) ) {
 				$output->writeln( '<error>Something has gone wrong while checking on the Pressable site. Aborting!</error>' );
 				exit;
 			}
@@ -309,5 +307,10 @@ class Create_Development_Site extends Command {
 		$_slug = preg_replace( '/-+/', '-', $_slug ); // convert multiple contiguous hyphens to a single hyphen
 
 		return $_slug;
+	}
+
+	// Confirm that Pressable site data exists
+	protected function is_pressable_site( $site ) {
+		return ! ( empty( $site->data ) || empty( $site->data->id ) );
 	}
 }
