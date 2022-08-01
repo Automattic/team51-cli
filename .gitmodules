@@ -1,0 +1,6 @@
+[submodule "safety-net"]
+	path = safety-net
+	url = https://github.com/a8cteam51/safety-net
+[submodule "scaffold/safety-net"]
+	path = scaffold/safety-net
+	url = https://github.com/a8cteam51/safety-net
