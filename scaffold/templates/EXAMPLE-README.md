@@ -10,7 +10,7 @@ This repo is for EXAMPLE_REPO_NAME, powered by WordPress.
 
 If the PHPCS checks are taking too long because of a plugin/code that we aren't responsible for, feel free to include that plugin folder in the files `.vipgoci_lint_skip_folders` and `.vipgoci_phpcs_skip_folders`. Please use this feature sparingly. We view the checks as a safety mechanism that can save sites from serious errors.
 
-If `mu-plugins` are needed for a project, add them to the `mu-plugins` directory. The  `mu-autoloader.php` file within that mu-plugins directory (`/mu-plugins/mu-autoloader.php`) will automatically load. In that `mu-autoloader.php` file, add the following contents:
+If `mu-plugins` are needed for a project, create a `mu-plugins` directory and include a `mu-autoloader.php` file within that mu-plugins directory (`/mu-plugins/mu-autoloader.php`). In that `mu-autoloader.php` file, add the following contents:
 
 ```
 <?php
