@@ -109,31 +109,14 @@ class Pressable_Call_Api extends Command {
 	 */
 	private function get_data( InputInterface $input, OutputInterface $output ): string {
 		// Attempt to get data from Input.
-		$data = $input->getOption( 'data' );
+		$data = $input->getOption( 'data' ) ?? '';
 
 		// If this isn't valid JSON data, fail.
 		if ( ! empty( $data ) && null === json_decode( $data ) ) {
 			$output->writeln( '<error>You must supply a valid JSON encoded string.</error>' );
 			exit;
 		}
-
 		return $data;
-	}
-
-	/*************************************
-	 *************************************
-	 *             QUESTIONS             *
-	 *************************************
-	 *************************************/
-
-
-	/**
-	 * Returns the question for getting JSON data.
-	 *
-	 * @return \Symfony\Component\Console\Question\Question
-	 */
-	private function ask_data(): Question {
-		return new Question( 'Please enter the JSON data to pass to the API: ', false );
 	}
 
 	/*************************************
@@ -158,7 +141,7 @@ class Pressable_Call_Api extends Command {
 		$data = $this->get_data( $input, $output );
 
 		// Callback for API call
-		$output->writeln( sprintf( '<info>Attempting to call Pressable API at endpoint %s using %s. Data: %s</info>', $query, $method, $data ) );
+		$output->writeln( sprintf( "<info>Attempting to call Pressable API at endpoint %s using %s. \nData:\n%s</info>", $query, $method, $data ) );
 
 		$result = $this->api_helper->call_pressable_api( $query, $method, $data );
 
