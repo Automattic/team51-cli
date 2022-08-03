@@ -76,6 +76,8 @@ class Pressable_Call_Api extends Command {
 			exit;
 		}
 
+		// Account for leading slashes, if provided.
+		$query = trim( $query, '/' );
 		return $query;
 	}
 
