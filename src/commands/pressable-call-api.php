@@ -97,6 +97,12 @@ class Pressable_Call_Api extends Command {
 			$method = 'GET';
 		}
 
+		// Make sure it's a valid http method.
+		if ( ! in_array( $method, array( 'GET', 'POST', 'PUT', 'DELETE' ), true ) ) {
+			$output->writeln( '<error>You must supply a valid HTTP method.</error>' );
+			exit;
+		}
+
 		return $method;
 	}
 
