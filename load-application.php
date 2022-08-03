@@ -31,6 +31,7 @@ $application->add( new Team51\Command\Update_Repository_Secret() );
 $application->add( new Team51\Command\Plugin_List() );
 $application->add( new Team51\Command\Pressable_Generate_Token() );
 $application->add( new Team51\Command\Pressable_Grant_Access() );
+$application->add( new Team51\Command\Pressable_Call_Api() );
 
 
 $application->run();
