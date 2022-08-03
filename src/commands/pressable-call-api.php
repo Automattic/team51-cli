@@ -109,11 +109,6 @@ class Pressable_Call_Api extends Command {
 		// Attempt to get data from Input.
 		$data = $input->getOption( 'data' );
 
-		// If we don't have data, prompt the user.
-		if ( empty( $data ) ) {
-			$data = $this->get_question_helper()->ask( $input, $output, $this->ask_data() );
-		}
-
 		// If this isn't valid JSON data, fail.
 		if ( ! empty( $data ) && null === json_decode( $data ) ) {
 			$output->writeln( '<error>You must supply a valid JSON encoded string.</error>' );
