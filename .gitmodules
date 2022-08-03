@@ -1,0 +1,6 @@
+[submodule "scaffold/develop/safety-net"]
+	path = scaffold/safety-net
+	url = https://github.com/a8cteam51/safety-net
+[submodule "scaffold/wc-usage-tracking-auto-opt-in"]
+	path = scaffold/wc-usage-tracking-auto-opt-in
+	url = https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in
