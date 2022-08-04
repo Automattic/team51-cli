@@ -11,8 +11,8 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 
-class Jetpack_Module_Search extends Command {
-	protected static $defaultName = 'jetpack-module-search';
+class Jetpack_Sites_With extends Command {
+	protected static $defaultName = 'jetpack-sites-with';
 
 	/**
 	 * @var Api_Helper|null API Helper instance.
@@ -28,14 +28,20 @@ class Jetpack_Module_Search extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Searches Team 51 sites for a specified Jetpack module based on its status.' )
-		->setHelp( 'Use this command to show a list of sites where a particular Jetpack module is on or off. This command requires a Jetpack site connected to the a8cteam51 account.' )
+		->setHelp( 'Use this command to find and show a list of sites where a particular Jetpack module is on or off. This command requires a Jetpack site connected to the a8cteam51 account. Usage Example: team51 jetpack-sites-with adwords on' )
 		->addArgument( 'module-slug', InputArgument::REQUIRED, 'The slug of the Jetpack module to search for.' )
-		->addArgument( 'module-status', InputArgument::REQUIRED, 'The status of the Jetpack module to search for.' );
+		->addArgument( 'module-status', InputArgument::OPTIONAL, 'The status of the Jetpack module to search for.' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$module_slug   = $input->getArgument( 'module-slug' );
-		$module_status = $input->getArgument( 'module-status' );
+		$module_slug    = strtolower( $input->getArgument( 'module-slug' ) );
+		$module_status  = strtolower( $input->getArgument( 'module-status' ) );
+		$validation_run = true;
+
+		if ( ! in_array( $module_status, array( 'on', 'off' ), true ) ) {
+			$output->writeln( '<error>module-status should be "on" or "off" only. Aborting.<error>' );
+			exit;
+		}
 
 		$api_helper = new API_Helper;
 
@@ -56,7 +62,7 @@ class Jetpack_Module_Search extends Command {
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
 		$output->writeln( "<info>Checking each site for the Jetpack module: {$module_slug}<info>" );
-		$output->writeln( '<comment>"Patience you must have, my young padawan."</comment>' );
+		$output->writeln( '<info>Expected duration: 8 - 10 mins. Use Ctrl+C to abort.</info>' );
 
 		$progress_bar = new ProgressBar( $output, $site_count );
 		$progress_bar->start();
@@ -68,6 +74,26 @@ class Jetpack_Module_Search extends Command {
 			$module_list = $this->get_list_of_modules( $site[0] );
 			if ( ! is_null( $module_list ) ) {
 				if ( ! is_null( $module_list->data ) ) {
+					if ( $validation_run ) {
+						$all_modules = array();
+						foreach ( $module_list->data as $module ) {
+							$all_modules[] = array( $module->module, $module->name );
+						}
+						if ( ! in_array( $module_slug, array_column( $all_modules, 0 ), true ) ) {
+							$output->writeln( '<info>  Oooops!</info>' );
+							$output->writeln( "<info>Jetpack module slug \"{$module_slug}\" unknown.<info>" );
+							$output->writeln( '<info>Available slugs:<info>' );
+							$modules_table = new Table( $output );
+							$modules_table->setStyle( 'box-double' );
+							$modules_table->setHeaders( array( 'slug', 'Name' ) );
+							$modules_table->setRows( $all_modules );
+							$modules_table->render();
+							exit;
+						} else {
+							$validation_run = false;
+						}
+					}
+
 					foreach ( $module_list->data as $module ) {
 						if ( $module_slug === $module->module ) {
 							$module_match_status[] = array( $site[1], ( $module->activated ? 'on' : 'off' ) );
@@ -114,5 +140,4 @@ class Jetpack_Module_Search extends Command {
 		}
 		return $module_list;
 	}
-
 }
