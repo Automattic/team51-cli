@@ -24,6 +24,8 @@ plugins/*
 
 mu-plugins/*
 !mu-plugins/mu-autoloader.php
+!mu-plugins/wc-usage-tracking-auto-op
+  t-in
 
 themes/*
 !themes/EXAMPLE_THEME_NAME

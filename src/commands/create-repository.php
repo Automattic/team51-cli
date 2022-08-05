@@ -177,7 +177,7 @@ class Create_Repository extends Command {
 
 		$output->writeln( '<comment>Adding, committing, and pushing files to GitHub.</comment>' );
 
-		$progress_bar = new ProgressBar( $output, 7 );
+		$progress_bar = new ProgressBar( $output, 8 );
 		$progress_bar->start();
 
 		$this->execute_command( array( 'git', 'init', '--initial-branch', 'trunk', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" ) );
@@ -197,6 +197,8 @@ class Create_Repository extends Command {
 
 		$this->execute_command( array( 'git', 'branch', 'develop' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
+
+		$this->execute_command( array( 'git', 'submodule', 'add', 'https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in.git', 'mu-plugins/wc-usage-tracking-auto-opt-in' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 
 		$this->execute_command( array( 'git', 'push', '-u', 'origin', '--all' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
@@ -258,7 +260,7 @@ class Create_Repository extends Command {
 			),
 			array(
 				'name'        => 'needs review',
-				'description' => 'Pre-merge sanity check',
+				'description' => 'Pre-merge check',
 				'color'       => 'ff9515',
 			),
 			array(
