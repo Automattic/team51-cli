@@ -23,6 +23,8 @@ plugins/*
 !plugins/EXAMPLE_PLUGIN_NAME
 
 mu-plugins/*
+!mu-plugins/mu-autoloader.php
+!mu-plugins/wc-usage-tracking-auto-opt-in
 
 themes/*
 !themes/EXAMPLE_THEME_NAME

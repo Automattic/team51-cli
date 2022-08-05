@@ -187,6 +187,11 @@ class Create_Repository extends Command {
 		$this->execute_command( array( 'git', 'add', '.' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
 
+		$output->writeln( '<comment>Submodule command: ' . implode( ' ', array( 'git', 'submodule', 'add', '--', 'https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in.git', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins/wc-usage-tracking-auto-opt-in" ) ) . '</comment>' );
+		$output->writeln( '<comment>Working directory: ' . TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" . '</comment>' );
+		// $this->execute_command( array( 'git', 'submodule', 'add', '--', 'https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins/wc-usage-tracking-auto-opt-in" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+		$progress_bar->advance();
+
 		$this->execute_command( array( 'git', 'commit', "-m 'Added project files from scaffold'" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
 
@@ -200,7 +205,7 @@ class Create_Repository extends Command {
 		$output->writeln( '' );
 
 		$output->writeln( '<comment>Cleaning up scaffold files.</comment>' );
-		$this->execute_command( array( 'rm', '-rf', "$slug" ), TEAM51_CLI_ROOT_DIR . '/scaffold' );
+		// $this->execute_command( array( 'rm', '-rf', "$slug" ), TEAM51_CLI_ROOT_DIR . '/scaffold' );
 
 		$output->writeln( '<comment>Configuring GitHub repository labels.</comment>' );
 
