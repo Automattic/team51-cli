@@ -50,10 +50,10 @@ final class Pressable_API_Helper {
 		);
 
 		if ( 401 === (int) $result['headers']['http_code'] ) {
-			exit( '<error>Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.</error>' . PHP_EOL );
+			exit( 'Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL );
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			echo "<error>Pressable API error: {$result['headers']['http_code']} {$result['body']['message']}</error>" . PHP_EOL;
+			echo "Pressable API error: {$result['headers']['http_code']} {$result['body']['message']}" . PHP_EOL;
 			return null;
 		}
 
@@ -69,12 +69,12 @@ final class Pressable_API_Helper {
 		// Check for an existing access token.
 		$access_token = self::get_cached_access_token();
 		if ( ! \is_null( $access_token ) ) {
-			echo "<comment>Re-using OAuth token stored locally.</comment>" . PHP_EOL;
+			echo "Re-using OAuth token stored locally." . PHP_EOL;
 			return $access_token;
 		}
 
 		// If no access token exists, get a new one.
-		echo "<comment>Obtaining new OAuth token.</comment>" . PHP_EOL;
+		echo "Obtaining new OAuth token." . PHP_EOL;
 		$post_data = array(
 			'client_id'     => PRESSABLE_API_APP_CLIENT_ID,
 			'client_secret' => PRESSABLE_API_APP_CLIENT_SECRET,
@@ -88,7 +88,7 @@ final class Pressable_API_Helper {
 			$post_data['grant_type']    = 'refresh_token';
 			$post_data['refresh_token'] = self::get_cached_refresh_token();
 		} else {
-			exit( '<error>❌ Please configure your config.json to include Pressable email/password, or refresh and access tokens.</error>' . PHP_EOL );
+			exit( '❌ Please configure your config.json to include Pressable email/password, or refresh and access tokens.' . PHP_EOL );
 		}
 
 		$result = get_remote_content(
@@ -101,10 +101,10 @@ final class Pressable_API_Helper {
 			\http_build_query( $post_data )
 		);
 		if ( empty( $result['body']->access_token ) ) {
-			exit( '<error>Pressable API token could not be retrieved. Aborting!</error>' . PHP_EOL );
+			exit( 'Pressable API token could not be retrieved. Aborting!' . PHP_EOL );
 		}
 		if ( false === self::set_cached_tokens( $result['body'] ) ) {
-			echo '<error>❌ Failed to cache Pressable access tokens.</error>' . PHP_EOL;
+			echo '❌ Failed to cache Pressable access tokens.' . PHP_EOL;
 		}
 
 		return $result['body']->access_token;
@@ -157,11 +157,11 @@ final class Pressable_API_Helper {
 	private static function get_cached_refresh_token(): ?string {
 		if ( ! \file_exists( self::CACHED_TOKENS_FILE_PATH ) ) {
 			if ( \defined( 'PRESSABLE_API_REFRESH_TOKEN' ) ) {
-				echo '<info>Using PRESSABLE_API_REFRESH_TOKEN from config.json file.</info>' . PHP_EOL;
+				echo 'Using PRESSABLE_API_REFRESH_TOKEN from config.json file.' . PHP_EOL;
 				return PRESSABLE_API_REFRESH_TOKEN;
 			}
 
-			echo '<error>No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.</error>' . PHP_EOL;
+			echo 'No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.' . PHP_EOL;
 			return null;
 		}
 

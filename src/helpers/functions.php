@@ -74,7 +74,7 @@ function decode_json_content( string $json, bool $associative = false ) {
 	try {
 		return \json_decode( $json, $associative, 512, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "<error>JSON Exception: {$exception->getMessage()}</error>" . PHP_EOL;
+		echo "JSON Exception: {$exception->getMessage()}" . PHP_EOL;
 		return null;
 	}
 }
@@ -90,7 +90,7 @@ function encode_json_content( $data ): ?string {
 	try {
 		return \json_encode( $data, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "<error>JSON Exception: {$exception->getMessage()}</error>" . PHP_EOL;
+		echo "JSON Exception: {$exception->getMessage()}" . PHP_EOL;
 		return null;
 	}
 }
