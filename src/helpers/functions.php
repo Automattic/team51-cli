@@ -94,3 +94,16 @@ function encode_json_content( $data ): ?string {
 		return null;
 	}
 }
+
+/**
+ * Ensures that a given value is between given min and max, inclusively.
+ *
+ * @param   int|float   $value  The value to check.
+ * @param   int|float   $min    The minimum value.
+ * @param   int|float   $max    The maximum value.
+ *
+ * @return  int|float
+ */
+function clamp( $value, $min, $max ) {
+	return \min( \max( $value, $min ), $max );
+}
