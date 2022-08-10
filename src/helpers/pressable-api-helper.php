@@ -49,11 +49,11 @@ final class Pressable_API_Helper {
 			encode_json_content( $params )
 		);
 
-		if ( 401 === (int) $result['headers']['http_code'] ) {
+		if ( 401 === $result['headers']['http_code'] ) {
 			exit( 'Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL );
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			echo "Pressable API error: {$result['headers']['http_code']} {$result['body']['message']}" . PHP_EOL;
+			echo "Pressable API error: {$result['headers']['http_code']} {$result['body']->message}" . PHP_EOL;
 			return null;
 		}
 
