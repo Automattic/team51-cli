@@ -21,28 +21,28 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: Bearer '. $this->get_pressable_api_token(),
+			'Authorization: Bearer ' . $this->get_pressable_api_token(),
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
-				'content' => $data,
+				'header'        => $headers,
+				'method'        => $method,
+				'content'       => $data,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		preg_match( '/\d\d\d/', $http_response_header[0], $response_code );
 
 		$response_code = $response_code[0];
 
 		if ( '401' === $response_code ) {
-			echo "Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked." . PHP_EOL;
+			echo 'Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL;
 			exit;
 		}
 
@@ -51,7 +51,7 @@ class API_Helper {
 
 	public function get_pressable_api_token() {
 		$access_token = $this->get_local_pressable_access_token();
-		if( ! empty( $access_token ) ) {
+		if ( ! empty( $access_token ) ) {
 			// Re-use access token
 			echo "\nRe-using OAuth token stored locally.\n";
 			return $access_token;
@@ -88,16 +88,16 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => 'POST',
-				'content' => $data
-			)
+				'content' => $data,
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		$result = json_decode( $result );
 
-		if( empty( $result->access_token ) ) {
+		if ( empty( $result->access_token ) ) {
 			die( "Pressable API token could not be retrieved. Aborting!\n" );
 		}
 
@@ -115,7 +115,7 @@ class API_Helper {
 	 */
 	public function get_pressable_api_auth_tokens( $client_id, $client_secret ) {
 		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
-		$data = array(
+		$data            = array(
 			'client_id'     => $client_id,
 			'client_secret' => $client_secret,
 			'grant_type'    => 'password',
@@ -134,16 +134,16 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => 'POST',
-				'content' => $data
-			)
+				'content' => $data,
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		$result = json_decode( $result );
 
-		if( empty( $result->refresh_token ) ) {
+		if ( empty( $result->refresh_token ) ) {
 			die( "Pressable API Refresh token could not be retrieved. Aborting!\n" );
 		}
 
@@ -159,25 +159,25 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: token '. GITHUB_API_TOKEN,
+			'Authorization: token ' . GITHUB_API_TOKEN,
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
+				'header'        => $headers,
+				'method'        => $method,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		if( in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+		if ( in_array( $method, array( 'POST', 'PUT' ) ) ) {
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 		}
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -190,29 +190,29 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-type: application/json',
-			'Authorization: Basic '. base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
+			'Authorization: Basic ' . base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
-				'content' => $data,
-				'timeout' => 60,
+				'header'        => $headers,
+				'method'        => $method,
+				'content'       => $data,
+				'timeout'       => 60,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
 
 
 	public function log_to_slack( $message ) {
-		if( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
+		if ( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
 			echo "Note: log_to_slack() won't work while SLACK_WEBHOOK_URL is undefined in config.json." . PHP_EOL;
 		}
 
@@ -253,16 +253,16 @@ class API_Helper {
 				'header'        => $headers,
 				'ignore_errors' => true,
 				'method'        => $method,
-			)
+			),
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 		}
 
 		$context = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -273,7 +273,7 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: Bearer '. FRONT_API_TOKEN,
+			'Authorization: Bearer ' . FRONT_API_TOKEN,
 			'User-Agent: PHP',
 		);
 
@@ -281,17 +281,17 @@ class API_Helper {
 			'http' => array(
 				'header'        => $headers,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 			$options['http']['method']  = $method;
 		}
 
 		$context = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -300,11 +300,11 @@ class API_Helper {
 	 * This function makes async HTTP requests to the WP API,
 	 * and returns unified response for each of the endpoints
 	 * Implemented with AMPHP: https://amphp.org/http-client/concurrent
-	 * 
+	 *
 	 * @param string[] $endpoints a list of endpoints to be invoked. The string must include WPCOM_API_ENDPOINT
 	 */
 	public function call_wpcom_api_concurrent( $endpoints, $data = array(), $method = 'GET' ) {
-		$client = HttpClientBuilder::buildDefault();
+		$client   = HttpClientBuilder::buildDefault();
 		$promises = array();
 
 		foreach ( $endpoints as $endpoint ) {
@@ -353,7 +353,7 @@ class API_Helper {
 			return false;
 		}
 
-		if( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
+		if ( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
 			// Pressable token expired
 			return false;
 		}
@@ -362,7 +362,7 @@ class API_Helper {
 	}
 
 	/**
-	 * Retrieves the last stored Pressable refresh token, 
+	 * Retrieves the last stored Pressable refresh token,
 	 * or PRESSABLE_API_REFRESH_TOKEN by default
 	 */
 	private function get_local_pressable_refresh_token() {
@@ -379,7 +379,7 @@ class API_Helper {
 
 		$data = json_decode( file_get_contents( self::PRESABLE_TOKEN_FILE ) );
 		if ( ! $data ) {
-			echo "Could not read pressable_token.json file";
+			echo 'Could not read pressable_token.json file';
 			return false;
 		}
 
