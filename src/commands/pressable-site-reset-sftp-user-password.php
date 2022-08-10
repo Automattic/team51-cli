@@ -69,9 +69,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		$output->writeln( "<comment>Pressable site SFTP user found: $pressable_sftp_user->username ($pressable_sftp_user->email)</comment>" );
 
 		// Maybe let the user confirm the action.
-		if ( $input->getOption( 'no-interaction' ) ) {
-			$output->writeln( "<info>Resetting the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)</info>" );
-		} else {
+		if ( ! $input->getOption( 'no-interaction' ) ) {
 			$question = new Question( "Reset the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)? (y/n) ", 'n' );
 			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			if ( 'y' !== $answer ) {
@@ -80,6 +78,8 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			}
 		}
 
+		$output->writeln( "<info>Resetting the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</info>" );
+
 		// Reset SFTP password.
 		$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $pressable_site->id, $pressable_sftp_user->username );
 		if ( \is_null( $new_pressable_sftp_password ) ) {
@@ -87,7 +87,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			return 1;
 		}
 
-		$output->writeln( '<success>SFTP password reset.</success>' );
+		$output->writeln( '<fg=green;options=bold>Pressable SFTP password reset.</>' );
 
 		// Update the DeployHQ configuration, if required.
 		if ( true === $pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
@@ -148,7 +148,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 			}
 
-			$output->writeln( '<success>DeployHQ configuration updated.</success>' );
+			$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );
 		}
 
 		return 0;
