@@ -2,5 +2,6 @@ config.json
 vendor/
 .DS_Store
 src/helpers/pressable_token.json
+src/helpers/pressable_tokens.json
 .idea
 .vscode/
