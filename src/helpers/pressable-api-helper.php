@@ -69,12 +69,12 @@ final class Pressable_API_Helper {
 		// Check for an existing access token.
 		$access_token = self::get_cached_access_token();
 		if ( ! \is_null( $access_token ) ) {
-			echo "Re-using OAuth token stored locally." . PHP_EOL;
+			echo "Re-using Pressable OAuth token cached locally." . PHP_EOL;
 			return $access_token;
 		}
 
 		// If no access token exists, get a new one.
-		echo "Obtaining new OAuth token." . PHP_EOL;
+		echo "Obtaining new Pressable OAuth token." . PHP_EOL;
 		$post_data = array(
 			'client_id'     => PRESSABLE_API_APP_CLIENT_ID,
 			'client_secret' => PRESSABLE_API_APP_CLIENT_SECRET,
