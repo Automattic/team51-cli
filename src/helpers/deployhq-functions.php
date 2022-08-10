@@ -69,5 +69,40 @@ function get_deployhq_project_permalink_from_pressable_site( object $pressable_s
 		return null;
 	}
 
-	return \str_replace( array( '-production', '-development' ), array( '', '' ), $pressable_site->name );
+	$project_name = $pressable_site->name;
+	if ( false !== \strpos( $project_name, '-development' ) ) {
+		// Handles the case where the project name is "project-development-timestamp".
+		$project_name = \explode( '-development', $project_name, 2 )[0];
+	} elseif ( ! empty( $pressable_site->clonedFromId ) ) {
+		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring.
+		$pressable_site = get_pressable_site_by_id( $pressable_site->clonedFromId );
+		$project_name   = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
+	} elseif ( false !== \strpos( $pressable_site->displayName, '-development' ) ) {
+		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring
+		// and no 'clonedFromId' is available for some reason. For this to work, the display name of the clone
+		// must be updated MANUALLY to include the "-development" substring.
+		$project_name = \explode( '-development', $pressable_site->displayName, 2 )[0];
+	}
+
+	return \explode( '-production', $project_name, 2 )[0];
+}
+
+/**
+ * Updates the given server's configuration and returns the updated server.
+ *
+ * @param   string  $project_permalink  The permalink of the project.
+ * @param   string  $server_id          The identifier of the server.
+ * @param   array   $params             The parameters to update.
+ *
+ * @link    https://www.deployhq.com/support/api/servers/edit-an-existing-server
+ *
+ * @return  object|null
+ */
+function update_deployhq_project_server( string $project_permalink, string $server_id, array $params ): ?object {
+	$response = DeployHQ_API_Helper::call_api( "projects/$project_permalink/servers/$server_id", 'PUT', $params );
+	if ( empty( $response ) ) {
+		return null;
+	}
+
+	return $response;
 }
