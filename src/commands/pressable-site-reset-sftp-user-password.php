@@ -11,6 +11,7 @@ use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_pressable_site_by_id;
 use function Team51\Helpers\get_pressable_site_by_url;
 use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
+use function Team51\Helpers\reset_pressable_site_sftp_user_password;
 
 /**
  * CLI command for resetting the SFTP password of collaborators on Pressable sites.
@@ -70,13 +71,19 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			$question = new Question( "Reset the SFTP password of $sftp_user->username ($sftp_user->email) on $site->displayName (ID $site->id, URL $site->url)? (y/n) ", 'n' );
 			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			if ( 'y' !== $answer ) {
-				$output->writeln( 'Command aborted by user.' );
+				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
 			}
 		}
 
-		// TODO: Reset the SFTP password and update the DeployHQ configuration, if needed.
+		// Reset SFTP password.
+		$new_password = reset_pressable_site_sftp_user_password( $site->id, $sftp_user->username );
+		if ( \is_null( $new_password ) ) {
+			$output->writeln( '<error>Failed to reset SFTP password.</error>' );
+			return 1;
+		}
 
+		$output->writeln( '<success>SFTP password reset.</success>' );
 		return 0;
 	}
 
