@@ -5,12 +5,18 @@
         "symfony/filesystem": "^4.3",
         "symfony/process": "^4.3",
         "phpseclib/phpseclib": "^3.0.7",
-        "amphp/http-client": "^4.6"
+        "amphp/http-client": "^4.6",
+        "ext-json": "*"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
     },
     "autoload": {
-	    "classmap": ["src/"]
+        "files": [
+            "src/helpers/functions.php"
+        ],
+	    "classmap": [
+            "src/"
+        ]
     }
 }
