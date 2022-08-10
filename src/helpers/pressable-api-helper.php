@@ -50,10 +50,10 @@ final class Pressable_API_Helper {
 		);
 
 		if ( 401 === $result['headers']['http_code'] ) {
-			exit( 'Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL );
+			exit( '❌ Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL );
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			echo "Pressable API error: {$result['headers']['http_code']} {$result['body']->message}" . PHP_EOL;
+			echo "❌ Pressable API error: {$result['headers']['http_code']} {$result['body']->message}" . PHP_EOL;
 			return null;
 		}
 
@@ -88,7 +88,7 @@ final class Pressable_API_Helper {
 			$post_data['grant_type']    = 'refresh_token';
 			$post_data['refresh_token'] = self::get_cached_refresh_token();
 		} else {
-			exit( '❌ Please configure your config.json to include Pressable email/password, or refresh and access tokens.' . PHP_EOL );
+			exit( '❌ Please configure your config.json to include Pressable email/password, or refresh and access tokens. Aborting!' . PHP_EOL );
 		}
 
 		$result = get_remote_content(
@@ -101,7 +101,7 @@ final class Pressable_API_Helper {
 			\http_build_query( $post_data )
 		);
 		if ( empty( $result['body']->access_token ) ) {
-			exit( 'Pressable API token could not be retrieved. Aborting!' . PHP_EOL );
+			exit( '❌ Pressable API token could not be retrieved. Aborting!' . PHP_EOL );
 		}
 		if ( false === self::set_cached_tokens( $result['body'] ) ) {
 			echo '❌ Failed to cache Pressable access tokens.' . PHP_EOL;
@@ -161,7 +161,7 @@ final class Pressable_API_Helper {
 				return PRESSABLE_API_REFRESH_TOKEN;
 			}
 
-			echo 'No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.' . PHP_EOL;
+			echo '❌ No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.' . PHP_EOL;
 			return null;
 		}
 
