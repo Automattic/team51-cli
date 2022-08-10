@@ -9,7 +9,8 @@
     },
     "autoload": {
         "files": [
-            "src/helpers/functions.php"
+            "src/helpers/functions.php",
+            "src/helpers/pressable-functions.php"
         ],
 	    "classmap": [
             "src/"
