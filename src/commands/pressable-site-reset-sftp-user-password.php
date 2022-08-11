@@ -18,7 +18,7 @@ use function Team51\Helpers\reset_pressable_site_sftp_user_password;
 use function Team51\Helpers\update_deployhq_project_server;
 
 /**
- * CLI command for resetting the SFTP password of collaborators on Pressable sites.
+ * CLI command for resetting the SFTP password of users on Pressable sites.
  */
 final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	// region FIELDS AND CONSTANTS
