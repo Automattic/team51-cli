@@ -2,6 +2,11 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+// region HTTP
+
 /**
  * Performs the remote HTTPS request and returns the response.
  *
@@ -62,6 +67,10 @@ function parse_http_headers( array $http_response_header ): array {
 	return $headers;
 }
 
+// endregion
+
+// region WRAPPERS
+
 /**
  * Decodes a JSON object and displays an error on failure.
  *
@@ -95,6 +104,10 @@ function encode_json_content( $data ): ?string {
 	}
 }
 
+// endregion
+
+// region POLYFILLS
+
 /**
  * Ensures that a given value is between given min and max, inclusively.
  *
@@ -107,3 +120,78 @@ function encode_json_content( $data ): ?string {
 function clamp( $value, $min, $max ) {
 	return \min( \max( $value, $min ), $max );
 }
+
+// endregion
+
+// region CONSOLE
+
+/**
+ * Grabs a value from the console input and validates it as an email.
+ *
+ * @param   InputInterface  $input          The console input.
+ * @param   OutputInterface $output         The console output.
+ * @param   callable|null   $no_input_func  The function to call if no input is given.
+ * @param   string          $name           The name of the value to grab.
+ *
+ * @return  string
+ */
+function get_email_input( InputInterface $input, OutputInterface $output, ?callable $no_input_func = null, string $name = 'email' ): string {
+	$email = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
+
+	// If we don't have an email, prompt for one.
+	if ( empty( $email ) && \is_callable( $no_input_func ) ) {
+		$email = $no_input_func( $input, $output );
+	}
+
+	// If we still don't have an email, abort.
+	if ( empty( $email ) ) {
+		$output->writeln( '<error>No email was provided. Aborting!</error>' );
+		exit;
+	}
+
+	// Check email for validity.
+	if ( false === \filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
+		$output->writeln( '<error>The provided email is invalid. Aborting!</error>' );
+		exit;
+	}
+
+	return $email;
+}
+
+/**
+ * Grabs a value from the console input and validates it as a URL or a numeric string.
+ *
+ * @param   InputInterface  $input          The console input.
+ * @param   OutputInterface $output         The console output.
+ * @param   callable|null   $no_input_func  The function to call if no input is given.
+ * @param   string          $name           The name of the value to grab.
+ *
+ * @return  string
+ */
+function get_site_input( InputInterface $input, OutputInterface $output, ?callable $no_input_func = null, string $name = 'site' ): string {
+	$site_id_or_url = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
+
+	// If we don't have a site, prompt for one.
+	if ( empty( $site_id_or_url ) && \is_callable( $no_input_func ) ) {
+		$site_id_or_url = $no_input_func( $input, $output );
+	}
+
+	// If we still don't have a site, abort.
+	if ( empty( $site_id_or_url ) ) {
+		$output->writeln( '<error>No site was provided. Aborting!</error>' );
+		exit;
+	}
+
+	// Strip out everything but the hostname if we have a URL.
+	if ( false !== \strpos( $site_id_or_url, 'http' ) ) {
+		$site_id_or_url = \parse_url( $site_id_or_url, PHP_URL_HOST );
+		if ( false === $site_id_or_url ) {
+			$output->writeln( '<error>Invalid URL provided. Aborting!</error>' );
+			exit;
+		}
+	}
+
+	return $site_id_or_url;
+}
+
+// endregion
