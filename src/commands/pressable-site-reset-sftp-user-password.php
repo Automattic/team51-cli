@@ -14,6 +14,7 @@ use function Team51\Helpers\get_deployhq_project_servers;
 use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_by_id;
 use function Team51\Helpers\get_pressable_site_by_url;
+use function Team51\Helpers\get_pressable_site_from_input;
 use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
 use function Team51\Helpers\get_site_input;
 use function Team51\Helpers\reset_pressable_site_sftp_user_password;
@@ -49,17 +50,14 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$sftp_email     = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
-		$site_id_or_url = get_site_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
-
-		// Retrieve the site to make sure it exists.
-		$pressable_site = \is_numeric( $site_id_or_url ) ? get_pressable_site_by_id( $site_id_or_url ) : get_pressable_site_by_url( $site_id_or_url );
+		// Retrieve the site and make sure it exists.
+		$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
 		if ( \is_null( $pressable_site ) ) {
-			$output->writeln( '<error>Pressable site not found.</error>' );
 			return 1;
 		}
 
-		$output->writeln( "<comment>Pressable site found: $pressable_site->name ($pressable_site->url)</comment>" );
+		// Retrieve the SFTP user email and make sure it exists.
+		$sftp_email = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
 
 		// Confirm the SFTP user exists on the site.
 		$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $sftp_email );

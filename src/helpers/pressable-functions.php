@@ -2,6 +2,11 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+// region API
+
 /**
  * Get a list of sites belonging to your account. Sites can be filtered by tag name.
  * Site listing is a full list of sites attached to your account, unless pagination is requested.
@@ -172,3 +177,32 @@ function reset_pressable_site_sftp_user_password( string $site_id, string $usern
 
 	return $new_password->data;
 }
+
+// endregion
+
+// region CONSOLE
+
+/**
+ * Grabs a value from the console input and tries to retrieve a Pressable site based on it.
+ *
+ * @param   InputInterface  $input          The console input.
+ * @param   OutputInterface $output         The console output.
+ * @param   callable|null   $no_input_func  The function to call if no input is given.
+ * @param   string          $name           The name of the value to grab.
+ *
+ * @return  object|null
+ */
+function get_pressable_site_from_input( InputInterface $input, OutputInterface $output, ?callable $no_input_func = null, string $name = 'site' ): ?object {
+	$site_id_or_url = get_site_input( $input, $output, $no_input_func, $name );
+	$pressable_site = \is_numeric( $site_id_or_url ) ? get_pressable_site_by_id( $site_id_or_url ) : get_pressable_site_by_url( $site_id_or_url );
+
+	if ( \is_null( $pressable_site ) ) {
+		$output->writeln( "<error>Pressable site $site_id_or_url not found.</error>" );
+	} else {
+		$output->writeln( "<comment>Pressable site found: $pressable_site->name ($pressable_site->url)</comment>" );
+	}
+
+	return $pressable_site;
+}
+
+// endregion

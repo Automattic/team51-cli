@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_email_input;
-use function Team51\Helpers\get_site_input;
+use function Team51\Helpers\get_pressable_site_from_input;
 
 /**
  * CLI command for resetting the WP password of users on Pressable sites.
@@ -41,8 +41,13 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$wp_email       = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
-		$site_id_or_url = get_site_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
+		// Retrieve the site and make sure it exists.
+		$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
+		if ( \is_null( $pressable_site ) ) {
+			return 1;
+		}
+
+		$wp_email = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
 
 		return 0;
 	}
