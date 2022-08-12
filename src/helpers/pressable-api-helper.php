@@ -10,13 +10,15 @@ final class Pressable_API_Helper {
 
 	/**
 	 * The base URL for the Pressable API.
+	 *
+	 * @link    https://my.pressable.com/documentation/api/v1#introduction
 	 */
-	private const BASE_URL = PRESSABLE_API_ENDPOINT;
+	private const BASE_URL = 'https://my.pressable.com/v1/';
 
 	/**
 	 * The full path to the access token file.
 	 */
-	private const CACHED_TOKENS_FILE_PATH = __DIR__ . '/pressable_tokens.json';
+	private const CACHED_TOKENS_FILE_PATH = __DIR__ . '/pressable_cached_tokens.json';
 
 	/**
 	 * The time that the access token is valid for. According to the documentation, that is 1 hour.

@@ -178,6 +178,84 @@ function reset_pressable_site_sftp_user_password( string $site_id, string $usern
 	return $new_password->data;
 }
 
+/**
+ * Get a list of collaborators for the specified site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @return  object[]|null
+ */
+function get_pressable_site_collaborators( string $site_id ): ?array {
+	$collaborators = Pressable_API_Helper::call_api( "sites/$site_id/collaborators" );
+	if ( \is_null( $collaborators ) || empty( $collaborators->data ) ) {
+		return null;
+	}
+
+	return $collaborators->data;
+}
+
+/**
+ * Get site collaborator information by collaborator ID.
+ *
+ * @param   string  $site_id            The site ID.
+ * @param   string  $collaborator_id    The collaborator ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#get-site-collaborator
+ *
+ * @return  object|null
+ */
+function get_pressable_site_collaborator_by_id( string $site_id, string $collaborator_id ): ?object {
+	$collaborator = Pressable_API_Helper::call_api( "sites/$site_id/collaborators/$collaborator_id" );
+	if ( \is_null( $collaborator ) || empty( $collaborator->data ) ) {
+		return null;
+	}
+
+	return $collaborator->data;
+}
+
+/**
+ * Get site collaborator information by collaborator email.
+ *
+ * @param   string  $site_id            The site ID.
+ * @param   string  $collaborator_email The collaborator email.
+ *
+ * @return  object|null
+ */
+function get_pressable_site_collaborator_by_email( string $site_id, string $collaborator_email): ?object {
+	$collaborators = get_pressable_site_collaborators( $site_id );
+	if ( \is_null( $collaborators ) ) {
+		return null;
+	}
+
+	foreach ( $collaborators as $collaborator ) {
+		if ( 0 === \strcasecmp( $collaborator->email, $collaborator_email ) ) {
+			return $collaborator;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * If one of your collaborators is unable to log into the site’s WordPress dashboard because of a forgotten, or unknown, password,
+ * this can be used to set their WP Admin password to a randomly generated value.
+ *
+ * @param   string  $site_id            The site ID.
+ * @param   string  $collaborator_id    The collaborator ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#set-collaborator-wp-admin-password
+ *
+ * @return  string|null
+ */
+function reset_pressable_site_collaborator_wp_password( string $site_id, string $collaborator_id ): ?string {
+	$new_password = Pressable_API_Helper::call_api( "sites/$site_id/collaborators/$collaborator_id/wp-password-reset", 'PUT' );
+	if ( \is_null( $new_password ) || empty( $new_password->data ) ) {
+		return null;
+	}
+
+	return $new_password->data;
+}
+
 // endregion
 
 // region CONSOLE
