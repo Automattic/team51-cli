@@ -149,7 +149,8 @@ class Pressable_Call_Api extends Command {
 		// Callback for API call
 		$output->writeln( sprintf( "<info>Attempting to call Pressable API at endpoint %s using %s. \nData:\n%s</info>", $query, $method, $data ) );
 
-		$result = $this->api_helper->call_pressable_api( $query, $method, $data );
+		// The API Helper encodes the JSON data. Decode it here so that it fits properly.
+		$result = $this->api_helper->call_pressable_api( $query, $method, json_decode( $data ) );
 
 		$output->writeln( sprintf( '<info>API call result: %s</info>', print_r( $result, true ) ) );
 	}
