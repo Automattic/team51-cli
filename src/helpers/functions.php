@@ -36,7 +36,7 @@ function get_remote_content( string $url, array $headers = array(), string $meth
 
 	return array(
 		'headers' => parse_http_headers( $http_response_header ),
-		'body'    => decode_json_content( $result ),
+		'body'    => decode_json_content( $result ?: '{}' ), // Empty responses like those returned by WPCOM errors trigger an exception when decoding.
 	);
 }
 
@@ -83,7 +83,7 @@ function decode_json_content( string $json, bool $associative = false ) {
 	try {
 		return \json_decode( $json, $associative, 512, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "JSON Exception: {$exception->getMessage()}" . PHP_EOL;
+		echo "JSON Decoding Exception: {$exception->getMessage()}" . PHP_EOL;
 		return null;
 	}
 }
@@ -99,7 +99,7 @@ function encode_json_content( $data ): ?string {
 	try {
 		return \json_encode( $data, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "JSON Exception: {$exception->getMessage()}" . PHP_EOL;
+		echo "JSON Encoding Exception: {$exception->getMessage()}" . PHP_EOL;
 		return null;
 	}
 }
@@ -131,6 +131,31 @@ function clamp( $value, $min, $max ) {
  */
 function is_case_insensitive_match( string $string_1, string $string_2 ): bool {
 	return 0 === \strcasecmp( $string_1, $string_2 );
+}
+
+/**
+ * Creates a random password of given length from a fixed set of allowed characters.
+ *
+ * @param   int     $length             The length of password to generate.
+ * @param   bool    $special_chars      Whether to include standard special characters.
+ *
+ * @link    https://developer.wordpress.org/reference/functions/wp_generate_password/
+ *
+ * @return  string
+ * @throws  \Exception  Thrown if there is not enough entropy to generate a password.
+ */
+function generate_random_password( int $length = 12, bool $special_chars = true ): string {
+	$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	if ( $special_chars ) {
+		$chars .= '!@#$%^&*()';
+	}
+
+	$password = '';
+	for ( $i = 0; $i < $length; $i++ ) {
+		$password .= $chars[ \random_int( 0, \strlen( $chars ) - 1 ) ];
+	}
+
+	return $password;
 }
 
 // endregion

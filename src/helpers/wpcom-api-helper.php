@@ -44,7 +44,7 @@ final class WPCOM_API_Helper {
 		);
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			echo "❌ WordPress.com API error: {$result['headers']['http_code']} " . encode_json_content( $result['body'] ) . PHP_EOL;
+			echo "❌ WordPress.com API error: {$result['headers']['http_code']} " . PHP_EOL;
 			return null;
 		}
 
