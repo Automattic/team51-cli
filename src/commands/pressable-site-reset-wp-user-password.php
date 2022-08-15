@@ -9,7 +9,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_email_input;
+use function Team51\Helpers\get_pressable_site_by_id;
+use function Team51\Helpers\get_pressable_site_collaborator_by_email;
 use function Team51\Helpers\get_pressable_site_from_input;
+use function Team51\Helpers\get_pressable_sites;
 
 /**
  * CLI command for resetting the WP password of users on Pressable sites.
@@ -47,7 +50,33 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			return 1;
 		}
 
+		// If this is a development site, prompt the user to confirm.
+		if ( ! empty( $pressable_site->clonedFromId ) && ! $input->getOption( 'no-interaction' ) ) {
+			$production_site = get_pressable_site_by_id( $pressable_site->clonedFromId );
+			if ( \is_null( $production_site ) ) {
+				$output->writeln( "<comment>The website $pressable_site->name ($pressable_site->url) looks like a clone of site $pressable_site->clonedFromId which could not be found.</comment>" );
+			} else {
+				$output->writeln( "<comment>The website $pressable_site->name ($pressable_site->url) is a development site of $production_site->name ($production_site->url).</comment>" );
+			}
+
+			$question = new Question( "Do you wish to continue resetting the WP user password for this website? (y/n) ", 'n' );
+			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			if ( 'y' !== $answer ) {
+				$output->writeln( '<comment>Command aborted by user.</comment>' );
+				exit;
+			}
+		}
+
+		// Retrieve the WP user email and make sure it exists.
 		$wp_email = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
+
+		$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $wp_email );
+		if ( \is_null( $pressable_collaborator ) ) {
+			$output->writeln( "<comment>The WP user $wp_email is not a collaborator on $pressable_site->name ($pressable_site->url).</comment>" );
+			return 1;
+		}
+
+		$output->writeln( "<comment>Pressable site collaborator $pressable_collaborator->name ($pressable_collaborator->email) found on $pressable_site->name ($pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 		return 0;
 	}
