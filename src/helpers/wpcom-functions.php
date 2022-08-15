@@ -63,13 +63,23 @@ function get_wpcom_site_user_by_email( string $site_id_or_url, string $email ): 
 /**
  * Resets a given user's password on a site using the Jetpack API.
  *
- * @param   string  $site_id    The WordPress.com site ID.
- * @param   string  $user_id    The WP user ID.
+ * @param   string  $site_id_or_url     The site URL or WordPress.com site ID.
+ * @param   string  $user_id            The WP user ID.
  *
  * @return  string|null
  * @throws  \Exception  Thrown if there is not enough entropy to generate a password.
  */
-function reset_wpcom_site_user_wp_password( string $site_id, string $user_id ): ?string {
+function reset_wpcom_site_user_wp_password( string $site_id_or_url, string $user_id ): ?string {
+	$site_id = $site_id_or_url;
+	if ( ! \is_numeric( $site_id ) ) {
+		$wpcom_site = get_wpcom_site( $site_id );
+		if ( \is_null( $wpcom_site ) ) {
+			return null;
+		}
+
+		$site_id = $wpcom_site->ID;
+	}
+
 	$new_password = generate_random_password();
 
 	$result = WPCOM_API_Helper::call_api(
