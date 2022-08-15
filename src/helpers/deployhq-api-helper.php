@@ -10,8 +10,10 @@ final class DeployHQ_API_Helper {
 
 	/**
 	 * The base URL for the DeployHQ API.
+	 *
+	 * @link    https://www.deployhq.com/support/api
 	 */
-	private const BASE_URL = DEPLOY_HQ_API_ENDPOINT;
+	private const BASE_URL = 'https://<account>.deployhq.com/';
 
 	// endregion
 
@@ -39,6 +41,12 @@ final class DeployHQ_API_Helper {
 			encode_json_content( $params )
 		);
 
+		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
+			$message = encode_json_content( $result['body'] ) ?? 'Badly formatted error';
+			echo "❌ DeployHQ API error: {$result['headers']['http_code']} $message" . PHP_EOL;
+			return null;
+		}
+
 		return $result['body'];
 	}
 
@@ -54,7 +62,10 @@ final class DeployHQ_API_Helper {
 	 * @return  string
 	 */
 	private static function get_request_url( string $endpoint ): string {
-		return self::BASE_URL . \ltrim( $endpoint, '/' );
+		$account = \parse_url( DEPLOY_HQ_API_ENDPOINT, PHP_URL_HOST );
+		$account = \str_replace( '.deployhq.com', '', $account );
+
+		return \str_replace( '<account>', $account, self::BASE_URL ) . \ltrim( $endpoint, '/' );
 	}
 
 	// endregion
