@@ -121,6 +121,18 @@ function clamp( $value, $min, $max ) {
 	return \min( \max( $value, $min ), $max );
 }
 
+/**
+ * Returns whether two given strings are equal or not in a case-insensitive manner.
+ *
+ * @param   string  $string_1     The first string.
+ * @param   string  $string_2     The second string.
+ *
+ * @return  bool
+ */
+function is_case_insensitive_match( string $string_1, string $string_2 ): bool {
+	return 0 === \strcasecmp( $string_1, $string_2 );
+}
+
 // endregion
 
 // region CONSOLE
