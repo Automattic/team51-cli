@@ -12,11 +12,8 @@ use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
 use function Team51\Helpers\get_deployhq_project_servers;
 use function Team51\Helpers\get_email_input;
-use function Team51\Helpers\get_pressable_site_by_id;
-use function Team51\Helpers\get_pressable_site_by_url;
 use function Team51\Helpers\get_pressable_site_from_input;
 use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
-use function Team51\Helpers\get_site_input;
 use function Team51\Helpers\reset_pressable_site_sftp_user_password;
 use function Team51\Helpers\update_deployhq_project_server;
 
