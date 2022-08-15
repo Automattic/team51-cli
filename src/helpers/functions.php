@@ -144,7 +144,7 @@ function is_case_insensitive_match( string $string_1, string $string_2 ): bool {
  * @return  string
  * @throws  \Exception  Thrown if there is not enough entropy to generate a password.
  */
-function generate_random_password( int $length = 12, bool $special_chars = true ): string {
+function generate_random_password( int $length = 24, bool $special_chars = true ): string {
 	$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	if ( $special_chars ) {
 		$chars .= '!@#$%^&*()';
