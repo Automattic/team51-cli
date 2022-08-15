@@ -59,3 +59,35 @@ function get_wpcom_site_user_by_email( string $site_id_or_url, string $email ): 
 
 	return null;
 }
+
+/**
+ * Resets a given user's password on a site using the Jetpack API.
+ *
+ * @param   string  $site_id    The WordPress.com site ID.
+ * @param   string  $user_id    The WP user ID.
+ *
+ * @return  string|null
+ * @throws  \Exception  Thrown if there is not enough entropy to generate a password.
+ */
+function reset_wpcom_site_user_wp_password( string $site_id, string $user_id ): ?string {
+	$new_password = generate_random_password();
+
+	$result = WPCOM_API_Helper::call_api(
+		"jetpack-blogs/$site_id/rest-api",
+		'POST',
+		array(
+			'path' => "/wp/v2/users/$user_id",
+			'json' => true,
+			'body' => encode_json_content(
+				array(
+					'password' => $new_password,
+				)
+			)
+		)
+	);
+	if ( empty( $result ) ) {
+		return null;
+	}
+
+	return $new_password;
+}
