@@ -56,14 +56,13 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		// Retrieve the SFTP user email and make sure it exists.
 		$sftp_email = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
 
-		// Confirm the SFTP user exists on the site.
 		$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $sftp_email );
 		if ( \is_null( $pressable_sftp_user ) ) {
-			$output->writeln( '<error>Pressable site SFTP user not found.</error>' );
+			$output->writeln( "<error>Pressable site SFTP user $sftp_email not found on $pressable_site->name ($pressable_site->url).</error>" );
 			return 1;
 		}
 
-		$output->writeln( "<comment>Pressable site SFTP user found: $pressable_sftp_user->username ($pressable_sftp_user->email)</comment>" );
+		$output->writeln( "<comment>Pressable site SFTP user $pressable_sftp_user->username ($pressable_sftp_user->email) found on $pressable_site->name ($pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 		// Maybe let the user confirm the action.
 		if ( ! $input->getOption( 'no-interaction' ) ) {
@@ -89,15 +88,15 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 
 		// Update the DeployHQ configuration, if required.
 		if ( true === $pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
-			$output->writeln( '<info>Updating DeployHQ configuration.</info>' );
+			$output->writeln( '<info>SFTP user is project owner. DeployHQ configuration update required...</info>', OutputInterface::VERBOSITY_VERBOSE );
 
 			// Retrieve the DeployHQ project for the site.
 			$deployhq_project_permalink = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
-			$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>" );
+			$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
 			while ( \is_null( $deployhq_project ) ) {
-				$output->writeln( '<error>Failed to retrieve DeployHQ project.</error>' );
+				$output->writeln( "<error>Failed to retrieve DeployHQ project $deployhq_project_permalink.</error>" );
 				if ( $input->getOption( 'no-interaction' ) ) {
 					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 				}
@@ -109,11 +108,11 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 				}
 
-				$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>" );
+				$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 				$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
 			}
 
-			$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink)</comment>" );
+			$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Find the correct DeployHQ server config for the site.
 			$deployhq_project_servers = get_deployhq_project_servers( $deployhq_project->permalink );
@@ -137,7 +136,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 			}
 
-			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier)</comment>" );
+			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Update the DeployHQ server config password.
 			$deployhq_server = update_deployhq_project_server(

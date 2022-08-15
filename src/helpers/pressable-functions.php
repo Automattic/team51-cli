@@ -221,7 +221,7 @@ function get_pressable_site_collaborator_by_id( string $site_id, string $collabo
  *
  * @return  object|null
  */
-function get_pressable_site_collaborator_by_email( string $site_id, string $collaborator_email): ?object {
+function get_pressable_site_collaborator_by_email( string $site_id, string $collaborator_email ): ?object {
 	$collaborators = get_pressable_site_collaborators( $site_id );
 	if ( \is_null( $collaborators ) ) {
 		return null;
@@ -277,7 +277,7 @@ function get_pressable_site_from_input( InputInterface $input, OutputInterface $
 	if ( \is_null( $pressable_site ) ) {
 		$output->writeln( "<error>Pressable site $site_id_or_url not found.</error>" );
 	} else {
-		$output->writeln( "<comment>Pressable site found: $pressable_site->name ($pressable_site->url)</comment>" );
+		$output->writeln( "<comment>Pressable site found: $pressable_site->name ($pressable_site->url)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 	}
 
 	return $pressable_site;
