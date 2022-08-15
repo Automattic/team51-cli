@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_email_input;
+use function Team51\Helpers\get_pressable_site_collaborator_by_email;
+use function Team51\Helpers\get_pressable_sites;
 use function Team51\Helpers\get_wpcom_site;
 use function Team51\Helpers\get_pressable_site_by_id;
 use function Team51\Helpers\get_pressable_site_from_input;
@@ -91,13 +93,20 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 				$output->writeln( "<comment>WP user $wpcom_user->name ($wpcom_user->email) found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 				$output->writeln( "<info>Resetting the WP user password for $wpcom_user->name ($wpcom_user->email) on the site $pressable_site->name ($pressable_site->url) via the Jetpack API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
-				$wpcom_site   = get_wpcom_site( $pressable_site->url );
-				$new_password = reset_wpcom_site_user_wp_password( $wpcom_site->ID, $wpcom_user->ID );
+				/* @noinspection PhpUnhandledExceptionInspection */
+				$new_password = reset_wpcom_site_user_wp_password( $pressable_site->url, $wpcom_user->ID );
 			} elseif ( false === \is_null( $pressable_sftp_user ) ) { // User not found, but they are a collaborator on the site. Attempt Pressable API reset.
 				$output->writeln( "<comment>WP user $pressable_sftp_user->email not found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 				$output->writeln( "<info>Attempting a WP user password reset for Pressable collaborator $pressable_sftp_user->username ($pressable_sftp_user->email) on the site $pressable_site->name ($pressable_site->url) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
-				$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_sftp_user->id );
+				// It turns out that the collaborator ID is different from the SFTP user ID, although the former list is a subset of the latter.
+				$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $pressable_sftp_user->email );
+				if ( \is_null( $pressable_collaborator ) ) {
+					$output->writeln( "<error>Pressable collaborator $pressable_sftp_user->username ($pressable_sftp_user->email) not found on the site $pressable_site->name ($pressable_site->url).</error>" );
+					return 1;
+				}
+
+				$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_collaborator->id );
 			} else { // User not found.
 				$output->writeln( "<error>The WP user $wp_email could not be found on the site $pressable_site->name ($pressable_site->url).</error>" );
 				return 1;
@@ -109,8 +118,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			return 1;
 		}
 
-		$output->writeln( "<info>The WP user password for $wp_email on the site $pressable_site->name ($pressable_site->url) has been reset to $new_password.</info>" );
-
+		$output->writeln( "<info>The WP user password for $wp_email on the site $pressable_site->name ($pressable_site->url) has been reset to $new_password</info>" );
 		return 0;
 	}
 
