@@ -170,7 +170,7 @@ function get_pressable_site_sftp_user_by_email( string $site_id, string $user_em
  * @return  string|null     The new password or null if the password could not be reset.
  */
 function reset_pressable_site_sftp_user_password( string $site_id, string $username ): ?string {
-	$new_password = Pressable_API_Helper::call_api( "sites/$site_id/ftp/password/$username" );
+	$new_password = Pressable_API_Helper::call_api( "sites/$site_id/ftp/password/$username", 'POST' );
 	if ( \is_null( $new_password ) || empty( $new_password->data ) ) {
 		return null;
 	}
