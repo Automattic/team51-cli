@@ -143,7 +143,14 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier)</comment>" );
 
 			// Update the DeployHQ server config password.
-			$deployhq_server = update_deployhq_project_server( $deployhq_project->permalink, $deployhq_server->identifier, array( 'password' => $new_pressable_sftp_password ) );
+			$deployhq_server = update_deployhq_project_server(
+				$deployhq_project->permalink,
+				$deployhq_server->identifier,
+				array( // Sending just the 'password' parameter won't work. Experimentally, the protocol type parameter is also required.
+					'protocol_type' => 'ssh',
+					'password'      => $new_pressable_sftp_password,
+				)
+			);
 			if ( \is_null( $deployhq_server ) ) {
 				$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
 				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
