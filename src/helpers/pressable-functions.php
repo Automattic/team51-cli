@@ -89,7 +89,7 @@ function get_pressable_site_by_url( string $site_url, bool $exact = true ): ?obj
 
 	foreach ( $sites as $site ) {
 		if ( true === $exact ) {
-			if ( 0 === \strcasecmp( $site->url, $site_url ) ) {
+			if ( true === is_case_insensitive_match( $site->url, $site_url ) ) {
 				return $site;
 			}
 		} else if ( \substr( $site->url, -1 * \strlen( $site_url ) ) === $site_url ) {
@@ -151,7 +151,7 @@ function get_pressable_site_sftp_user_by_email( string $site_id, string $user_em
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
 
 	foreach ( $sftp_users as $sftp_user ) {
-		if ( 0 === \strcasecmp( $sftp_user->email, $user_email ) ) {
+		if ( true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
 			return $sftp_user;
 		}
 	}
@@ -228,7 +228,7 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
 	}
 
 	foreach ( $collaborators as $collaborator ) {
-		if ( 0 === \strcasecmp( $collaborator->email, $collaborator_email ) ) {
+		if ( true === is_case_insensitive_match( $collaborator->email, $collaborator_email ) ) {
 			return $collaborator;
 		}
 	}
@@ -249,6 +249,28 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
  */
 function reset_pressable_site_collaborator_wp_password( string $site_id, string $collaborator_id ): ?string {
 	$new_password = Pressable_API_Helper::call_api( "sites/$site_id/collaborators/$collaborator_id/wp-password-reset", 'PUT' );
+	if ( \is_null( $new_password ) || empty( $new_password->data ) ) {
+		return null;
+	}
+
+	return $new_password->data;
+}
+
+/**
+ * Reset the site owner's WP-Admin password. If you (account owner) are unable to log into your site’s WordPress dashboard because of a forgotten, or unknown, password,
+ * this endpoint can be used to set your WP Admin password to a randomly generated value.
+ *
+ * Since the site owner does NOT show up in the list of collaborators on a site, this endpoint must be used to instead
+ * of the @reset_pressable_site_collaborator_wp_password endpoint.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#reset-wpadmin-password
+ *
+ * @return  string|null
+ */
+function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
+	$new_password = Pressable_API_Helper::call_api( "sites/$site_id/wordpress/password-reset", 'PUT' );
 	if ( \is_null( $new_password ) || empty( $new_password->data ) ) {
 		return null;
 	}
