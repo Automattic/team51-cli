@@ -88,6 +88,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		}
 
 		$output->writeln( '<fg=green;options=bold>Pressable SFTP password reset.</>' );
+		$output->writeln( "<comment>New password: $new_pressable_sftp_password</comment>", OutputInterface::VERBOSITY_DEBUG );
 
 		// Update the DeployHQ configuration, if required.
 		if ( true === $pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
