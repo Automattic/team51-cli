@@ -74,7 +74,7 @@ final class Pressable_API_Helper {
 		// Check for an existing access token.
 		$access_token = self::get_cached_access_token();
 		if ( ! \is_null( $access_token ) ) {
-			console_writeln( 'Re-using Pressable OAuth token cached locally.', OutputInterface::VERBOSITY_VERY_VERBOSE );
+			console_writeln( 'Re-using Pressable OAuth token cached locally.', OutputInterface::VERBOSITY_DEBUG );
 			return $access_token;
 		}
 
