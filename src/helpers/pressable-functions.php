@@ -319,7 +319,7 @@ function get_pressable_site_from_input( InputInterface $input, OutputInterface $
 	if ( \is_null( $pressable_site ) ) {
 		$output->writeln( "<error>Pressable site $site_id_or_url not found.</error>" );
 	} else {
-		$output->writeln( "<comment>Pressable site found: $pressable_site->displayName (ID $pressable_site->id , URL $pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+		$output->writeln( "<comment>Pressable site found: $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 	}
 
 	return $pressable_site;
