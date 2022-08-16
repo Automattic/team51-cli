@@ -2,6 +2,8 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Performs the calls to the Pressable API and parses the responses.
  */
@@ -56,7 +58,7 @@ final class Pressable_API_Helper {
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
 			$message = \property_exists( $result['body'], 'message' ) ? $result['body']->message : $result['body']->error;
-			echo "❌ Pressable API error: {$result['headers']['http_code']} $message" . PHP_EOL;
+			console_writeln( "❌ Pressable API error: {$result['headers']['http_code']} $message" );
 			return null;
 		}
 
@@ -72,12 +74,12 @@ final class Pressable_API_Helper {
 		// Check for an existing access token.
 		$access_token = self::get_cached_access_token();
 		if ( ! \is_null( $access_token ) ) {
-			echo "Re-using Pressable OAuth token cached locally." . PHP_EOL;
+			console_writeln( 'Re-using Pressable OAuth token cached locally.', OutputInterface::VERBOSITY_VERY_VERBOSE );
 			return $access_token;
 		}
 
 		// If no access token exists, get a new one.
-		echo "Obtaining new Pressable OAuth token." . PHP_EOL;
+		console_writeln( 'Obtaining new Pressable OAuth token.', OutputInterface::VERBOSITY_VERBOSE );
 		$post_data = array(
 			'client_id'     => PRESSABLE_API_APP_CLIENT_ID,
 			'client_secret' => PRESSABLE_API_APP_CLIENT_SECRET,
@@ -107,7 +109,7 @@ final class Pressable_API_Helper {
 			exit( '❌ Pressable API token could not be retrieved. Aborting!' . PHP_EOL );
 		}
 		if ( false === self::set_cached_tokens( $result['body'] ) ) {
-			echo '❌ Failed to cache Pressable access tokens.' . PHP_EOL;
+			console_writeln( '❌ Failed to cache Pressable access tokens.' );
 		}
 
 		return $result['body']->access_token;
@@ -160,11 +162,11 @@ final class Pressable_API_Helper {
 	private static function get_cached_refresh_token(): ?string {
 		if ( ! \file_exists( self::CACHED_TOKENS_FILE_PATH ) ) {
 			if ( \defined( 'PRESSABLE_API_REFRESH_TOKEN' ) ) {
-				echo 'Using PRESSABLE_API_REFRESH_TOKEN from config.json file.' . PHP_EOL;
+				console_writeln( 'Using PRESSABLE_API_REFRESH_TOKEN from config.json file.' );
 				return PRESSABLE_API_REFRESH_TOKEN;
 			}
 
-			echo '❌ No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.' . PHP_EOL;
+			console_writeln( '❌ No PRESSABLE_API_REFRESH_TOKEN found. Please check your config.json file.' );
 			return null;
 		}
 

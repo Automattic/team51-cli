@@ -83,7 +83,7 @@ function decode_json_content( string $json, bool $associative = false ) {
 	try {
 		return \json_decode( $json, $associative, 512, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "JSON Decoding Exception: {$exception->getMessage()}" . PHP_EOL;
+		console_writeln( "JSON Decoding Exception: {$exception->getMessage()}");
 		return null;
 	}
 }
@@ -99,7 +99,7 @@ function encode_json_content( $data ): ?string {
 	try {
 		return \json_encode( $data, JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
-		echo "JSON Encoding Exception: {$exception->getMessage()}" . PHP_EOL;
+		console_writeln( "JSON Encoding Exception: {$exception->getMessage()}" );
 		return null;
 	}
 }
@@ -161,6 +161,21 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
 // endregion
 
 // region CONSOLE
+
+/**
+ * Displays a message to the console if the console verbosity level is at least as high as the message's level.
+ *
+ * @param   string  $message    The message to display.
+ * @param   int     $verbosity  The verbosity level of the message.
+ *
+ * @return  void
+ */
+function console_writeln( string $message, int $verbosity = 0 ): void {
+	$console_verbosity = \defined( 'TEAM51_CLI_VERBOSITY' ) ? TEAM51_CLI_VERBOSITY : 0;
+	if ( $verbosity <= $console_verbosity ) {
+		echo $message . PHP_EOL;
+	}
+}
 
 /**
  * Grabs a value from the console input and validates it as an email.
