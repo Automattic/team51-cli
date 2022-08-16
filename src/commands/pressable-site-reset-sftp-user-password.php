@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use function Team51\Helpers\define_console_verbosity;
 use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
 use function Team51\Helpers\get_deployhq_project_servers;
@@ -63,7 +64,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
-		\define( 'TEAM51_CLI_VERBOSITY', $output->getVerbosity() );
+		define_console_verbosity( $output->getVerbosity() );
 
 		// Retrieve the site and make sure it exists.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );

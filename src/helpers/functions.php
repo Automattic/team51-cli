@@ -163,6 +163,17 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
 // region CONSOLE
 
 /**
+ * Defines a constant equal to the console's verbosity level.
+ *
+ * @param   int $verbosity  The verbosity level.
+ *
+ * @return  void
+ */
+function define_console_verbosity( int $verbosity ): void {
+	\define( 'TEAM51_CLI_VERBOSITY', $verbosity );
+}
+
+/**
  * Displays a message to the console if the console verbosity level is at least as high as the message's level.
  *
  * @param   string  $message    The message to display.
