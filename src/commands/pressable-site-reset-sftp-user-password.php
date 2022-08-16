@@ -46,6 +46,13 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	/**
 	 * {@inheritDoc}
 	 */
+	protected function initialize( InputInterface $input, OutputInterface $output ): void {
+		\define( 'TEAM51_CLI_VERBOSITY', $output->getVerbosity() );
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		// Retrieve the site and make sure it exists.
 		$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );

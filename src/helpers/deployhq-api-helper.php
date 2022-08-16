@@ -43,7 +43,7 @@ final class DeployHQ_API_Helper {
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
 			$message = encode_json_content( $result['body'] ) ?? 'Badly formatted error';
-			echo "❌ DeployHQ API error: {$result['headers']['http_code']} $message" . PHP_EOL;
+			console_writeln( "❌ DeployHQ API error: {$result['headers']['http_code']} $message" );
 			return null;
 		}
 
