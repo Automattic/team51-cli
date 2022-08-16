@@ -246,4 +246,38 @@ function get_site_input( InputInterface $input, OutputInterface $output, ?callab
 	return $site_id_or_url;
 }
 
+/**
+ * Grabs a value from the console input and validates it as a numeric string or an email.
+ *
+ * @param   InputInterface  $input          The console input.
+ * @param   OutputInterface $output         The console output.
+ * @param   callable|null   $no_input_func  The function to call if no input is given.
+ * @param   string          $name           The name of the value to grab.
+ * @param   bool            $validate       Whether to validate the input as an email or number.
+ *
+ * @return  string
+ */
+function get_user_input( InputInterface $input, OutputInterface $output, ?callable $no_input_func = null, string $name = 'user', bool $validate = true ): string {
+	$user = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
+
+	// If we don't have a user, prompt for one.
+	if ( empty( $user ) && \is_callable( $no_input_func ) ) {
+		$user = $no_input_func( $input, $output );
+	}
+
+	// If we still don't have a user, abort.
+	if ( empty( $user ) ) {
+		$output->writeln( '<error>No user was provided. Aborting!</error>' );
+		exit;
+	}
+
+	// Check user for validity.
+	if ( true === $validate && ! \is_numeric( $user ) && false === \filter_var( $user, FILTER_VALIDATE_EMAIL ) ) {
+		$output->writeln( '<error>The provided user is invalid. Aborting!</error>' );
+		exit;
+	}
+
+	return $user;
+}
+
 // endregion

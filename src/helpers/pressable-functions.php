@@ -140,6 +140,26 @@ function get_pressable_site_sftp_user_by_username( string $site_id, string $user
 }
 
 /**
+ * Get SFTP user by ID for the specified site.
+ *
+ * @param   string  $site_id    The site ID.
+ * @param   string  $user_id    The ID of the site SFTP user.
+ *
+ * @return  object|null
+ */
+function get_pressable_site_sftp_user_by_id( string $site_id, string $user_id ): ?object {
+	$sftp_users = get_pressable_site_sftp_users( $site_id );
+
+	foreach ( $sftp_users as $sftp_user ) {
+		if ( $user_id === (string) $sftp_user->id ) {
+			return $sftp_user;
+		}
+	}
+
+	return null;
+}
+
+/**
  * Get SFTP user by email for the specified site.
  *
  * @param   string  $site_id        The site ID.
@@ -299,10 +319,35 @@ function get_pressable_site_from_input( InputInterface $input, OutputInterface $
 	if ( \is_null( $pressable_site ) ) {
 		$output->writeln( "<error>Pressable site $site_id_or_url not found.</error>" );
 	} else {
-		$output->writeln( "<comment>Pressable site found: $pressable_site->name ($pressable_site->url)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+		$output->writeln( "<comment>Pressable site found: $pressable_site->displayName (ID $pressable_site->id , URL $pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 	}
 
 	return $pressable_site;
+}
+
+/**
+ * Grabs a value from the console input and tries to retrieve a Pressable SFTP user based on it.
+ *
+ * @param   InputInterface  $input              The console input.
+ * @param   OutputInterface $output             The console output.
+ * @param   string          $pressable_site_id  The Pressable site ID.
+ * @param   callable|null   $no_input_func      The function to call if no input is given.
+ * @param   string          $name               The name of the value to grab.
+ *
+ * @return  object|null
+ */
+function get_pressable_site_sftp_user_from_input( InputInterface $input, OutputInterface $output, string $pressable_site_id, ?callable $no_input_func = null, string $name = 'user' ): ?object {
+	$user_uname_or_id_or_email = get_user_input( $input, $output, $no_input_func, $name, false ); // Pressable SFTP users can also be retrieved by username so no validation is needed.
+	$pressable_sftp_user       = \is_numeric( $user_uname_or_id_or_email ) ? get_pressable_site_sftp_user_by_id( $pressable_site_id, $user_uname_or_id_or_email )
+		: ( get_pressable_site_sftp_user_by_email( $pressable_site_id, $user_uname_or_id_or_email ) ?? get_pressable_site_sftp_user_by_username( $pressable_site_id, $user_uname_or_id_or_email ) );
+
+	if ( \is_null( $pressable_sftp_user ) ) {
+		$output->writeln( "<error>Pressable SFTP user $user_uname_or_id_or_email not found on $pressable_site_id.</error>" );
+	} else {
+		$output->writeln( "<comment>Pressable SFTP user found on $pressable_site_id: $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+	}
+
+	return $pressable_sftp_user;
 }
 
 // endregion

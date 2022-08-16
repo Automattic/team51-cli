@@ -7,13 +7,15 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
 use function Team51\Helpers\get_deployhq_project_servers;
-use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_from_input;
-use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
+use function Team51\Helpers\get_pressable_site_sftp_user_from_input;
+use function Team51\Helpers\get_pressable_site_sftp_users;
+use function Team51\Helpers\get_pressable_sites;
 use function Team51\Helpers\reset_pressable_site_sftp_user_password;
 use function Team51\Helpers\update_deployhq_project_server;
 
@@ -28,6 +30,20 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 */
 	protected static $defaultName = 'pressable:reset-site-sftp-user-password';
 
+	/**
+	 * The Pressable site to reset the SFTP password on.
+	 *
+	 * @var object|null
+	 */
+	protected ?object $pressable_site = null;
+
+	/**
+	 * The Pressable site SFTP user to reset the password of.
+	 *
+	 * @var object|null
+	 */
+	protected ?object $pressable_sftp_user = null;
+
 	// endregion
 
 	// region INHERITED METHODS
@@ -40,7 +56,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	        ->setHelp( 'This command allows you to reset the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the SFTP user password.' )
-			->addOption( 'email', null, InputOption::VALUE_OPTIONAL, 'Email of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' );
+			->addOption( 'user', '-u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' );
 	}
 
 	/**
@@ -48,57 +64,60 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		\define( 'TEAM51_CLI_VERBOSITY', $output->getVerbosity() );
+
+		// Retrieve the site and make sure it exists.
+		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
+		if ( false !== \is_null( $this->pressable_site ) ) {
+			exit; // Exit if the site does not exist.
+		}
+
+		$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the argument field.
+
+		// Retrieve the SFTP user email and make sure it exists.
+		$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
+		if ( false !== \is_null( $this->pressable_site ) ) {
+			exit; // Exit if the SFTP user does not exist.
+		}
+
+		$input->setOption( 'user', $this->pressable_sftp_user->username ); // Store the username of the SFTP user in the option field.
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function interact( InputInterface $input, OutputInterface $output ): void {
+		$question = new ConfirmationQuestion( "<question>Are you sure you want to reset the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+			$output->writeln( '<comment>Command aborted by user.</comment>' );
+			exit;
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		// Retrieve the site and make sure it exists.
-		$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
-		if ( \is_null( $pressable_site ) ) {
-			return 1;
-		}
-
-		// Retrieve the SFTP user email and make sure it exists.
-		$sftp_email = get_email_input( $input, $output, fn() => $this->prompt_email_input( $input, $output ) );
-
-		$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $sftp_email );
-		if ( \is_null( $pressable_sftp_user ) ) {
-			$output->writeln( "<error>Pressable site SFTP user $sftp_email not found on $pressable_site->name ($pressable_site->url).</error>" );
-			return 1;
-		}
-
-		$output->writeln( "<comment>Pressable site SFTP user $pressable_sftp_user->username ($pressable_sftp_user->email) found on $pressable_site->name ($pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-
-		// Maybe let the user confirm the action.
-		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( "<question>Reset the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)? (y/n)</question> ", 'n' );
-			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
-			if ( 'y' !== $answer ) {
-				$output->writeln( '<comment>Command aborted by user.</comment>' );
-				exit;
-			}
-		}
-
-		$output->writeln( "<info>Resetting the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</info>" );
+		$output->writeln( "<info>Resetting the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
 
 		// Reset SFTP password.
-		$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $pressable_site->id, $pressable_sftp_user->username );
+		$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
 		if ( \is_null( $new_pressable_sftp_password ) ) {
 			$output->writeln( '<error>Failed to reset SFTP password.</error>' );
 			return 1;
 		}
 
 		$output->writeln( '<fg=green;options=bold>Pressable SFTP password reset.</>' );
-		$output->writeln( "<comment>New password: $new_pressable_sftp_password</comment>", OutputInterface::VERBOSITY_DEBUG );
+		$output->writeln(
+			"<comment>New password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
+			true === $this->pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
+		);
 
 		// Update the DeployHQ configuration, if required.
-		if ( true === $pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
+		if ( true === $this->pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
 			$output->writeln( '<info>SFTP user is project owner. DeployHQ configuration update required...</info>', OutputInterface::VERBOSITY_VERBOSE );
 
 			// Retrieve the DeployHQ project for the site.
-			$deployhq_project_permalink = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
+			$deployhq_project_permalink = get_deployhq_project_permalink_from_pressable_site( $this->pressable_site );
 			$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
@@ -119,7 +138,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 				$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
 			}
 
-			$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+			$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Find the correct DeployHQ server config for the site.
 			$deployhq_project_servers = get_deployhq_project_servers( $deployhq_project->permalink );
@@ -132,7 +151,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			foreach ( $deployhq_project_servers as $deployhq_project_server ) {
 				// Match the DeployHQ server config username with the Pressable SFTP username.
 				// This is the least error-prone way to find the correct server.
-				if ( $deployhq_project_server->username === $pressable_sftp_user->username ) {
+				if ( $deployhq_project_server->username === $this->pressable_sftp_user->username ) {
 					$deployhq_server = $deployhq_project_server;
 					break;
 				}
@@ -143,7 +162,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 			}
 
-			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier)</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Update the DeployHQ server config password.
 			$deployhq_server = update_deployhq_project_server(
@@ -170,31 +189,6 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	// region HELPERS
 
 	/**
-	 * Prompts the user for an email or returns the default if in 'no-interaction' mode.
-	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
-	 *
-	 * @return  string
-	 */
-	private function prompt_email_input( InputInterface $input, OutputInterface $output ): string {
-		if ( $input->getOption( 'no-interaction' ) ) {
-			$email = 'concierge@wordpress.com';
-		} else {
-			$question = new Question( '<question>No email was provided. Do you wish to continue with the default concierge email? (y/n)</question> ', 'n' );
-			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
-			if ( 'y' === $answer ) {
-				$email = 'concierge@wordpress.com';
-			} else {
-				$question = new Question( '<question>Enter the email to reset the SFTP password for:</question> ' );
-				$email    = $this->getHelper( 'question' )->ask( $input, $output, $question );
-			}
-		}
-
-		return $email;
-	}
-
-	/**
 	 * Prompts the user for a site if not in 'no-interaction' mode.
 	 *
 	 * @param   InputInterface      $input      The input interface.
@@ -204,11 +198,39 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( '<question>Enter the site ID or URL to reset the SFTP password for:</question> ' );
-			$site     = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			$question = new Question( '<question>Enter the site ID or URL to reset the SFTP password on:</question> ' );
+			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
+
+			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 
 		return $site ?? null;
+	}
+
+	/**
+	 * Prompts the user for an email or returns the default if in 'no-interaction' mode.
+	 *
+	 * @param   InputInterface      $input      The input interface.
+	 * @param   OutputInterface     $output     The output interface.
+	 *
+	 * @return  string
+	 */
+	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
+		if ( $input->getOption( 'no-interaction' ) ) {
+			$email = 'concierge@wordpress.com';
+		} else {
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? (y/n)</question> ', false );
+			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+				$email = 'concierge@wordpress.com';
+			} else {
+				$question = new Question( '<question>Enter the user ID or email to reset the SFTP password for:</question> ' );
+				$question->setAutocompleterValues( \array_map( static fn( object $sftp_user ) => $sftp_user->email, get_pressable_site_sftp_users( $input->getArgument( 'site' ) ) ?? array() ) );
+
+				$email = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			}
+		}
+
+		return $email;
 	}
 
 	/**
