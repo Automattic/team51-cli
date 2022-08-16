@@ -66,7 +66,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 
 		// Maybe let the user confirm the action.
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( "Reset the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)? (y/n) ", 'n' );
+			$question = new Question( "<question>Reset the SFTP password of $pressable_sftp_user->username ($pressable_sftp_user->email) on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)? (y/n)</question> ", 'n' );
 			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			if ( 'y' !== $answer ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
@@ -102,7 +102,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 				}
 
 				// Prompt the user to input the DeployHQ project permalink.
-				$question = new Question( 'Enter the DeployHQ project permalink or leave empty to exit gracefully: ', 'pP3uZb0b5s' );
+				$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to exit gracefully:</question> ', 'pP3uZb0b5s' );
 				$deployhq_project_permalink = $this->getHelper( 'question' )->ask( $input, $output, $question );
 				if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
 					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
@@ -174,12 +174,12 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		if ( $input->getOption( 'no-interaction' ) ) {
 			$email = 'concierge@wordpress.com';
 		} else {
-			$question = new Question( 'No email was provided. Do you wish to continue with the default concierge email? (y/n) ', 'n' );
+			$question = new Question( '<question>No email was provided. Do you wish to continue with the default concierge email? (y/n)</question> ', 'n' );
 			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			if ( 'y' === $answer ) {
 				$email = 'concierge@wordpress.com';
 			} else {
-				$question = new Question( 'Enter the email to reset the SFTP password for: ' );
+				$question = new Question( '<question>Enter the email to reset the SFTP password for:</question> ' );
 				$email    = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			}
 		}
@@ -197,7 +197,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( 'Enter the site ID or URL to reset the SFTP password for: ' );
+			$question = new Question( '<question>Enter the site ID or URL to reset the SFTP password for:</question> ' );
 			$site     = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 

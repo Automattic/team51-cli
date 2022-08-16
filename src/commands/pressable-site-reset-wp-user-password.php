@@ -57,11 +57,18 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			return 1;
 		}
 
-		// Retrieve all related Pressable sites and display them in a table.
+		// Retrieve all related Pressable sites and ask the user to confirm.
 		$related_pressable_sites = $this->compile_sites_tree( $pressable_site );
 
-		$output->writeln( '<comment>Related Pressable sites to reset the WP user password on:</comment>' );
 		$this->output_sites_tree( $output, $related_pressable_sites );
+		if ( ! $input->getOption( 'no-interaction' ) ) {
+			$question = new Question( '<question>Do you want to proceed with resetting the WP user password on all the sites listed above? (y/n)</question> ', 'n' );
+			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			if ( 'y' !== $answer ) {
+				$output->writeln( '<comment>Command aborted by user.</comment>' );
+				exit;
+			}
+		}
 
 		return 0;
 
