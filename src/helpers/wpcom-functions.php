@@ -65,11 +65,11 @@ function get_wpcom_site_user_by_email( string $site_id_or_url, string $email ): 
  *
  * @param   string  $site_id_or_url     The site URL or WordPress.com site ID.
  * @param   string  $user_id            The WP user ID.
+ * @param   string  $new_password       The new password to set.
  *
- * @return  string|null
- * @throws  \Exception  Thrown if there is not enough entropy to generate a password.
+ * @return  bool|null
  */
-function reset_wpcom_site_user_wp_password( string $site_id_or_url, string $user_id ): ?string {
+function set_wpcom_site_user_wp_password( string $site_id_or_url, string $user_id, string $new_password ): ?bool {
 	$site_id = $site_id_or_url;
 	if ( ! \is_numeric( $site_id ) ) {
 		$wpcom_site = get_wpcom_site( $site_id );
@@ -79,8 +79,6 @@ function reset_wpcom_site_user_wp_password( string $site_id_or_url, string $user
 
 		$site_id = $wpcom_site->ID;
 	}
-
-	$new_password = generate_random_password();
 
 	$result = WPCOM_API_Helper::call_api(
 		"jetpack-blogs/$site_id/rest-api",
@@ -96,8 +94,8 @@ function reset_wpcom_site_user_wp_password( string $site_id_or_url, string $user
 		)
 	);
 	if ( empty( $result ) ) {
-		return null;
+		return false;
 	}
 
-	return $new_password;
+	return true;
 }
