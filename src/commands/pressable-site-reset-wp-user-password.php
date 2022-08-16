@@ -3,6 +3,8 @@
 namespace Team51\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,7 +13,6 @@ use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_collaborator_by_email;
 use function Team51\Helpers\get_pressable_sites;
-use function Team51\Helpers\get_wpcom_site;
 use function Team51\Helpers\get_pressable_site_by_id;
 use function Team51\Helpers\get_pressable_site_from_input;
 use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
@@ -54,6 +55,33 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 		$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
 		if ( \is_null( $pressable_site ) ) {
 			return 1;
+		}
+
+		// Retrieve all related Pressable sites and display them in a table.
+		$related_pressable_sites = $this->compile_sites_tree( $pressable_site );
+
+		$output->writeln( '<comment>Related Pressable sites to reset the WP user password on:</comment>' );
+		$this->output_sites_tree( $output, $related_pressable_sites );
+
+		return 0;
+
+		// If this is a development site, prompt the user if they wish to switch to the production site.
+		if ( ! empty( $pressable_site->clonedFromId ) && ! $input->getOption( 'no-interaction' ) ) {
+			$production_site = get_pressable_site_by_id( $pressable_site->clonedFromId );
+			if ( \is_null( $production_site ) ) {
+				$output->writeln( "<comment>The website $pressable_site->name ($pressable_site->url) looks like a clone of site $pressable_site->clonedFromId which could not be found. Aborting!</comment>" );
+				return 1;
+			}
+
+			$output->writeln( "<comment>The website $pressable_site->name ($pressable_site->url) is a development site of $production_site->name ($production_site->url).</comment>" );
+
+			$question = new Question( "Do you to ? (y/n) ", 'n' );
+			$answer   = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			if ( 'y' !== $answer ) {
+				$output->writeln( '<comment>Command aborted by user.</comment>' );
+				exit;
+			}
+
 		}
 
 		// If this is a development site, prompt the user to confirm.
@@ -166,6 +194,90 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 		}
 
 		return $site ?? null;
+	}
+
+	/**
+	 * Compiles a tree-like structure of cloned Pressable sites for a given site node.
+	 *
+	 * @param   object  $site   The Pressable site.
+	 *
+	 * @return  array
+	 */
+	private function compile_sites_tree( object $site ): array {
+		$tree = array();
+
+		// Identify the root production site first.
+		$production_site = $site;
+		while ( ! empty( $production_site->clonedFromId ) ) {
+			$production_site = get_pressable_site_by_id( $production_site->clonedFromId );
+		}
+
+		$tree[0] = array(
+			$production_site->id => array(
+				'site' => $production_site,
+			)
+		);
+
+		// Identify the related sites by level.
+		$all_sites = get_pressable_sites();
+
+		do {
+			$has_next_level = false;
+			$current_level  = count( $tree );
+
+			foreach ( \array_keys( $tree[ $current_level - 1 ] ) as $parent_site_id ) {
+				foreach ( $all_sites as $maybe_clone_site ) {
+					if ( $maybe_clone_site->clonedFromId === $parent_site_id ) {
+						$site_node = array( 'site' => $maybe_clone_site, 'temporary' => true );
+						if ( 1 === $current_level && '-development' === \substr( $maybe_clone_site->name, -12 ) ) {
+							$site_node['temporary'] = false;
+						}
+
+						$tree[ $current_level ][ $maybe_clone_site->id ] = $site_node;
+						$has_next_level = true;
+					}
+				}
+			}
+		} while ( $has_next_level );
+
+		return $tree;
+	}
+
+	/**
+	 * Outputs the related sites in a table format.
+	 *
+	 * @param   OutputInterface $output     The output interface.
+	 * @param   array           $tree       The tree of related sites.
+	 *
+	 * @return  void
+	 */
+	private function output_sites_tree( OutputInterface $output, array $tree ): void {
+		$table = new Table( $output );
+
+		$table->setHeaderTitle( 'Related Pressable sites' );
+		$table->setHeaders( array( 'ID', 'Name', 'URL', 'Level', 'Parent ID' ) );
+		foreach ( $tree as $level => $nodes ) {
+			foreach ( $nodes as $node ) {
+				$is_main_dev_site = ( 1 === $level && false === $node['temporary'] );
+
+				$table->addRow(
+					array(
+						$node['site']->id,
+						$node['site']->name . ( $is_main_dev_site ? ' <info>(main dev)</info>' : '' ),
+						$node['site']->url,
+						$level,
+						$node['site']->clonedFromId ?: '--',
+					)
+				);
+			}
+
+			if ( $level < \count( $tree ) - 1 ) {
+				$table->addRow( new TableSeparator() );
+			}
+		}
+
+		$table->setStyle('box-double');
+		$table->render();
 	}
 
 	// endregion
