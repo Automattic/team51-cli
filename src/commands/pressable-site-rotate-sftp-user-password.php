@@ -159,7 +159,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					if ( \is_null( $new_pressable_sftp_password ) ) {
 						$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
 						if ( $input->getOption( 'all-sites' ) ) {
-							continue; // Continue to the next site if the password could not be rotated.
+							goto next_site;
 						}
 
 						return 1;
@@ -189,7 +189,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 						if ( $input->getOption( 'no-interaction' ) ) {
 							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
 							if ( $input->getOption( 'all-sites' ) ) {
-								continue 2; // Continue to the next site if the project could not be retrieved.
+								goto next_site;
 							}
 
 							return $result;
@@ -201,7 +201,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 						if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
 							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
 							if ( $input->getOption( 'all-sites' ) ) {
-								continue 2; // Continue to the next site if the user left the project permalink empty.
+								goto next_site;
 							}
 
 							return $result;
@@ -220,7 +220,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 						$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
 						if ( $input->getOption( 'all-sites' ) ) {
-							continue; // Continue to the next site if the servers could not be retrieved.
+							goto next_site;
 						}
 
 						return $result;
@@ -241,7 +241,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 						$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
 						if ( $input->getOption( 'all-sites' ) ) {
-							continue; // Continue to the next site if the server could not be found.
+							goto next_site; // Continue to the next site if the server could not be found.
 						}
 
 						return $result;
@@ -264,7 +264,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
 							if ( $input->getOption( 'all-sites' ) ) {
-								continue; // Continue to the next site if the server could not be updated.
+								goto next_site;
 							}
 
 							return $result;
@@ -282,7 +282,8 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			}
 
 			if ( $input->getOption( 'all-sites' ) ) {
-				$output->writeln( "==================== END {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})" );
+				next_site:
+				$output->writeln( "<fg=yellow>==================== END {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})</>" );
 				$output->writeln( '' ); // Empty line for UX purposes.
 			}
 		}
