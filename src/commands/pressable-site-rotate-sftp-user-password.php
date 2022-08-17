@@ -109,7 +109,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 				return 1;
 			}
 		} else {
-			$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>' );
+			$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 			$new_pressable_sftp_password = '********';
 		}
 
@@ -186,7 +186,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 				}
 			} else {
-				$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>' );
+				$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 			}
 
 			$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );

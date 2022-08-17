@@ -170,7 +170,7 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
  * @return  void
  */
 function define_console_verbosity( int $verbosity ): void {
-	\define( 'TEAM51_CLI_VERBOSITY', $verbosity );
+	\defined( 'TEAM51_CLI_VERBOSITY' ) || \define( 'TEAM51_CLI_VERBOSITY', $verbosity );
 }
 
 /**
