@@ -2,7 +2,6 @@
 
 namespace Team51\Command;
 
-use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -26,13 +25,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * {@inheritdoc}
 	 */
 	protected static $defaultName = 'pressable:rotate-site-passwords';
-
-	/**
-	 * The console application object.
-	 *
-	 * @var Application|null
-	 */
-	protected ?Application $application = null;
 
 	/**
 	 * The Pressable site to rotate the passwords on.
@@ -60,9 +52,9 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	        ->setHelp( 'This command rotates the SFTP and WP user passwords of the concierge user on one a given Pressable site or on all sites retrievable through the Pressable API.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the passwords.' )
-			->addOption( 'all', null, InputOption::VALUE_NONE, 'Rotate the passwords on all sites. Forces the use of the concierge user.' )
-			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the user for which to rotate the passwords. Default is concierge@wordpress.com.' )
-			->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the rotation of the WP user password on all related sites even if out-of-sync with the other sites.' )
+			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the user for which to rotate the passwords. Default is concierge@wordpress.com.' );
+
+		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the passwords on all sites.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current passwords. Useful for checking whether a given input is valid.' );
 	}
 
@@ -72,24 +64,12 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		define_console_verbosity( $output->getVerbosity() );
 
-		// Get the application instance.
-		$this->application = $this->getApplication();
-		if ( false !== \is_null( $this->application ) ) {
-			$output->writeln( '<error>Missing application instance!</error>' );
-			exit;
-		}
-
 		// Retrieve the user email.
-		if ( $input->getOption( 'all' ) ) {
-			$this->user_email = 'concierge@wordpress.com';
-		} else {
-			$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-		}
-
+		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
 		$input->setOption( 'user', $this->user_email ); // Store the email in the input for subcommands to use.
 
 		// Retrieve the site and make sure it exists.
-		if ( ! $input->getOption( 'all' ) ) {
+		if ( ! $input->getOption( 'all-sites' ) ) {
 			$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
 			if ( false !== \is_null( $this->pressable_site ) ) {
 				exit; // Exit if the site does not exist.
@@ -103,7 +83,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		if ( $input->getOption( 'all' ) ) {
+		if ( $input->getOption( 'all-sites' ) ) {
 			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for $this->user_email on <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
 		} else {
 			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for $this->user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
@@ -117,49 +97,42 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 
 	/**
 	 * {@inheritDoc}
-	 * @noinspection DisconnectedForeachInstructionInspection
+	 * @noinspection NullPointerExceptionInspection
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$output->writeln( "<fg=magenta;options=bold>Rotating passwords for $this->user_email.</>" );
 
-		$pressable_sites = $input->getOption( 'all' ) ? get_pressable_sites() : array( $this->pressable_site );
-		foreach ( $pressable_sites as $pressable_site ) {
-			$output->writeln( "<fg=magenta;options=bold>Rotating passwords on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</>" );
+		// Rotate the SFTP user(s) password.
+		$output->writeln( '' ); // Empty line for UX purposes.
+		$output->writeln( '<fg=blue;options=bold>----- SFTP User(s) Password -----</>' );
 
-			// Rotate the SFTP password.
-			$output->writeln( '----- SFTP Password' );
+		$sftp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-sftp-user-password' );
+		$sftp_password_rotate_command_input = new ArrayInput( array(
+			'site'        => $input->getArgument( 'site' ),
+			'--user'      => $this->user_email,
+			'--all-sites' => $input->getOption( 'all-sites' ),
+			'--dry-run'   => $input->getOption( 'dry-run' ),
+		) );
+		$sftp_password_rotate_command_input->setInteractive( false );
 
-			$sftp_password_rotate_command       = $this->application->find( 'pressable:rotate-site-sftp-user-password' );
-			$sftp_password_rotate_command_input = new ArrayInput( array(
-				'site'      => $this->pressable_site->id,
-				'--user'    => $this->user_email,
-				'--dry-run' => $input->getOption( 'dry-run' ),
-			) );
-			$sftp_password_rotate_command_input->setInteractive( false );
+		/* @noinspection PhpUnhandledExceptionInspection */
+		$sftp_password_rotate_command->run( $sftp_password_rotate_command_input, $output );
 
-			/* @noinspection PhpUnhandledExceptionInspection */
-			$sftp_password_rotate_command->run( $sftp_password_rotate_command_input, $output );
+		// Rotate the WP user(s) password.
+		$output->writeln( '' ); // Empty line for UX purposes.
+		$output->writeln( '<fg=blue;options=bold>----- WP User(s) Password -----</>' );
 
-			// Maybe rotate the WP password. If going through all the sites, it's enough to rotate the password once
-			// on the production site since the command tries to reset the password on all related sites.
-			if ( empty( $pressable_site->clonedFromId ) || ! $input->getOption( 'all' ) ) {
-				$output->writeln( '----- WP User Password' );
+		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
+		$wp_password_rotate_command_input = new ArrayInput( array(
+			'site'        => $input->getArgument( 'site' ),
+			'--user'      => $this->user_email,
+			'--all-sites' => $input->getOption( 'all-sites' ),
+			'--dry-run'   => $input->getOption( 'dry-run' ),
+		) );
+		$wp_password_rotate_command_input->setInteractive( false );
 
-				$wp_password_rotate_command       = $this->application->find( 'pressable:rotate-site-wp-user-password' );
-				$wp_password_rotate_command_input = new ArrayInput( array(
-					'site'      => $this->pressable_site->id,
-					'--user'    => $this->user_email,
-					'--force'   => $input->getOption( 'force' ),
-					'--dry-run' => $input->getOption( 'dry-run' ),
-				) );
-				$wp_password_rotate_command_input->setInteractive( false );
-
-				/* @noinspection PhpUnhandledExceptionInspection */
-				$wp_password_rotate_command->run( $wp_password_rotate_command_input, $output );
-			}
-
-			$output->writeln( "==================== END $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)" );
-		}
+		/* @noinspection PhpUnhandledExceptionInspection */
+		$wp_password_rotate_command->run( $wp_password_rotate_command_input, $output );
 
 		return 0;
 	}
