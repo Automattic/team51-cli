@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use function Team51\Helpers\decode_json_content;
 use function Team51\Helpers\define_console_verbosity;
 use function Team51\Helpers\generate_random_password;
 use function Team51\Helpers\get_email_input;
@@ -20,6 +21,7 @@ use function Team51\Helpers\get_pressable_site_by_id;
 use function Team51\Helpers\get_pressable_site_from_input;
 use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
 use function Team51\Helpers\get_wpcom_site_user_by_email;
+use function Team51\Helpers\is_case_insensitive_match;
 use function Team51\Helpers\reset_pressable_site_collaborator_wp_password;
 use function Team51\Helpers\reset_pressable_site_owner_wp_password;
 use function Team51\Helpers\set_wpcom_site_user_wp_password;
@@ -157,7 +159,10 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 		}
 		unset( $nodes );
 
+		// Update the passwords in 1Password and output the end result.
+		$this->update_1password_logins( $input, $output );
 		$this->output_sites_tree( $output,true );
+
 		return 0;
 	}
 
@@ -220,6 +225,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 				$this->pressable_prod_site->id => array(
 					'site_object'   => $this->pressable_prod_site,
 					'new_password'  => null,
+					'1password'     => null,
 				)
 			)
 		);
@@ -238,6 +244,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 							'site_object'  => $maybe_clone_site,
 							'temporary'    => true,
 							'new_password' => null,
+							'1password'    => null,
 						);
 						if ( 1 === $current_level && '-development' === \substr( $maybe_clone_site->name, -1 * \strlen( '-development' ) ) ) {
 							$site_node['temporary'] = false;
@@ -255,17 +262,17 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 * Outputs the related sites in a table format.
 	 *
 	 * @param   OutputInterface $output                 The output interface.
-	 * @param   bool            $include_new_password   Whether to include the new password in the table.
+	 * @param   bool            $include_password_info  Whether to include the new password information or not.
 	 *
 	 * @return  void
 	 */
-	private function output_sites_tree( OutputInterface $output, bool $include_new_password ): void {
+	private function output_sites_tree( OutputInterface $output, bool $include_password_info ): void {
 		$table = new Table( $output );
 
 		$headers = array( 'ID', 'Name', 'URL', 'Level', 'Parent ID' );
-		if ( true === $include_new_password ) {
-			$headers[]     = 'New password';
-			$main_password = \reset( $this->related_pressable_sites[0] )['new_password'] ?? '--';
+		if ( true === $include_password_info ) {
+			$headers       = \array_merge( $headers, array( 'New password', '1Password update' ) );
+			$main_password = $this->get_production_site_new_password() ?? '--';
 		}
 
 		$table->setHeaderTitle( 'Related Pressable sites' );
@@ -282,13 +289,15 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 					$node['site_object']->clonedFromId ?: '--',
 				);
 
-				if ( true === $include_new_password ) {
+				if ( true === $include_password_info ) {
 					$node['new_password'] ??= '--';
 					if ( $main_password !== $node['new_password'] ) {
 						$site_row[] = "<error>{$node['new_password']}</error>";
 					} else {
 						$site_row[] = $node['new_password'];
 					}
+
+					$site_row[] = ( true !== $node['1password'] ) ? '❌' : '✅';
 				}
 
 				$table->addRow( $site_row );
@@ -322,6 +331,15 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 		}
 
 		return $return;
+	}
+
+	/**
+	 * Returns the new password for the production site.
+	 *
+	 * @return  string|null
+	 */
+	private function get_production_site_new_password(): ?string {
+		return \reset( $this->related_pressable_sites[0] )['new_password'];
 	}
 
 	/**
@@ -399,6 +417,62 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 
 		$password = $result ? $new_password : $password;
 		return $result;
+	}
+
+	/**
+	 * @param   InputInterface      $input      The input interface.
+	 * @param   OutputInterface     $output     The output interface.
+	 *
+	 * @return  void
+	 */
+	private function update_1password_logins( InputInterface $input, OutputInterface $output ): void {
+		$output->writeln( "<info>Updating 1Password logins for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</info>" );
+
+		$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
+		if ( true === \is_null( $op_items ) ) {
+			$output->writeln( "<error>1Password logins not found.</error>" );
+			return;
+		}
+
+		// Find main production site login.
+		$prod_op_login = \array_filter(
+			\array_map(
+				function( object $login ) {
+					if ( \property_exists( $login, 'urls' ) && \is_array( $login->urls ) ) {
+						foreach ( $login->urls as $url ) {
+							$url = \parse_url( $url->href, PHP_URL_HOST );
+							if ( $url === $this->pressable_prod_site->url ) {
+								$login = decode_json_content( \shell_exec( "op item get $login->id --format json" ) );
+								if ( is_case_insensitive_match( $this->wp_user_email, $login->fields[0]->value ) ) {
+									return $login;
+								}
+
+								// Sometimes, the concierge user is stored as the username.
+								if ( is_case_insensitive_match( $this->wp_user_email, 'concierge@wordpress.com' ) && is_case_insensitive_match( $login->fields[0]->value, 'wpconcierge' ) ) {
+									return $login;
+								}
+							}
+						}
+					}
+
+					return false;
+				},
+				$op_items
+			)
+		);
+		if ( 1 < \count( $prod_op_login ) ) {
+			$output->writeln( "<error>Multiple 1Password logins found for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</error>" );
+			return;
+		}
+		if ( 0 === \count( $prod_op_login ) ) {
+			$output->writeln( "<error>1Password login not found for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</error>" );
+			return;
+		}
+
+		$prod_op_login = \reset( $prod_op_login );
+		$prod_password = $this->get_production_site_new_password();
+
+		\shell_exec( "op item edit $prod_op_login->id password='$prod_password'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 	}
 
 	// endregion
