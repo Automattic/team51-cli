@@ -119,7 +119,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		// Rotate the WP user password on the main dev site.
 		$pressable_main_dev_node = &$this->find_main_dev_site_node();
 		if ( ! \is_null( $pressable_main_dev_node ) ) {
-			$result = $this->change_wp_user_password( $input, $output, $pressable_main_dev_node['site_object'], $new_wp_user_password );
+			$result = $this->rotate_wp_user_password( $input, $output, $pressable_main_dev_node['site_object'], $new_wp_user_password );
 			if ( true === $result ) {
 				$output->writeln( '<fg=green;options=bold>Main dev site WP password rotated.</>' );
 				$pressable_main_dev_node['new_password'] = $new_wp_user_password;
@@ -131,7 +131,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		// Rotate the WP user password on the production site.
-		$result = $this->change_wp_user_password( $input, $output, $this->pressable_prod_site, $new_wp_user_password );
+		$result = $this->rotate_wp_user_password( $input, $output, $this->pressable_prod_site, $new_wp_user_password );
 		if ( true === $result ) {
 			$output->writeln( '<fg=green;options=bold>Production site WP password rotated.</>' );
 			$this->related_pressable_sites[0][ $this->pressable_prod_site->id ]['new_password'] = $new_wp_user_password;
@@ -154,10 +154,12 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				}
 
 				$new_wp_user_password = $this->related_pressable_sites[0][ $this->pressable_prod_site->id ]['new_password']; // Attempt to use the same password as the production site.
-				$result               = $this->change_wp_user_password( $input, $output, $node['site_object'], $new_wp_user_password );
+				$result               = $this->rotate_wp_user_password( $input, $output, $node['site_object'], $new_wp_user_password );
 				if ( true === $result ) {
 					$output->writeln( "<fg=green;options=bold>{$node['site_object']->displayName} WP password rotated.</>" );
 					$node['new_password'] = $new_wp_user_password;
+				} else {
+					$output->writeln( "<fg=red;options=bold>{$node['site_object']->displayName} WP password failed to rotate.</>" );
 				}
 			}
 			unset( $node );
@@ -165,9 +167,12 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		unset( $nodes );
 
 		// Update the passwords in 1Password and output the end result.
-		$this->update_1password_logins( $input, $output );
-		$this->output_sites_tree( $output,true );
+		$result = $this->update_1password_logins( $input, $output );
+		if ( true !== $result ) {
+			$output->writeln( '<info>If needed, please update the 1Password logins manually to:</info>' );
+		}
 
+		$this->output_sites_tree( $output,true );
 		return 0;
 	}
 
@@ -356,8 +361,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * @return  bool|null   Whether the password was successfully set. Null means that an API attempt wasn't even made (most likely, no user found).
 	 * @noinspection PhpDocMissingThrowsInspection
 	 */
-	private function change_wp_user_password( InputInterface $input, OutputInterface $output, object $pressable_site, ?string &$password = null ): ?bool {
-		$output->writeln( "<info>Changing password on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url)</info>" );
+	private function rotate_wp_user_password( InputInterface $input, OutputInterface $output, object $pressable_site, ?string &$password = null ): ?bool {
+		$output->writeln( "<info>Attempting password rotation on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</info>" );
 
 		$result = null;
 
@@ -428,15 +433,15 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
 	 *
-	 * @return  void
+	 * @return  bool|null   True if the update was successful, null if the update was never attempted.
 	 */
-	private function update_1password_logins( InputInterface $input, OutputInterface $output ): void {
+	private function update_1password_logins( InputInterface $input, OutputInterface $output ): ?bool {
 		$output->writeln( "<info>Updating 1Password production login for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</info>" );
 
 		$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
 		if ( true === \is_null( $op_items ) ) {
 			$output->writeln( "<error>1Password logins could not be retrieved.</error>" );
-			return;
+			return null;
 		}
 
 		// Find main production site login.
@@ -460,31 +465,32 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 						}
 					}
 
-					return false;
+					return null;
 				},
 				$op_items
 			)
 		);
 		if ( 1 < \count( $prod_op_login ) ) {
 			$output->writeln( "<error>Multiple 1Password logins found for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</error>" );
-			return;
+			return false;
 		}
 		if ( 0 === \count( $prod_op_login ) ) {
 			$output->writeln( "<error>1Password login not found for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</error>" );
-			return;
+			return false;
 		}
 
 		// Update main production site login.
 		$prod_op_login = \reset( $prod_op_login );
 		$prod_password = $this->get_production_site_new_password();
 
-		if ( ! $input->getOption( 'dry-run' ) ) {
-			\shell_exec( "op item edit $prod_op_login->id password='$prod_password' --title '{$this->pressable_prod_site->displayName}'" );
-		} else {
-			$output->writeln( "<comment>Dry run: 1Password production login update skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
+		$result = \shell_exec( "op item edit $prod_op_login->id password='$prod_password' --title '{$this->pressable_prod_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+		if ( empty( $result ) ) {
+			$output->writeln( "<error>1Password production login could not be updated.</error>" );
+			return false;
 		}
 
 		$output->writeln( "<fg=green;options=bold>1Password production login updated.</>" );
+		return true;
 	}
 
 	// endregion
