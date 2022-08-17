@@ -76,7 +76,10 @@ function get_deployhq_project_permalink_from_pressable_site( object $pressable_s
 	} elseif ( ! empty( $pressable_site->clonedFromId ) ) {
 		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring.
 		$pressable_site = get_pressable_site_by_id( $pressable_site->clonedFromId );
-		$project_name   = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
+		if ( true !== \is_null( $pressable_site ) ) {
+			// Safeguard against a deleted site (discovered in the wild during testing).
+			$project_name = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
+		}
 	} elseif ( false !== \strpos( $pressable_site->displayName, '-development' ) ) {
 		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring
 		// and no 'clonedFromId' is available for some reason. For this to work, the display name of the clone
