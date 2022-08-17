@@ -58,7 +58,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the SFTP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' )
-			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but not actually reset the password. Useful for checking whether a given input is valid.' );
+			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but not actually reset the SFTP password. Useful for checking whether a given input is valid.' );
 	}
 
 	/**
@@ -102,13 +102,14 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		$output->writeln( "<info>Resetting the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
 
 		// Reset SFTP password.
-		if ( !$input->getOption( 'dry-run' ) ) {
+		if ( ! $input->getOption( 'dry-run' ) ) {
 			$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
 			if ( \is_null( $new_pressable_sftp_password ) ) {
 				$output->writeln( '<error>Failed to reset SFTP password.</error>' );
 				return 1;
 			}
 		} else {
+			$output->writeln( '<comment>Dry run: SFTP password reset skipped.</comment>' );
 			$new_pressable_sftp_password = '********';
 		}
 
@@ -171,7 +172,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Update the DeployHQ server config password.
-			if ( !$input->getOption( 'dry-run' ) ) {
+			if ( ! $input->getOption( 'dry-run' ) ) {
 				$deployhq_server = update_deployhq_project_server(
 					$deployhq_project->permalink,
 					$deployhq_server->identifier,
@@ -184,6 +185,8 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 					$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
 					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
 				}
+			} else {
+				$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>' );
 			}
 
 			$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );
