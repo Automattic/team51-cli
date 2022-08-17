@@ -13,7 +13,9 @@ use function Team51\Helpers\define_console_verbosity;
 use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
 use function Team51\Helpers\get_deployhq_project_servers;
+use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_from_input;
+use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
 use function Team51\Helpers\get_pressable_site_sftp_user_from_input;
 use function Team51\Helpers\get_pressable_site_sftp_users;
 use function Team51\Helpers\get_pressable_sites;
@@ -45,6 +47,14 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected ?object $pressable_sftp_user = null;
 
+	/**
+	 * The email of the SFTP user to rotate the password of.
+	 * Required for the 'all-sites' flag.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $sftp_user_email = null;
+
 	// endregion
 
 	// region INHERITED METHODS
@@ -57,7 +67,9 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	        ->setHelp( 'This command allows you to rotate the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
-			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' )
+			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' );
+
+		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the SFTP user password on all sites.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current SFTP password. Useful for checking whether a given input is valid.' );
 	}
 
@@ -67,28 +79,38 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		define_console_verbosity( $output->getVerbosity() );
 
-		// Retrieve the site and make sure it exists.
-		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
-		if ( false !== \is_null( $this->pressable_site ) ) {
-			exit; // Exit if the site does not exist.
+		if ( $input->getOption( 'all-sites' ) ) {
+			$this->sftp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+			$input->setOption( 'user', $this->sftp_user_email ); // Store the email of the SFTP user in the option field.
+		} else {
+			// Retrieve the site and make sure it exists.
+			$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
+			if ( false !== \is_null( $this->pressable_site ) ) {
+				exit; // Exit if the site does not exist.
+			}
+
+			$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the argument field.
+
+			// Retrieve the SFTP user email and make sure it exists.
+			$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
+			if ( false !== \is_null( $this->pressable_sftp_user ) ) {
+				exit; // Exit if the SFTP user does not exist.
+			}
+
+			$input->setOption( 'user', $this->pressable_sftp_user->username ); // Store the username of the SFTP user in the option field.
 		}
-
-		$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the argument field.
-
-		// Retrieve the SFTP user email and make sure it exists.
-		$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
-		if ( false !== \is_null( $this->pressable_sftp_user ) ) {
-			exit; // Exit if the SFTP user does not exist.
-		}
-
-		$input->setOption( 'user', $this->pressable_sftp_user->username ); // Store the username of the SFTP user in the option field.
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+		if ( $input->getOption( 'all-sites' ) ) {
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of $this->sftp_user_email on <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
+		} else {
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+		}
+
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit;
@@ -99,99 +121,119 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<info>Rotating the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
+		$pressable_sites      = $input->getOption( 'all-sites' ) ? get_pressable_sites() : array( $this->pressable_site );
+		$pressable_sftp_users = $input->getOption( 'all-sites' ) ? \array_map(
+			static fn( object $site ) => get_pressable_site_sftp_user_by_email( $site->id, $this->sftp_user_email ),
+			$pressable_sites
+		) : array( $this->pressable_sftp_user );
 
-		// Rotate SFTP password.
-		if ( ! $input->getOption( 'dry-run' ) ) {
-			$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
-			if ( \is_null( $new_pressable_sftp_password ) ) {
-				$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
-				return 1;
-			}
-		} else {
-			$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
-			$new_pressable_sftp_password = '********';
-		}
+		foreach ( $pressable_sites as $index => $pressable_site ) {
+			$this->pressable_site      = $pressable_site;
+			$this->pressable_sftp_user = $pressable_sftp_users[ $index ];
 
-		$output->writeln( '<fg=green;options=bold>Pressable SFTP password rotated.</>' );
-		$output->writeln(
-			"<comment>New password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
-			true === $this->pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
-		);
+			if ( true !== \is_null( $this->pressable_sftp_user ) ) {
+				$output->writeln( "<fg=magenta;options=bold>Rotating the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
 
-		// Update the DeployHQ configuration, if required.
-		if ( true === $this->pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
-			$output->writeln( '<info>SFTP user is project owner. DeployHQ configuration update required...</info>', OutputInterface::VERBOSITY_VERBOSE );
-
-			// Retrieve the DeployHQ project for the site.
-			$deployhq_project_permalink = get_deployhq_project_permalink_from_pressable_site( $this->pressable_site );
-			$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-
-			$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
-			while ( \is_null( $deployhq_project ) ) {
-				$output->writeln( "<error>Failed to retrieve DeployHQ project $deployhq_project_permalink.</error>" );
-				if ( $input->getOption( 'no-interaction' ) ) {
-					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+				// Rotate SFTP password.
+				if ( ! $input->getOption( 'dry-run' ) ) {
+					$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
+					if ( \is_null( $new_pressable_sftp_password ) ) {
+						$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
+						return 1;
+					}
+				} else {
+					$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+					$new_pressable_sftp_password = '********';
 				}
 
-				// Prompt the user to input the DeployHQ project permalink.
-				$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to exit gracefully:</question> ', 'pP3uZb0b5s' );
-				$deployhq_project_permalink = $this->getHelper( 'question' )->ask( $input, $output, $question );
-				if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
-					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
-				}
-
-				$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-				$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
-			}
-
-			$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-
-			// Find the correct DeployHQ server config for the site.
-			$deployhq_project_servers = get_deployhq_project_servers( $deployhq_project->permalink );
-			if ( empty( $deployhq_project_servers ) ) { // Covers the case where the project has no servers.
-				$output->writeln( '<error>Failed to retrieve DeployHQ servers or no servers configured.</error>' );
-				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
-			}
-
-			$deployhq_server = null;
-			foreach ( $deployhq_project_servers as $deployhq_project_server ) {
-				// Match the DeployHQ server config username with the Pressable SFTP username.
-				// This is the least error-prone way to find the correct server.
-				if ( $deployhq_project_server->username === $this->pressable_sftp_user->username ) {
-					$deployhq_server = $deployhq_project_server;
-					break;
-				}
-			}
-
-			if ( \is_null( $deployhq_server ) ) {
-				$output->writeln( '<error>Failed to find DeployHQ server.</error>' );
-				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
-			}
-
-			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-
-			// Update the DeployHQ server config password.
-			if ( ! $input->getOption( 'dry-run' ) ) {
-				$deployhq_server = update_deployhq_project_server(
-					$deployhq_project->permalink,
-					$deployhq_server->identifier,
-					array( // Sending just the 'password' parameter won't work. Experimentally, the protocol type parameter is also required.
-						'protocol_type' => 'ssh',
-						'password'      => $new_pressable_sftp_password,
-					)
+				$output->writeln( '<fg=green;options=bold>Pressable SFTP password rotated.</>' );
+				$output->writeln(
+					"<comment>New password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
+					true === $this->pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
 				);
-				if ( \is_null( $deployhq_server ) ) {
-					$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
-					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+
+				// Update the DeployHQ configuration, if required.
+				if ( true === $this->pressable_sftp_user->owner ) { // The owner account is the one that is used to deploy the site.
+					$output->writeln( '<info>SFTP user is project owner. DeployHQ configuration update required...</info>', OutputInterface::VERBOSITY_VERBOSE );
+
+					// Retrieve the DeployHQ project for the site.
+					$deployhq_project_permalink = get_deployhq_project_permalink_from_pressable_site( $this->pressable_site );
+					$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+
+					$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
+					while ( \is_null( $deployhq_project ) ) {
+						$output->writeln( "<error>Failed to retrieve DeployHQ project $deployhq_project_permalink.</error>" );
+						if ( $input->getOption( 'no-interaction' ) ) {
+							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+						}
+
+						// Prompt the user to input the DeployHQ project permalink.
+						$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to exit gracefully:</question> ', 'pP3uZb0b5s' );
+						$deployhq_project_permalink = $this->getHelper( 'question' )->ask( $input, $output, $question );
+						if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
+							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+						}
+
+						$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+						$deployhq_project = get_deployhq_project_by_permalink( $deployhq_project_permalink );
+					}
+
+					$output->writeln( "<comment>DeployHQ project found: $deployhq_project->name ($deployhq_project->permalink).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+
+					// Find the correct DeployHQ server config for the site.
+					$deployhq_project_servers = get_deployhq_project_servers( $deployhq_project->permalink );
+					if ( empty( $deployhq_project_servers ) ) { // Covers the case where the project has no servers.
+						$output->writeln( '<error>Failed to retrieve DeployHQ servers or no servers configured.</error>' );
+						return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+					}
+
+					$deployhq_server = null;
+					foreach ( $deployhq_project_servers as $deployhq_project_server ) {
+						// Match the DeployHQ server config username with the Pressable SFTP username.
+						// This is the least error-prone way to find the correct server.
+						if ( $deployhq_project_server->username === $this->pressable_sftp_user->username ) {
+							$deployhq_server = $deployhq_project_server;
+							break;
+						}
+					}
+
+					if ( \is_null( $deployhq_server ) ) {
+						$output->writeln( '<error>Failed to find DeployHQ server.</error>' );
+						return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+					}
+
+					$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+
+					// Update the DeployHQ server config password.
+					if ( ! $input->getOption( 'dry-run' ) ) {
+						$deployhq_server = update_deployhq_project_server(
+							$deployhq_project->permalink,
+							$deployhq_server->identifier,
+							array( // Sending just the 'password' parameter won't work. Experimentally, the protocol type parameter is also required.
+								'protocol_type' => 'ssh',
+								'password'      => $new_pressable_sftp_password,
+							)
+						);
+						if ( \is_null( $deployhq_server ) ) {
+							$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
+							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+						}
+					} else {
+						$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+					}
+
+					$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );
+				} else {
+					$output->writeln( '<info>SFTP user is not project owner. No DeployHQ configuration update required.</info>' );
 				}
 			} else {
-				$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+				$output->writeln( "<error>The SFTP user $this->sftp_user_email does not exist on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}). Skipping site...</error>" );
 			}
 
-			$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );
-		} else {
-			$output->writeln( '<info>SFTP user is not project owner. No DeployHQ configuration update required.</info>' );
+			if ( $input->getOption( 'all-sites' ) ) {
+				$output->writeln( "==================== END {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})" );
+				$output->writeln( '' ); // Empty line for UX reasons.
+			}
 		}
 
 		return 0;
@@ -236,8 +278,10 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {
-				$question = new Question( '<question>Enter the user ID or email to rotate the SFTP password for:</question> ' );
-				$question->setAutocompleterValues( \array_map( static fn( object $sftp_user ) => $sftp_user->email, get_pressable_site_sftp_users( $input->getArgument( 'site' ) ) ?? array() ) );
+				$question = new Question( '<question>Enter the user email to rotate the SFTP password for:</question> ' );
+				if ( true === $input->hasArgument( 'site' ) ) { // Autocompletion is only available when a singular site is provided.
+					$question->setAutocompleterValues( \array_map( static fn( object $sftp_user ) => $sftp_user->email, get_pressable_site_sftp_users( $input->getArgument( 'site' ) ) ?? array() ) );
+				}
 
 				$email = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			}
