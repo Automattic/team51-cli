@@ -77,7 +77,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 
 		// Retrieve the SFTP user email and make sure it exists.
 		$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
-		if ( false !== \is_null( $this->pressable_site ) ) {
+		if ( false !== \is_null( $this->pressable_sftp_user ) ) {
 			exit; // Exit if the SFTP user does not exist.
 		}
 
