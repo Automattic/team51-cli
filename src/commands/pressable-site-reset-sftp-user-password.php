@@ -57,7 +57,8 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	        ->setHelp( 'This command allows you to reset the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the SFTP user password.' )
-			->addOption( 'user', '-u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' );
+			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' )
+			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but not actually reset the password. Useful for checking whether a given input is valid.' );
 	}
 
 	/**
@@ -101,10 +102,14 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 		$output->writeln( "<info>Resetting the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
 
 		// Reset SFTP password.
-		$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
-		if ( \is_null( $new_pressable_sftp_password ) ) {
-			$output->writeln( '<error>Failed to reset SFTP password.</error>' );
-			return 1;
+		if ( !$input->getOption( 'dry-run' ) ) {
+			$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
+			if ( \is_null( $new_pressable_sftp_password ) ) {
+				$output->writeln( '<error>Failed to reset SFTP password.</error>' );
+				return 1;
+			}
+		} else {
+			$new_pressable_sftp_password = '********';
 		}
 
 		$output->writeln( '<fg=green;options=bold>Pressable SFTP password reset.</>' );
@@ -166,20 +171,24 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 
 			// Update the DeployHQ server config password.
-			$deployhq_server = update_deployhq_project_server(
-				$deployhq_project->permalink,
-				$deployhq_server->identifier,
-				array( // Sending just the 'password' parameter won't work. Experimentally, the protocol type parameter is also required.
-					'protocol_type' => 'ssh',
-					'password'      => $new_pressable_sftp_password,
-				)
-			);
-			if ( \is_null( $deployhq_server ) ) {
-				$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
-				return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+			if ( !$input->getOption( 'dry-run' ) ) {
+				$deployhq_server = update_deployhq_project_server(
+					$deployhq_project->permalink,
+					$deployhq_server->identifier,
+					array( // Sending just the 'password' parameter won't work. Experimentally, the protocol type parameter is also required.
+						'protocol_type' => 'ssh',
+						'password'      => $new_pressable_sftp_password,
+					)
+				);
+				if ( \is_null( $deployhq_server ) ) {
+					$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
+					return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+				}
 			}
 
 			$output->writeln( '<fg=green;options=bold>DeployHQ configuration updated.</>' );
+		} else {
+			$output->writeln( '<info>SFTP user is not project owner. No DeployHQ configuration update required.</info>' );
 		}
 
 		return 0;

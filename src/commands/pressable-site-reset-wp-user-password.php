@@ -68,7 +68,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			->setHelp( 'This command allows you to reset the WP password of users on a given Pressable site and all of its development clones. Finally, it attempts to update the 1Password value as well.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the WP user password.' )
-	        ->addOption( 'user', '-u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to reset the password. Default is concierge@wordpress.com.' )
+	        ->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to reset the password. Default is concierge@wordpress.com.' )
 		    ->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the reset of the WP user password on all development sites even if out-of-sync with the other sites.' );
 	}
 
