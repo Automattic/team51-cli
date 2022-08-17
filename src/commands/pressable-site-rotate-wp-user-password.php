@@ -385,7 +385,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			// Pressable has special endpoints for owners vs collaborators.
 			$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $this->wp_user_email );
 			if ( false === \is_null( $pressable_sftp_user ) && true === $pressable_sftp_user->owner ) { // SFTP user found on site and is a site owner.
-				$output->writeln( "<info>ROtating the WP user password for the Pressable site owner $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+				$output->writeln( "<info>Rotating the WP user password for the Pressable site owner $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 				if ( ! $input->getOption( 'dry-run' ) ) {
 					$new_password = reset_pressable_site_owner_wp_password( $pressable_site->id );
