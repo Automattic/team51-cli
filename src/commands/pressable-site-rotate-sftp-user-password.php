@@ -21,25 +21,25 @@ use function Team51\Helpers\reset_pressable_site_sftp_user_password;
 use function Team51\Helpers\update_deployhq_project_server;
 
 /**
- * CLI command for resetting the SFTP password of users on Pressable sites.
+ * CLI command for rotating the SFTP password of users on Pressable sites.
  */
-final class Pressable_Site_Reset_SFTP_User_Password extends Command {
+final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	// region FIELDS AND CONSTANTS
 
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'pressable:reset-site-sftp-user-password';
+	protected static $defaultName = 'pressable:rotate-site-sftp-user-password';
 
 	/**
-	 * The Pressable site to reset the SFTP password on.
+	 * The Pressable site to rotate the SFTP password on.
 	 *
 	 * @var object|null
 	 */
 	protected ?object $pressable_site = null;
 
 	/**
-	 * The Pressable site SFTP user to reset the password of.
+	 * The Pressable site SFTP user to rotate the password of.
 	 *
 	 * @var object|null
 	 */
@@ -53,12 +53,12 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription( 'Resets the SFTP password of the concierge user or that of a given user for a given site.' )
-	        ->setHelp( 'This command allows you to reset the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
+		$this->setDescription( 'Rotates the SFTP password of the concierge user or that of a given user for a given site.' )
+	        ->setHelp( 'This command allows you to rotate the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
 
-		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the SFTP user password.' )
-			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to reset the password. Default is concierge@wordpress.com.' )
-			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but not actually reset the SFTP password. Useful for checking whether a given input is valid.' );
+		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
+			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' )
+			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current SFTP password. Useful for checking whether a given input is valid.' );
 	}
 
 	/**
@@ -88,7 +88,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		$question = new ConfirmationQuestion( "<question>Are you sure you want to reset the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+		$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit;
@@ -99,21 +99,21 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<info>Resetting the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
+		$output->writeln( "<info>Rotating the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</info>" );
 
-		// Reset SFTP password.
+		// Rotate SFTP password.
 		if ( ! $input->getOption( 'dry-run' ) ) {
 			$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
 			if ( \is_null( $new_pressable_sftp_password ) ) {
-				$output->writeln( '<error>Failed to reset SFTP password.</error>' );
+				$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
 				return 1;
 			}
 		} else {
-			$output->writeln( '<comment>Dry run: SFTP password reset skipped.</comment>' );
+			$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>' );
 			$new_pressable_sftp_password = '********';
 		}
 
-		$output->writeln( '<fg=green;options=bold>Pressable SFTP password reset.</>' );
+		$output->writeln( '<fg=green;options=bold>Pressable SFTP password rotated.</>' );
 		$output->writeln(
 			"<comment>New password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
 			true === $this->pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
@@ -211,7 +211,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( '<question>Enter the site ID or URL to reset the SFTP password on:</question> ' );
+			$question = new Question( '<question>Enter the site ID or URL to rotate the SFTP password on:</question> ' );
 			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
 
 			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
@@ -236,7 +236,7 @@ final class Pressable_Site_Reset_SFTP_User_Password extends Command {
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {
-				$question = new Question( '<question>Enter the user ID or email to reset the SFTP password for:</question> ' );
+				$question = new Question( '<question>Enter the user ID or email to rotate the SFTP password for:</question> ' );
 				$question->setAutocompleterValues( \array_map( static fn( object $sftp_user ) => $sftp_user->email, get_pressable_site_sftp_users( $input->getArgument( 'site' ) ) ?? array() ) );
 
 				$email = $this->getHelper( 'question' )->ask( $input, $output, $question );
