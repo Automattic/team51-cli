@@ -271,7 +271,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 
 		$headers = array( 'ID', 'Name', 'URL', 'Level', 'Parent ID' );
 		if ( true === $include_password_info ) {
-			$headers       = \array_merge( $headers, array( 'New password', '1Password update' ) );
+			$headers       = \array_merge( $headers, array( 'New password' ) );
 			$main_password = $this->get_production_site_new_password() ?? '--';
 		}
 
@@ -296,8 +296,6 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 					} else {
 						$site_row[] = $node['new_password'];
 					}
-
-					$site_row[] = ( true !== $node['1password'] ) ? '❌' : '✅';
 				}
 
 				$table->addRow( $site_row );
@@ -420,17 +418,19 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	}
 
 	/**
+	 * Updates the 1Password entry(-ies) for the WP user.
+	 *
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
 	 *
 	 * @return  void
 	 */
 	private function update_1password_logins( InputInterface $input, OutputInterface $output ): void {
-		$output->writeln( "<info>Updating 1Password logins for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</info>" );
+		$output->writeln( "<info>Updating 1Password production login for $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}).</info>" );
 
 		$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
 		if ( true === \is_null( $op_items ) ) {
-			$output->writeln( "<error>1Password logins not found.</error>" );
+			$output->writeln( "<error>1Password logins could not be retrieved.</error>" );
 			return;
 		}
 
@@ -469,10 +469,17 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			return;
 		}
 
+		// Update main production site login.
 		$prod_op_login = \reset( $prod_op_login );
 		$prod_password = $this->get_production_site_new_password();
 
-		\shell_exec( "op item edit $prod_op_login->id password='$prod_password'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+		if ( ! $input->getOption( 'dry-run' ) ) {
+			\shell_exec( "op item edit $prod_op_login->id password='$prod_password' --title '{$this->pressable_prod_site->displayName}'" );
+		} else {
+			$output->writeln( "<comment>Dry run: 1Password production login update skipped.</comment>" );
+		}
+
+		$output->writeln( "<fg=green;options=bold>1Password production login updated.</>" );
 	}
 
 	// endregion
