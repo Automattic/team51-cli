@@ -158,6 +158,10 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
 					if ( \is_null( $new_pressable_sftp_password ) ) {
 						$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
+						if ( $input->getOption( 'all-sites' ) ) {
+							continue; // Continue to the next site if the password could not be rotated.
+						}
+
 						return 1;
 					}
 				} else {
@@ -183,14 +187,24 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					while ( \is_null( $deployhq_project ) ) {
 						$output->writeln( "<error>Failed to retrieve DeployHQ project $deployhq_project_permalink.</error>" );
 						if ( $input->getOption( 'no-interaction' ) ) {
-							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
+							if ( $input->getOption( 'all-sites' ) ) {
+								continue 2; // Continue to the next site if the project could not be retrieved.
+							}
+
+							return $result;
 						}
 
 						// Prompt the user to input the DeployHQ project permalink.
-						$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to exit gracefully:</question> ', 'pP3uZb0b5s' );
+						$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to fail gracefully:</question> ', 'pP3uZb0b5s' );
 						$deployhq_project_permalink = $this->getHelper( 'question' )->ask( $input, $output, $question );
 						if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
-							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
+							if ( $input->getOption( 'all-sites' ) ) {
+								continue 2; // Continue to the next site if the user left the project permalink empty.
+							}
+
+							return $result;
 						}
 
 						$output->writeln( "<comment>DeployHQ project permalink: $deployhq_project_permalink</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
@@ -203,7 +217,13 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					$deployhq_project_servers = get_deployhq_project_servers( $deployhq_project->permalink );
 					if ( empty( $deployhq_project_servers ) ) { // Covers the case where the project has no servers.
 						$output->writeln( '<error>Failed to retrieve DeployHQ servers or no servers configured.</error>' );
-						return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+
+						$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
+						if ( $input->getOption( 'all-sites' ) ) {
+							continue; // Continue to the next site if the servers could not be retrieved.
+						}
+
+						return $result;
 					}
 
 					$deployhq_server = null;
@@ -218,7 +238,13 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 					if ( \is_null( $deployhq_server ) ) {
 						$output->writeln( '<error>Failed to find DeployHQ server.</error>' );
-						return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+
+						$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
+						if ( $input->getOption( 'all-sites' ) ) {
+							continue; // Continue to the next site if the server could not be found.
+						}
+
+						return $result;
 					}
 
 					$output->writeln( "<comment>DeployHQ server found: $deployhq_server->name ($deployhq_server->identifier).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
@@ -235,7 +261,13 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 						);
 						if ( \is_null( $deployhq_server ) ) {
 							$output->writeln( '<error>Failed to update DeployHQ server.</error>' );
-							return $this->fail_deployhq( $output, $new_pressable_sftp_password );
+
+							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );
+							if ( $input->getOption( 'all-sites' ) ) {
+								continue; // Continue to the next site if the server could not be updated.
+							}
+
+							return $result;
 						}
 					} else {
 						$output->writeln( '<comment>Dry run: DeployHQ server password update skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
