@@ -109,19 +109,6 @@ function encode_json_content( $data ): ?string {
 // region POLYFILLS
 
 /**
- * Ensures that a given value is between given min and max, inclusively.
- *
- * @param   int|float   $value  The value to check.
- * @param   int|float   $min    The minimum value.
- * @param   int|float   $max    The maximum value.
- *
- * @return  int|float
- */
-function clamp( $value, $min, $max ) {
-	return \min( \max( $value, $min ), $max );
-}
-
-/**
  * Returns whether two given strings are equal or not in a case-insensitive manner.
  *
  * @param   string  $string_1     The first string.

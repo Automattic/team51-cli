@@ -18,14 +18,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @return  object[]|null
  */
 function get_pressable_sites( array $params = array() ): ?array {
-	if ( $params['paginate'] ?? false ) {
-		$params['paginate'] = true;
-		$params['per_page'] = clamp( (int) ( $params['per_page'] ?? 20 ), 1, 50 ); // Clamp to 1-50 with a default of 20.
-		$params['page']	    = \max( 1, (int) ( $params['page'] ?? 1 ) ); // Page number starts at 1.
-	} else {
-		unset( $params['paginate'], $params['per_page'], $params['page'] );
-	}
-
 	$sites = Pressable_API_Helper::call_api( 'sites?' . \http_build_query( $params ) );
 	if ( \is_null( $sites ) || empty( $sites->data ) ) {
 		return null;
