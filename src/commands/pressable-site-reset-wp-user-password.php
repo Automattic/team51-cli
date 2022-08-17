@@ -228,12 +228,16 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 
 		do {
 			$has_next_level = false;
-			$current_level  = count( $this->related_pressable_sites );
+			$current_level  = \count( $this->related_pressable_sites );
 
 			foreach ( \array_keys( $this->related_pressable_sites[ $current_level - 1 ] ) as $parent_site_id ) {
 				foreach ( $all_sites as $maybe_clone_site ) {
 					if ( $maybe_clone_site->clonedFromId === $parent_site_id ) {
-						$site_node = array( 'site_object' => $maybe_clone_site, 'temporary' => true, 'new_password' => null, );
+						$site_node = array(
+							'site_object'  => $maybe_clone_site,
+							'temporary'    => true,
+							'new_password' => null,
+						);
 						if ( 1 === $current_level && '-development' === \substr( $maybe_clone_site->name, -1 * \strlen( '-development' ) ) ) {
 							$site_node['temporary'] = false;
 						}
@@ -243,7 +247,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 					}
 				}
 			}
-		} while ( $has_next_level );
+		} while ( true === $has_next_level );
 	}
 
 	/**
@@ -339,28 +343,32 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 		// First attempt to set the password via the WPCOM/Jetpack API.
 		$wpcom_user = get_wpcom_site_user_by_email( $pressable_site->url, $this->wp_user_email );
 		if ( false === \is_null( $wpcom_user ) ) { // User found on site and Jetpack connection is active.
-			$output->writeln( "<comment>WP user $wpcom_user->name (email $wpcom_user->email) found via the WPCOM API on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</comment>", OutputInterface::VERBOSITY_VERBOSE );
-			$output->writeln( "<info>Setting the WP user password for $wpcom_user->name (email $wpcom_user->email) on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the Jetpack API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+			$output->writeln( "<comment>WP user $wpcom_user->name (email $wpcom_user->email) found on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+			$output->writeln( "<info>Setting the WP user password for $wpcom_user->name (email $wpcom_user->email) on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the WPCOM API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 			$result = set_wpcom_site_user_wp_password( $pressable_site->url, $wpcom_user->ID, $new_password );
+		} else {
+			$output->writeln( "<comment>WP user $this->wp_user_email not found on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 		}
 
 		// If the password wasn't set via the WPCOM/Jetpack API, try the Pressable API.
 		if ( true !== $result && ( true === \is_null( $password ) || ! empty( $input->getOption( 'force' ) ) ) ) {
+			// Pressable has special endpoints for owners vs collaborators.
 			$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $this->wp_user_email );
 			if ( false === \is_null( $pressable_sftp_user ) && true === $pressable_sftp_user->owner ) { // SFTP user found on site and is a site owner.
-				$output->writeln( "<info>Resetting the WP user password for the owner $this->wp_user_email of the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</info>" );
+				$output->writeln( "<info>Resetting the WP user password for the owner $this->wp_user_email of the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</info>", OutputInterface::VERBOSITY_VERBOSE );
 
-				// Pressable has a special endpoint for owners where, if the WP user does not exist, it will be created instead of the request failing.
 				$new_password = reset_pressable_site_owner_wp_password( $pressable_site->id );
 				$result       = ( true !== \is_null( $new_password ) );
 			} else {
 				$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $this->wp_user_email );
 				if ( true !== \is_null( $pressable_collaborator ) ) {
-					$output->writeln( "<info>Attempting a WP user password reset for Pressable collaborator $pressable_collaborator->wpUsername (email $pressable_collaborator->email) on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (email $pressable_collaborator->email) on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 					$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_collaborator->id );
 					$result       = ( true !== \is_null( $new_password ) );
+				} else {
+					$output->writeln( "<comment>WP user $this->wp_user_email not found on the site $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url) via the Pressable API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 				}
 			}
 		}
