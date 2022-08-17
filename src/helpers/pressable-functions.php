@@ -339,7 +339,7 @@ function get_pressable_site_from_input( InputInterface $input, OutputInterface $
 function get_pressable_site_sftp_user_from_input( InputInterface $input, OutputInterface $output, string $pressable_site_id, ?callable $no_input_func = null, string $name = 'user' ): ?object {
 	$user_uname_or_id_or_email = get_user_input( $input, $output, $no_input_func, $name, false ); // Pressable SFTP users can also be retrieved by username so no validation is needed.
 	$pressable_sftp_user       = \is_numeric( $user_uname_or_id_or_email ) ? get_pressable_site_sftp_user_by_id( $pressable_site_id, $user_uname_or_id_or_email )
-		: ( get_pressable_site_sftp_user_by_email( $pressable_site_id, $user_uname_or_id_or_email ) ?? get_pressable_site_sftp_user_by_username( $pressable_site_id, $user_uname_or_id_or_email ) );
+		: ( get_pressable_site_sftp_user_by_username( $pressable_site_id, $user_uname_or_id_or_email ) ?? get_pressable_site_sftp_user_by_email( $pressable_site_id, $user_uname_or_id_or_email ) );
 
 	if ( \is_null( $pressable_sftp_user ) ) {
 		$output->writeln( "<error>Pressable SFTP user $user_uname_or_id_or_email not found on $pressable_site_id.</error>" );

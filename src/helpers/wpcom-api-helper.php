@@ -2,6 +2,8 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Performs the calls to the WordPress.com API and parses the responses.
  */
@@ -44,7 +46,10 @@ final class WPCOM_API_Helper {
 		);
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			console_writeln( "❌ WordPress.com API error: {$result['headers']['http_code']} " );
+			console_writeln(
+				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']}",
+				\in_array( $result['headers']['http_code'], array( 403, 404 ), true ) ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
+			);
 			return null;
 		}
 

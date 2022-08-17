@@ -64,7 +64,10 @@ final class Pressable_API_Helper {
 				$message = $result['body']->error;
 			}
 
-			console_writeln( "❌ Pressable API error: {$result['headers']['http_code']} $message ($endpoint)" );
+			console_writeln(
+				"❌ Pressable API error ($endpoint): {$result['headers']['http_code']} $message",
+				404 === $result['headers']['http_code'] ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
+			);
 			return null;
 		}
 
