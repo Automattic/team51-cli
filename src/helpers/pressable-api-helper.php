@@ -57,15 +57,14 @@ final class Pressable_API_Helper {
 			exit( '❌ Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL );
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
+			$message = '';
 			if ( \property_exists( $result['body'], 'message' ) ) {
 				$message = $result['body']->message;
 			} else if ( \property_exists( $result['body'], 'error' ) ) {
 				$message = $result['body']->error;
-			} else {
-				$message = $endpoint;
 			}
 
-			console_writeln( "❌ Pressable API error: {$result['headers']['http_code']} $message" );
+			console_writeln( "❌ Pressable API error: {$result['headers']['http_code']} $message ($endpoint)" );
 			return null;
 		}
 

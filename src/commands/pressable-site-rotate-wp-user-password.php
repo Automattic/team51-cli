@@ -71,7 +71,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the WP user password.' )
 	        ->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' )
-		    ->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the rotation of the WP user password on all development sites even if out-of-sync with the other sites.' )
+		    ->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the rotation of the WP user password on all sites even if out-of-sync with the other sites.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current WP user password. Useful for checking whether a given input is valid.' );
 	}
 
@@ -96,13 +96,13 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		$this->compile_sites_tree();
-		$this->output_sites_tree( $output, false );
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
+		$this->output_sites_tree( $output, false );
 		$question = new ConfirmationQuestion( "<question>Do you want to proceed with rotating the WP user password of $this->wp_user_email on all the sites listed above? (y/n)</question> ", false );
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
@@ -121,7 +121,10 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		if ( ! \is_null( $pressable_main_dev_node ) ) {
 			$result = $this->change_wp_user_password( $input, $output, $pressable_main_dev_node['site_object'], $new_wp_user_password );
 			if ( true === $result ) {
+				$output->writeln( '<fg=green;options=bold>Main dev site WP password rotated.</>' );
 				$pressable_main_dev_node['new_password'] = $new_wp_user_password;
+			} else {
+				$output->writeln( '<fg=red;options=bold>Main dev site WP password failed to rotate.</>' );
 			}
 		} else {
 			$output->writeln( '<comment>No main dev site found.</comment>' );
@@ -130,10 +133,11 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		// Rotate the WP user password on the production site.
 		$result = $this->change_wp_user_password( $input, $output, $this->pressable_prod_site, $new_wp_user_password );
 		if ( true === $result ) {
+			$output->writeln( '<fg=green;options=bold>Production site WP password rotated.</>' );
 			$this->related_pressable_sites[0][ $this->pressable_prod_site->id ]['new_password'] = $new_wp_user_password;
 		} else {
 			// If we fail to rotate the password on the production site, then what's the point of doing it on the development sites? We definitely shouldn't update it in 1Password for now.
-			$output->writeln( "<error>Failed to rotate the password on the production site {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}). Here is a summary of rotated passwords:</error>" );
+			$output->writeln( '<fg=red;options=bold>Production site WP password failed to rotate. Here is a summary of rotated passwords:</>' );
 			$this->output_sites_tree( $output, true );
 			return 1;
 		}
@@ -152,6 +156,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				$new_wp_user_password = $this->related_pressable_sites[0][ $this->pressable_prod_site->id ]['new_password']; // Attempt to use the same password as the production site.
 				$result               = $this->change_wp_user_password( $input, $output, $node['site_object'], $new_wp_user_password );
 				if ( true === $result ) {
+					$output->writeln( "<fg=green;options=bold>{$node['site_object']->displayName} WP password rotated.</>" );
 					$node['new_password'] = $new_wp_user_password;
 				}
 			}
@@ -169,25 +174,6 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	// endregion
 
 	// region HELPERS
-
-	/**
-	 * Prompts the user for a site if not in 'no-interaction' mode.
-	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
-	 *
-	 * @return  string|null
-	 */
-	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
-		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( '<question>Enter the site ID or URL to rotate the WP password on:</question> ' );
-			$question->setAutocompleterValues( \array_filter( \array_map( static fn( $site ) => empty( $site->clonedFromId ) ? $site->url : false, get_pressable_sites() ?? array() ) ) );
-
-			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
-		}
-
-		return $site ?? null;
-	}
 
 	/**
 	 * Prompts the user for an email or returns the default if in 'no-interaction' mode.
@@ -211,6 +197,25 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		return $email;
+	}
+
+	/**
+	 * Prompts the user for a site if not in 'no-interaction' mode.
+	 *
+	 * @param   InputInterface      $input      The input interface.
+	 * @param   OutputInterface     $output     The output interface.
+	 *
+	 * @return  string|null
+	 */
+	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
+		if ( ! $input->getOption( 'no-interaction' ) ) {
+			$question = new Question( '<question>Enter the site ID or URL to rotate the WP password on:</question> ' );
+			$question->setAutocompleterValues( \array_filter( \array_map( static fn( $site ) => empty( $site->clonedFromId ) ? $site->url : false, get_pressable_sites() ?? array() ) ) );
+
+			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
+		}
+
+		return $site ?? null;
 	}
 
 	/**
@@ -368,7 +373,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			if ( ! $input->getOption( 'dry-run' ) ) {
 				$result = set_wpcom_site_user_wp_password( $pressable_site->url, $wpcom_user->ID, $new_password );
 			} else {
-				$output->writeln( "<comment>Dry run: WP user password setting skipped.</comment>" );
+				$output->writeln( "<comment>Dry run: WP user password setting skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 				$result = true;
 			}
 		} else {
@@ -386,7 +391,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 					$new_password = reset_pressable_site_owner_wp_password( $pressable_site->id );
 					$result       = ( true !== \is_null( $new_password ) );
 				} else {
-					$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site owner skipped.</comment>" );
+					$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site owner skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 
 					/* @noinspection PhpUnhandledExceptionInspection */
 					$new_password = generate_random_password();
@@ -401,7 +406,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 						$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_collaborator->id );
 						$result       = ( true !== \is_null( $new_password ) );
 					} else {
-						$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site collaborator skipped.</comment>" );
+						$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site collaborator skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 
 						/* @noinspection PhpUnhandledExceptionInspection */
 						$new_password = generate_random_password();
@@ -476,7 +481,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		if ( ! $input->getOption( 'dry-run' ) ) {
 			\shell_exec( "op item edit $prod_op_login->id password='$prod_password' --title '{$this->pressable_prod_site->displayName}'" );
 		} else {
-			$output->writeln( "<comment>Dry run: 1Password production login update skipped.</comment>" );
+			$output->writeln( "<comment>Dry run: 1Password production login update skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
 		}
 
 		$output->writeln( "<fg=green;options=bold>1Password production login updated.</>" );
