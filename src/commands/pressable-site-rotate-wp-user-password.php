@@ -27,25 +27,25 @@ use function Team51\Helpers\reset_pressable_site_owner_wp_password;
 use function Team51\Helpers\set_wpcom_site_user_wp_password;
 
 /**
- * CLI command for resetting the WP password of users on Pressable sites.
+ * CLI command for rotating the WP password of users on Pressable sites.
  */
-final class Pressable_Site_Reset_WP_User_Password extends Command {
+final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	// region FIELDS AND CONSTANTS
 
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'pressable:reset-site-wp-user-password';
+	protected static $defaultName = 'pressable:rotate-site-wp-user-password';
 
 	/**
-	 * The Pressable site to reset the WP user password on.
+	 * The Pressable site to rotate the WP user password on.
 	 *
 	 * @var object|null
 	 */
 	protected ?object $pressable_prod_site = null;
 
 	/**
-	 * The email of the WP user to reset the password for.
+	 * The email of the WP user to rotate the password for.
 	 *
 	 * @var string|null
 	 */
@@ -66,13 +66,13 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription('Resets the WP password of the concierge user or that of a given user for a given site and all of its development clones.')
-			->setHelp( 'This command allows you to reset the WP password of users on a given Pressable site and all of its development clones. Finally, it attempts to update the 1Password value as well.' );
+		$this->setDescription('Rotates the WP password of the concierge user or that of a given user for a given site and all of its development clones.')
+			->setHelp( 'This command allows you to rotate the WP password of users on a given Pressable site and all of its development clones. Finally, it attempts to update the 1Password value as well.' );
 
-		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to reset the WP user password.' )
-	        ->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to reset the password. Default is concierge@wordpress.com.' )
-		    ->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the reset of the WP user password on all development sites even if out-of-sync with the other sites.' )
-			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but not actually reset the WP user password. Useful for checking whether a given input is valid.' );
+		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the WP user password.' )
+	        ->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' )
+		    ->addOption( 'force', null, InputOption::VALUE_NONE, 'Force the rotation of the WP user password on all development sites even if out-of-sync with the other sites.' )
+			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current WP user password. Useful for checking whether a given input is valid.' );
 	}
 
 	/**
@@ -103,7 +103,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		$question = new ConfirmationQuestion( "<question>Do you want to proceed with resetting the WP user password of $this->wp_user_email on all the sites listed above? (y/n)</question> ", false );
+		$question = new ConfirmationQuestion( "<question>Do you want to proceed with rotating the WP user password of $this->wp_user_email on all the sites listed above? (y/n)</question> ", false );
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit;
@@ -114,9 +114,9 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<info>Resetting the WP user password of $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}) and all of its development clones.</info>" );
+		$output->writeln( "<info>Rotating the WP user password of $this->wp_user_email on {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}) and all of its development clones.</info>" );
 
-		// Reset the WP user password on the main dev site.
+		// Rotate the WP user password on the main dev site.
 		$pressable_main_dev_node = &$this->find_main_dev_site_node();
 		if ( ! \is_null( $pressable_main_dev_node ) ) {
 			$result = $this->change_wp_user_password( $input, $output, $pressable_main_dev_node['site_object'], $new_wp_user_password );
@@ -127,18 +127,18 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			$output->writeln( '<comment>No main dev site found.</comment>' );
 		}
 
-		// Reset the WP user password on the production site.
+		// Rotate the WP user password on the production site.
 		$result = $this->change_wp_user_password( $input, $output, $this->pressable_prod_site, $new_wp_user_password );
 		if ( true === $result ) {
 			$this->related_pressable_sites[0][ $this->pressable_prod_site->id ]['new_password'] = $new_wp_user_password;
 		} else {
-			// If we fail to reset the password on the production site, then what's the point of doing it on the development sites? We definitely shouldn't update it in 1Password for now.
-			$output->writeln( "<error>Failed to reset the password on the production site {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}). Here is a summary of resetted passwords:</error>" );
+			// If we fail to rotate the password on the production site, then what's the point of doing it on the development sites? We definitely shouldn't update it in 1Password for now.
+			$output->writeln( "<error>Failed to rotate the password on the production site {$this->pressable_prod_site->displayName} (ID {$this->pressable_prod_site->id}, URL {$this->pressable_prod_site->url}). Here is a summary of rotated passwords:</error>" );
 			$this->output_sites_tree( $output, true );
 			return 1;
 		}
 
-		// Reset the WP user password on the rest of the development sites.
+		// Rotate the WP user password on the rest of the development sites.
 		foreach ( $this->related_pressable_sites as $level => &$nodes ) {
 			if ( 0 === $level ) {
 				continue; // Skip the production site.
@@ -180,7 +180,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$question = new Question( '<question>Enter the site ID or URL to reset the WP password on:</question> ' );
+			$question = new Question( '<question>Enter the site ID or URL to rotate the WP password on:</question> ' );
 			$question->setAutocompleterValues( \array_filter( \array_map( static fn( $site ) => empty( $site->clonedFromId ) ? $site->url : false, get_pressable_sites() ?? array() ) ) );
 
 			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
@@ -205,7 +205,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {
-				$question = new Question( '<question>Enter the user email to reset the WP password for:</question> ' );
+				$question = new Question( '<question>Enter the user email to rotate the WP password for:</question> ' );
 				$email    = $this->getHelper( 'question' )->ask( $input, $output, $question );
 			}
 		}
@@ -341,7 +341,7 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 	}
 
 	/**
-	 * Sets or resets the WP password of the user on a given site.
+	 * Rotates the WP password of the user on a given site.
 	 *
 	 * @param   InputInterface      $input              The input interface.
 	 * @param   OutputInterface     $output             The output interface.
@@ -375,18 +375,18 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			$output->writeln( "<comment>WP user $this->wp_user_email <fg=red;options=bold>NOT</> found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 		}
 
-		// If the password wasn't set via the WPCOM/Jetpack API, maybe try resetting it via the Pressable API.
+		// If the password wasn't set via the WPCOM/Jetpack API, maybe try rotating it via the Pressable API.
 		if ( true !== $result && ( true === \is_null( $password ) || ! empty( $input->getOption( 'force' ) ) ) ) {
 			// Pressable has special endpoints for owners vs collaborators.
 			$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $this->wp_user_email );
 			if ( false === \is_null( $pressable_sftp_user ) && true === $pressable_sftp_user->owner ) { // SFTP user found on site and is a site owner.
-				$output->writeln( "<info>Resetting the WP user password for the Pressable site owner $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+				$output->writeln( "<info>ROtating the WP user password for the Pressable site owner $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 				if ( ! $input->getOption( 'dry-run' ) ) {
 					$new_password = reset_pressable_site_owner_wp_password( $pressable_site->id );
 					$result       = ( true !== \is_null( $new_password ) );
 				} else {
-					$output->writeln( "<comment>Dry run: WP user password reset of Pressable site owner skipped.</comment>" );
+					$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site owner skipped.</comment>" );
 
 					/* @noinspection PhpUnhandledExceptionInspection */
 					$new_password = generate_random_password();
@@ -395,13 +395,13 @@ final class Pressable_Site_Reset_WP_User_Password extends Command {
 			} else {
 				$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $this->wp_user_email );
 				if ( true !== \is_null( $pressable_collaborator ) ) {
-					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+					$output->writeln( "<info>Rotating the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 					if ( ! $input->getOption( 'dry-run' ) ) {
 						$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_collaborator->id );
 						$result       = ( true !== \is_null( $new_password ) );
 					} else {
-						$output->writeln( "<comment>Dry run: WP user password reset of Pressable site collaborator skipped.</comment>" );
+						$output->writeln( "<comment>Dry run: WP user password rotation of Pressable site collaborator skipped.</comment>" );
 
 						/* @noinspection PhpUnhandledExceptionInspection */
 						$new_password = generate_random_password();
