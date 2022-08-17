@@ -211,7 +211,14 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function pressable_sftp_connect( $site_id ) {
+	/**
+	 * Connect to a Pressable site via SFTP.
+	 *
+	 * @param int $site_id
+	 * @param mixed $return_credentials If an array is passed, the credentials are returned within that array.
+	 * @return void
+	 */
+	public function pressable_sftp_connect( $site_id, &$return_credentials = false ) {
 
 		$ftp_config = $this->get_pressable_sftp_connection_data( $site_id );
 
@@ -235,6 +242,10 @@ class API_Helper {
 
 		if ( ! empty( $ftp_config['error'] ) ) {
 			return (object) $ftp_config;
+		}
+
+		if ( is_array( $return_credentials )) {
+			$return_credentials = $ftp_config;
 		}
 
 		$this->writeln( "Opening SFTP connection to site $site_id." );
