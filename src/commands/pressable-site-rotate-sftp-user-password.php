@@ -138,7 +138,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 				if ( $progress_bar->getProgress() === \count( $pressable_sites ) ) {
 					$progress_bar->finish();
-					$output->writeln( '' );
+					$output->writeln( '' ); // Empty line for UX purposes.
 				}
 
 				return get_pressable_site_sftp_user_by_email( $site->id, $this->sftp_user_email );
@@ -251,7 +251,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 			if ( $input->getOption( 'all-sites' ) ) {
 				$output->writeln( "==================== END {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})" );
-				$output->writeln( '' ); // Empty line for UX reasons.
+				$output->writeln( '' ); // Empty line for UX purposes.
 			}
 		}
 
