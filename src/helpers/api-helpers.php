@@ -4,6 +4,7 @@ namespace Team51\Helper;
 
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
+use phpseclib3\Net\SFTP;
 use function Amp\Promise\wait;
 use function Amp\Promise\all;
 use function Amp\call;
@@ -21,28 +22,28 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: Bearer '. $this->get_pressable_api_token(),
+			'Authorization: Bearer ' . $this->get_pressable_api_token(),
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
-				'content' => $data,
+				'header'        => $headers,
+				'method'        => $method,
+				'content'       => $data,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		preg_match( '/\d\d\d/', $http_response_header[0], $response_code );
 
 		$response_code = $response_code[0];
 
 		if ( '401' === $response_code ) {
-			echo "Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked." . PHP_EOL;
+			echo 'Pressable authentication failed! Your credentials are probably out of date. Please update them before running this again or your Pressable account may be locked.' . PHP_EOL;
 			exit;
 		}
 
@@ -51,7 +52,7 @@ class API_Helper {
 
 	public function get_pressable_api_token() {
 		$access_token = $this->get_local_pressable_access_token();
-		if( ! empty( $access_token ) ) {
+		if ( ! empty( $access_token ) ) {
 			// Re-use access token
 			echo "\nRe-using OAuth token stored locally.\n";
 			return $access_token;
@@ -88,16 +89,16 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => 'POST',
-				'content' => $data
-			)
+				'content' => $data,
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		$result = json_decode( $result );
 
-		if( empty( $result->access_token ) ) {
+		if ( empty( $result->access_token ) ) {
 			die( "Pressable API token could not be retrieved. Aborting!\n" );
 		}
 
@@ -115,7 +116,7 @@ class API_Helper {
 	 */
 	public function get_pressable_api_auth_tokens( $client_id, $client_secret ) {
 		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
-		$data = array(
+		$data            = array(
 			'client_id'     => $client_id,
 			'client_secret' => $client_secret,
 			'grant_type'    => 'password',
@@ -134,16 +135,16 @@ class API_Helper {
 			'http' => array(
 				'header'  => $headers,
 				'method'  => 'POST',
-				'content' => $data
-			)
+				'content' => $data,
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		$result = json_decode( $result );
 
-		if( empty( $result->refresh_token ) ) {
+		if ( empty( $result->refresh_token ) ) {
 			die( "Pressable API Refresh token could not be retrieved. Aborting!\n" );
 		}
 
@@ -159,25 +160,25 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: token '. GITHUB_API_TOKEN,
+			'Authorization: token ' . GITHUB_API_TOKEN,
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
+				'header'        => $headers,
+				'method'        => $method,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		if( in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+		if ( in_array( $method, array( 'POST', 'PUT' ) ) ) {
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 		}
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -190,29 +191,67 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-type: application/json',
-			'Authorization: Basic '. base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
+			'Authorization: Basic ' . base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
 			'User-Agent: PHP',
 		);
 
 		$options = array(
 			'http' => array(
-				'header'  => $headers,
-				'method'  => $method,
-				'content' => $data,
-				'timeout' => 60,
+				'header'        => $headers,
+				'method'        => $method,
+				'content'       => $data,
+				'timeout'       => 60,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
-		$context  = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
 
+	public function pressable_sftp_connect( $site_id ) {
+
+		$ftp_config = $this->get_pressable_sftp_connection_data( $site_id );
+
+		if ( empty( $ftp_config ) ) {
+			// Bot collaborator does not exist, add him and grab SFTP data.
+			$this->writeln( 'Bot collaborator SFTP credentials do not exist.' );
+
+			$this->writeln( "Adding bot collaborator to site $site_id." );
+
+			$add_collaborator_request = $this->add_bot_collaborator_to_site( $site_id );
+
+			if ( ! empty( $add_collaborator_request['error'] ) ) {
+				$this->writeln( sprintf( '<error>%s</error>', $add_collaborator_request['error'] ) );
+				exit;
+			}
+
+			$this->writeln( 'Getting bot collaborator SFTP credentials after adding user.' );
+
+			$ftp_config = $this->get_pressable_sftp_connection_data_after_adding( $site_id );
+		}
+
+		if ( ! empty( $ftp_config['error'] ) ) {
+			return (object) $ftp_config;
+		}
+
+		$this->writeln( "Opening SFTP connection to site $site_id." );
+
+		// Time to connect to the server.
+		$sftp_connection = new SFTP( $ftp_config['sftp_hostname'] );
+
+		if ( ! $sftp_connection->login( $ftp_config['sftp_username'], $ftp_config['sftp_password'] ) ) {
+			$this->writeln( '<error>Failed to connect to the server via SFTP. Aborting!</error>' );
+			exit;
+		}
+
+		return $sftp_connection;
+	}
 
 	public function log_to_slack( $message ) {
-		if( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
+		if ( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
 			echo "Note: log_to_slack() won't work while SLACK_WEBHOOK_URL is undefined in config.json." . PHP_EOL;
 		}
 
@@ -253,16 +292,16 @@ class API_Helper {
 				'header'        => $headers,
 				'ignore_errors' => true,
 				'method'        => $method,
-			)
+			),
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 		}
 
 		$context = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -273,7 +312,7 @@ class API_Helper {
 		$headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
-			'Authorization: Bearer '. FRONT_API_TOKEN,
+			'Authorization: Bearer ' . FRONT_API_TOKEN,
 			'User-Agent: PHP',
 		);
 
@@ -281,17 +320,17 @@ class API_Helper {
 			'http' => array(
 				'header'        => $headers,
 				'ignore_errors' => true,
-			)
+			),
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data = json_encode( $data );
+			$data                       = json_encode( $data );
 			$options['http']['content'] = $data;
 			$options['http']['method']  = $method;
 		}
 
 		$context = stream_context_create( $options );
-		$result = @file_get_contents( $api_request_url, false, $context );
+		$result  = @file_get_contents( $api_request_url, false, $context );
 
 		return json_decode( $result );
 	}
@@ -300,11 +339,11 @@ class API_Helper {
 	 * This function makes async HTTP requests to the WP API,
 	 * and returns unified response for each of the endpoints
 	 * Implemented with AMPHP: https://amphp.org/http-client/concurrent
-	 * 
+	 *
 	 * @param string[] $endpoints a list of endpoints to be invoked. The string must include WPCOM_API_ENDPOINT
 	 */
 	public function call_wpcom_api_concurrent( $endpoints, $data = array(), $method = 'GET' ) {
-		$client = HttpClientBuilder::buildDefault();
+		$client   = HttpClientBuilder::buildDefault();
 		$promises = array();
 
 		foreach ( $endpoints as $endpoint ) {
@@ -353,7 +392,7 @@ class API_Helper {
 			return false;
 		}
 
-		if( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
+		if ( intval( $data->pressable_token_timestamp ) < strtotime( self::PRESABLE_TOKEN_EXPIRE_AFTER ) ) {
 			// Pressable token expired
 			return false;
 		}
@@ -362,7 +401,7 @@ class API_Helper {
 	}
 
 	/**
-	 * Retrieves the last stored Pressable refresh token, 
+	 * Retrieves the last stored Pressable refresh token,
 	 * or PRESSABLE_API_REFRESH_TOKEN by default
 	 */
 	private function get_local_pressable_refresh_token() {
@@ -379,7 +418,7 @@ class API_Helper {
 
 		$data = json_decode( file_get_contents( self::PRESABLE_TOKEN_FILE ) );
 		if ( ! $data ) {
-			echo "Could not read pressable_token.json file";
+			echo 'Could not read pressable_token.json file';
 			return false;
 		}
 
@@ -398,5 +437,102 @@ class API_Helper {
 		file_put_contents( self::PRESABLE_TOKEN_FILE, json_encode( $data ) );
 
 		return true;
+	}
+
+	/**
+	 * Add bot collaborator to site
+	 * Using batch_create, so we can set sftp_access role
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function add_bot_collaborator_to_site( $pressable_site_id ) {
+
+		$response = array();
+
+		$add_collaborator_request = $this->call_pressable_api(
+			'collaborators/batch_create',
+			'POST',
+			array(
+				'siteIds' => array(
+					$pressable_site_id,
+				),
+				'email'   => PRESSABLE_BOT_COLLABORATOR_EMAIL,
+				'roles'   => 'sftp_access',
+			)
+		);
+
+		if ( ! is_null( $add_collaborator_request->errors ) ) {
+			$response['error'] = 'Error creating temporary bot collaborator. Aborting!';
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Get bot collaborator SFTP connection data for a site.
+	 * If account is not found and $create is true, a new account is created.
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function get_pressable_sftp_connection_data( $pressable_site_id, $create = false ) {
+		$ftp_data = $this->call_pressable_api( "sites/{$pressable_site_id}/ftp", 'GET', array() );
+
+		$ftp_config = array();
+
+		if ( empty( $ftp_data->data ) ) {
+			$ftp_config['error'] = 'Failed to retrieve FTP users. Aborting!';
+			return $ftp_config;
+		}
+
+		foreach ( $ftp_data->data as $ftp_user ) {
+			if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
+				$ftp_config['sftp_username'] = $ftp_user->username;
+				$ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
+
+				$password_reset = $this->call_pressable_api( "sites/{$pressable_site_id}/ftp/password/{$ftp_user->username}", 'POST', array() );
+				if ( ! empty( $password_reset->data ) ) {
+					$ftp_config['sftp_password'] = $password_reset->data;
+				} else {
+					$ftp_config['error'] = 'Failed to retrieve password for temporary bot collaborator. Aborting!';
+				}
+				break;
+			}
+		}
+
+		return $ftp_config;
+	}
+
+	/**
+	 * Try to get sftp data after adding the user.
+	 * Adding of the user takes some time, so we need to check a few times.
+	 * @param $pressable_site_id
+	 *
+	 * @return array
+	 */
+	private function get_pressable_sftp_connection_data_after_adding( $pressable_site_id ) {
+		$ftp_config = array();
+
+		$tries = 0;
+		$delay = 1;
+		while ( empty( $ftp_config ) && $tries <= 3 ) {
+
+			$ftp_config = $this->get_pressable_sftp_connection_data( $pressable_site_id );
+
+			sleep( $delay );
+			$tries++;
+			$delay = $delay * 2;
+		}
+
+		if ( empty( $ftp_config ) ) {
+			$ftp_config['error'] = 'Trouble finding temporary bot collaborator after adding.';
+		}
+
+		return $ftp_config;
+	}
+
+	private function writeln( $message ) {
+		echo "$message\n";
 	}
 }
