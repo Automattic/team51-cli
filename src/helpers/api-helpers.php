@@ -234,8 +234,7 @@ class API_Helper {
 		}
 
 		if ( ! empty( $ftp_config['error'] ) ) {
-			$sftp_connection->error = $ftp_config['error'];
-			return $sftp_connection;
+			return (object) $ftp_config;
 		}
 
 		$this->writeln( "Opening SFTP connection to site $site_id." );
@@ -470,7 +469,7 @@ class API_Helper {
 		return $response;
 	}
 
-		/**
+	/**
 	 * Get bot collaborator SFTP connection data for a site.
 	 * If account is not found and $create is true, a new account is created.
 	 * @param $pressable_site_id
