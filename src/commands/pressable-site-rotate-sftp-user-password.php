@@ -3,6 +3,7 @@
 namespace Team51\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -123,7 +124,25 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$pressable_sites      = $input->getOption( 'all-sites' ) ? get_pressable_sites() : array( $this->pressable_site );
 		$pressable_sftp_users = $input->getOption( 'all-sites' ) ? \array_map(
-			static fn( object $site ) => get_pressable_site_sftp_user_by_email( $site->id, $this->sftp_user_email ),
+			function( object $site ) use ( $output, $pressable_sites ) {
+				static $progress_bar = null;
+
+				if ( true === \is_null( $progress_bar ) ) {
+					$output->writeln( '<info>Compiling list of Pressable SFTP users...</info>' );
+
+					$progress_bar = new ProgressBar( $output, \count( $pressable_sites ) );
+					$progress_bar->start();
+				}
+
+				$progress_bar->advance();
+
+				if ( $progress_bar->getProgress() === \count( $pressable_sites ) ) {
+					$progress_bar->finish();
+					$output->writeln( '' );
+				}
+
+				return get_pressable_site_sftp_user_by_email( $site->id, $this->sftp_user_email );
+			},
 			$pressable_sites
 		) : array( $this->pressable_sftp_user );
 

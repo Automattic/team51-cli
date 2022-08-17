@@ -2,6 +2,8 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Performs the calls to the DeployHQ API and parses the responses.
  */
@@ -43,7 +45,10 @@ final class DeployHQ_API_Helper {
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
 			$message = encode_json_content( $result['body'] ) ?? 'Badly formatted error';
-			console_writeln( "❌ DeployHQ API error: {$result['headers']['http_code']} $message" );
+			console_writeln(
+				"❌ DeployHQ API error: {$result['headers']['http_code']} $message",
+				404 === $result['headers']['http_code'] ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
+			);
 			return null;
 		}
 

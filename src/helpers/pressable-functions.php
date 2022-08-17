@@ -163,7 +163,7 @@ function get_pressable_site_sftp_user_by_email( string $site_id, string $user_em
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
 
 	foreach ( $sftp_users as $sftp_user ) {
-		if ( true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
+		if ( ! empty( $sftp_user->email ) && true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
 			return $sftp_user;
 		}
 	}
@@ -240,7 +240,7 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
 	}
 
 	foreach ( $collaborators as $collaborator ) {
-		if ( true === is_case_insensitive_match( $collaborator->email, $collaborator_email ) ) {
+		if ( ! empty( $collaborator->email ) && true === is_case_insensitive_match( $collaborator->email, $collaborator_email ) ) {
 			return $collaborator;
 		}
 	}
