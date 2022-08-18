@@ -100,6 +100,14 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit;
 		}
+
+		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
+			$question = new ConfirmationQuestion( "<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? (y/n)</question> ", false );
+			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+				$output->writeln( '<comment>Command aborted by user.</comment>' );
+				exit;
+			}
+		}
 	}
 
 	/**
