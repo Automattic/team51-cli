@@ -104,7 +104,7 @@ function get_deployhq_project_permalink_from_pressable_site( object $pressable_s
 function update_deployhq_project_server( string $project_permalink, string $server_id, array $params ): ?object {
 	if ( ! isset( $params['server'] ) ) { // Quirk of the API. All changes must be sub-nested under 'server' for some inexplicable reason.
 		$params = array(
-			'server' => $params
+			'server' => $params,
 		);
 	}
 

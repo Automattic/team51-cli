@@ -49,7 +49,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Rotates the SFTP and WP user passwords of the concierge user on one or all Pressable sites.' )
-	        ->setHelp( 'This command rotates the SFTP and WP user passwords of the concierge user on one a given Pressable site or on all sites retrievable through the Pressable API.' );
+			->setHelp( 'This command rotates the SFTP and WP user passwords of the concierge user on one a given Pressable site or on all sites retrievable through the Pressable API.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the passwords.' )
 			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the user for which to rotate the passwords. Default is concierge@wordpress.com.' );
@@ -95,7 +95,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		}
 
 		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
-			$question = new ConfirmationQuestion( "<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the passwords? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the passwords? (y/n)</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
@@ -115,12 +115,14 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$output->writeln( '<fg=blue;options=bold>----- SFTP User(s) Password -----</>' );
 
 		$sftp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-sftp-user-password' );
-		$sftp_password_rotate_command_input = new ArrayInput( array(
-			'site'        => $input->getArgument( 'site' ),
-			'--user'      => $this->user_email,
-			'--all-sites' => $input->getOption( 'all-sites' ),
-			'--dry-run'   => $input->getOption( 'dry-run' ),
-		) );
+		$sftp_password_rotate_command_input = new ArrayInput(
+			array(
+				'site'        => $input->getArgument( 'site' ),
+				'--user'      => $this->user_email,
+				'--all-sites' => $input->getOption( 'all-sites' ),
+				'--dry-run'   => $input->getOption( 'dry-run' ),
+			)
+		);
 		$sftp_password_rotate_command_input->setInteractive( false );
 
 		/* @noinspection PhpUnhandledExceptionInspection */
@@ -131,12 +133,14 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$output->writeln( '<fg=blue;options=bold>----- WP User(s) Password -----</>' );
 
 		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
-		$wp_password_rotate_command_input = new ArrayInput( array(
-			'site'        => $input->getArgument( 'site' ),
-			'--user'      => $this->user_email,
-			'--all-sites' => $input->getOption( 'all-sites' ),
-			'--dry-run'   => $input->getOption( 'dry-run' ),
-		) );
+		$wp_password_rotate_command_input = new ArrayInput(
+			array(
+				'site'        => $input->getArgument( 'site' ),
+				'--user'      => $this->user_email,
+				'--all-sites' => $input->getOption( 'all-sites' ),
+				'--dry-run'   => $input->getOption( 'dry-run' ),
+			)
+		);
 		$wp_password_rotate_command_input->setInteractive( false );
 
 		/* @noinspection PhpUnhandledExceptionInspection */

@@ -29,7 +29,7 @@ function get_pressable_sites( array $params = array() ): ?array {
 /**
  * Get site information and settings for all sites that contain a given search term in their name or URL.
  *
- * @param   string  $search_term	The search term.
+ * @param   string  $search_term    The search term.
  * @param   array   $params         The query parameters for filtering the results.
  *
  * @return  object[]|null
@@ -84,7 +84,7 @@ function get_pressable_site_by_url( string $site_url, bool $exact = true ): ?obj
 			if ( true === is_case_insensitive_match( $site->url, $site_url ) ) {
 				return $site;
 			}
-		} else if ( \substr( $site->url, -1 * \strlen( $site_url ) ) === $site_url ) {
+		} elseif ( \substr( $site->url, -1 * \strlen( $site_url ) ) === $site_url ) {
 			// If $site_url is the ending of the site URL, return the site.
 			// This will thus return the site with URL www.domain.com for a URL input of domain.com.
 			return $site;

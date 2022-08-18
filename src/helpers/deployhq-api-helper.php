@@ -36,7 +36,7 @@ final class DeployHQ_API_Helper {
 			array(
 				'Accept: application/json',
 				'Content-type: application/json',
-				'Authorization: Basic '. \base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
+				'Authorization: Basic ' . \base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
 				'User-Agent: PHP',
 			),
 			$method,
