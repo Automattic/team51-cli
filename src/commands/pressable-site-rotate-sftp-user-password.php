@@ -81,6 +81,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		define_console_verbosity( $output->getVerbosity() );
 
 		if ( $input->getOption( 'all-sites' ) ) {
+			// Retrieve the SFTP user email.
 			$this->sftp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
 			$input->setOption( 'user', $this->sftp_user_email ); // Store the email of the SFTP user in the option field.
 		} else {
@@ -92,7 +93,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 			$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the argument field.
 
-			// Retrieve the SFTP user email and make sure it exists.
+			// Retrieve the SFTP user and make sure it exists.
 			$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
 			if ( false !== \is_null( $this->pressable_sftp_user ) ) {
 				exit; // Exit if the SFTP user does not exist.
@@ -107,9 +108,9 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		if ( $input->getOption( 'all-sites' ) ) {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of $this->sftp_user_email on <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of $this->sftp_user_email on <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
 		} else {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
@@ -157,7 +158,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 				if ( ! $input->getOption( 'dry-run' ) ) {
 					$new_pressable_sftp_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $this->pressable_sftp_user->username );
 					if ( \is_null( $new_pressable_sftp_password ) ) {
-						$output->writeln( '<error>Failed to rotate SFTP password.</error>' );
+						$output->writeln( '<error>Failed to rotate SFTP user password.</error>' );
 						if ( $input->getOption( 'all-sites' ) ) {
 							goto next_site;
 						}
@@ -165,13 +166,13 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 						return 1;
 					}
 				} else {
-					$output->writeln( '<comment>Dry run: SFTP password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+					$output->writeln( '<comment>Dry run: SFTP user password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 					$new_pressable_sftp_password = '********';
 				}
 
-				$output->writeln( '<fg=green;options=bold>Pressable SFTP password rotated.</>' );
+				$output->writeln( '<fg=green;options=bold>SFTP user password rotated.</>' );
 				$output->writeln(
-					"<comment>New password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
+					"<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
 					true === $this->pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
 				);
 
