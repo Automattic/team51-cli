@@ -375,7 +375,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$op_login = \reset( $op_login );
 			$output->writeln( "<info>Updating 1Password login <fg=cyan;options=bold>$op_login->title</> (ID $op_login->id).</info>", OutputInterface::VERBOSITY_DEBUG );
 
-			$result = \shell_exec( "op item edit $op_login->id password='$password' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+			// The URL flag is required because otherwise a login entry valid for prod and staging will update both times with different passwords, and one will be lost...
+			$result = \shell_exec( "op item edit $op_login->id password='$password' --url 'https://{$this->pressable_site->url}' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 			if ( empty( $result ) ) {
 				$output->writeln( '<error>1Password login could not be updated.</error>' );
 				return false;
