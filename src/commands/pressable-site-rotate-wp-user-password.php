@@ -56,11 +56,11 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription('Rotates the WP password of the concierge user or that of a given user for a given site and all of its development clones.')
+		$this->setDescription( 'Rotates the WP password of the concierge user or that of a given user for a given site and all of its development clones.' )
 			->setHelp( 'This command allows you to rotate the WP password of users on a given Pressable site and all of its development clones. Finally, it attempts to update the 1Password value as well.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the WP user password.' )
-	        ->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' );
+			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' );
 
 		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the WP user password on all sites.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current WP user password. Useful for checking whether a given input is valid.' );
@@ -102,7 +102,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
-			$question = new ConfirmationQuestion( "<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? (y/n)</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
@@ -234,7 +234,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			if ( ! $input->getOption( 'dry-run' ) ) {
 				$result = set_wpcom_site_user_wp_password( $this->pressable_site->url, $wpcom_user->ID, $new_password );
 			} else {
-				$output->writeln( "<comment>Dry run: WP user password setting skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
+				$output->writeln( '<comment>Dry run: WP user password setting skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 				$result = true;
 			}
 		} else {
@@ -252,7 +252,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 					$new_password = reset_pressable_site_owner_wp_password( $this->pressable_site->id );
 					$result       = ( true !== \is_null( $new_password ) );
 				} else {
-					$output->writeln( "<comment>Dry run: WP user password reset of Pressable site owner skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
+					$output->writeln( '<comment>Dry run: WP user password reset of Pressable site owner skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
 					/* @noinspection PhpUnhandledExceptionInspection */
 					$new_password = generate_random_password();
@@ -268,7 +268,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 						$new_password = reset_pressable_site_collaborator_wp_password( $this->pressable_site->id, $pressable_collaborator->id );
 						$result       = ( true !== \is_null( $new_password ) );
 					} else {
-						$output->writeln( "<comment>Dry run: WP user password reset of Pressable site collaborator skipped.</comment>", OutputInterface::VERBOSITY_VERBOSE );
+						$output->writeln( '<comment>Dry run: WP user password reset of Pressable site collaborator skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
 						/* @noinspection PhpUnhandledExceptionInspection */
 						$new_password = generate_random_password();
@@ -303,7 +303,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		if ( true === \is_null( $op_items ) ) { // Performance and rate-limiting optimization.
 			$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
 			if ( true === \is_null( $op_items ) ) {
-				$output->writeln( "<error>1Password logins could not be retrieved.</error>" );
+				$output->writeln( '<error>1Password logins could not be retrieved.</error>' );
 				return null;
 			}
 		}
@@ -368,7 +368,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 
 			$result = \shell_exec( "op item create --category login --vault 'eysfzwd3el7tlphjd7koc6qfdu' username='$this->wp_user_email' password='$password' --url 'https://{$this->pressable_site->url}' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 			if ( empty( $result ) ) {
-				$output->writeln( "<error>1Password login could not be created.</error>" );
+				$output->writeln( '<error>1Password login could not be created.</error>' );
 				return false;
 			}
 		} else {
@@ -377,7 +377,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 
 			$result = \shell_exec( "op item edit $op_login->id password='$password' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 			if ( empty( $result ) ) {
-				$output->writeln( "<error>1Password login could not be updated.</error>" );
+				$output->writeln( '<error>1Password login could not be updated.</error>' );
 				return false;
 			}
 		}

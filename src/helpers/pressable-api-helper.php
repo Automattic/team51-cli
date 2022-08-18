@@ -60,7 +60,7 @@ final class Pressable_API_Helper {
 			$message = '';
 			if ( \property_exists( $result['body'], 'message' ) ) {
 				$message = $result['body']->message;
-			} else if ( \property_exists( $result['body'], 'error' ) ) {
+			} elseif ( \property_exists( $result['body'], 'error' ) ) {
 				$message = $result['body']->error;
 			}
 
@@ -199,7 +199,7 @@ final class Pressable_API_Helper {
 		$data = array(
 			'access_token'  => $token->access_token,
 			'refresh_token' => $token->refresh_token,
-			'created_at'    => \time(),// Safeguard against the user's PHP time being misconfigured.
+			'created_at'    => \time(), // Safeguard against the user's PHP time being misconfigured.
 		);
 
 		// Save the data to the file as a JSON string.

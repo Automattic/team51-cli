@@ -65,7 +65,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Rotates the SFTP password of the concierge user or that of a given user for a given site.' )
-	        ->setHelp( 'This command allows you to rotate the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
+			->setHelp( 'This command allows you to rotate the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' );
@@ -119,7 +119,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		}
 
 		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
-			$question = new ConfirmationQuestion( "<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the SFTP users password? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the SFTP users password? (y/n)</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
@@ -205,7 +205,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 						}
 
 						// Prompt the user to input the DeployHQ project permalink.
-						$question = new Question( '<question>Enter the DeployHQ project permalink or leave empty to fail gracefully:</question> ', 'pP3uZb0b5s' );
+						$question                   = new Question( '<question>Enter the DeployHQ project permalink or leave empty to fail gracefully:</question> ', 'pP3uZb0b5s' );
 						$deployhq_project_permalink = $this->getHelper( 'question' )->ask( $input, $output, $question );
 						if ( 'pP3uZb0b5s' === $deployhq_project_permalink ) {
 							$result = $this->fail_deployhq( $output, $new_pressable_sftp_password );

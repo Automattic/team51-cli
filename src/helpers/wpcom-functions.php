@@ -41,7 +41,7 @@ function get_wpcom_site_users( string $site_id_or_url, array $params = array() )
  * Gets a site user for a site by their login email address (requires active Jetpack connection for WPORG sites).
  *
  * @param   string  $site_id_or_url     The site URL or WordPress.com site ID.
- * @param   string  $email			    The email address of the user.
+ * @param   string  $email              The email address of the user.
  *
  * @return  object|null
  */
@@ -90,7 +90,7 @@ function set_wpcom_site_user_wp_password( string $site_id_or_url, string $user_i
 				array(
 					'password' => $new_password,
 				)
-			)
+			),
 		)
 	);
 	if ( empty( $result ) ) {
