@@ -110,11 +110,12 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		$pressable_sites = $input->getOption( 'all-sites' ) ? get_pressable_sites() : array( $this->pressable_site );
 		foreach ( $pressable_sites as $pressable_site ) {
 			$this->pressable_site = $pressable_site;
+			unset( $wp_username ); // Make sure we don't carry over the previous site's WP username.
 
 			$output->writeln( "<fg=magenta;options=bold>Rotating the WP user password of $this->wp_user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
 
 			// Rotate the WP user password.
-			$result = $this->rotate_wp_user_password( $input, $output, $new_wp_user_password );
+			$result = $this->rotate_wp_user_password( $input, $output, $new_wp_user_password, $wp_username );
 			if ( true !== $result ) {
 				$output->writeln( '<error>Failed to rotate WP user password.</error>' );
 				if ( $input->getOption( 'all-sites' ) ) {
@@ -128,7 +129,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( "<comment>New WP user password:</comment> <fg=green;options=bold>$new_wp_user_password</>", OutputInterface::VERBOSITY_DEBUG );
 
 			// Update the 1Password password value.
-			$result = $this->update_1password_login( $input, $output, $new_wp_user_password );
+			$result = $this->update_1password_login( $input, $output, $new_wp_user_password, $wp_username );
 			if ( true !== $result ) {
 				$output->writeln( '<error>Failed to update 1Password value.</error>' );
 				$output->writeln( "<info>If needed, please update the 1Password value manually to: $new_wp_user_password</info>" );
@@ -204,11 +205,12 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
 	 * @param   string|null         $password   The new password.
+	 * @param   string|null         $username   The username of the user, if found.
 	 *
 	 * @return  bool|null   Whether the password was successfully set. Null means that an API attempt wasn't even made (most likely, no user found).
 	 * @noinspection PhpDocMissingThrowsInspection
 	 */
-	private function rotate_wp_user_password( InputInterface $input, OutputInterface $output, ?string &$password = null ): ?bool {
+	private function rotate_wp_user_password( InputInterface $input, OutputInterface $output, ?string &$password = null, ?string &$username = null ): ?bool {
 		$result = null;
 
 		/* @noinspection PhpUnhandledExceptionInspection */
@@ -217,9 +219,10 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		// First attempt to set the password via the WPCOM/Jetpack API.
 		$wpcom_user = get_wpcom_site_user_by_email( $this->pressable_site->url, $this->wp_user_email );
 		if ( false === \is_null( $wpcom_user ) ) { // User found on site and Jetpack connection is active.
-			$output->writeln( "<comment>WP user $wpcom_user->name (ID $wpcom_user->ID, email $wpcom_user->email) found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-			$output->writeln( "<info>Setting the WP user password for $wpcom_user->name (ID $wpcom_user->ID, email $wpcom_user->email) via the WPCOM API.</info>", OutputInterface::VERBOSITY_VERBOSE );
+			$output->writeln( "<comment>WP user $wpcom_user->login (ID $wpcom_user->ID, email $wpcom_user->email) found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+			$output->writeln( "<info>Setting the WP user password for $wpcom_user->login (ID $wpcom_user->ID, email $wpcom_user->email) via the WPCOM API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
+			$username = $wpcom_user->login;
 			if ( ! $input->getOption( 'dry-run' ) ) {
 				$result = set_wpcom_site_user_wp_password( $this->pressable_site->url, $wpcom_user->ID, $new_password );
 			} else {
@@ -252,6 +255,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				if ( true !== \is_null( $pressable_collaborator ) ) {
 					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
+					$username = $pressable_collaborator->wpUsername;
 					if ( ! $input->getOption( 'dry-run' ) ) {
 						$new_password = reset_pressable_site_collaborator_wp_password( $this->pressable_site->id, $pressable_collaborator->id );
 						$result       = ( true !== \is_null( $new_password ) );
@@ -281,36 +285,61 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
 	 * @param   string              $password   The password to set.
+	 * @param   string|null         $username   The username of the WP user, if known.
 	 *
 	 * @return  bool|null   True if the update was successful, null if the update was never attempted.
 	 */
-	private function update_1password_login( InputInterface $input, OutputInterface $output, string $password ): ?bool {
-		$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
-		if ( true === \is_null( $op_items ) ) {
-			$output->writeln( "<error>1Password logins could not be retrieved.</error>" );
-			return null;
+	private function update_1password_login( InputInterface $input, OutputInterface $output, string $password, ?string $username = null ): ?bool {
+		static $op_items = null;
+
+		if ( true === \is_null( $op_items ) ) { // Performance and rate-limiting optimization.
+			$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
+			if ( true === \is_null( $op_items ) ) {
+				$output->writeln( "<error>1Password logins could not be retrieved.</error>" );
+				return null;
+			}
 		}
 
 		// Find main production site login.
 		$op_login = \array_filter(
 			\array_map(
-				function ( object $login ) {
+				function ( object $login ) use ( $output, $username ) {
 					$login_urls = \property_exists( $login, 'urls' ) ? (array) $login->urls : array();
 					foreach ( $login_urls as $login_url ) {
 						$login_url = \trim( $login_url->href );
 						if ( false !== \strpos( $login_url, 'http' ) ) {
+							// Strip away everything but the domain itself.
 							$login_url = \parse_url( $login_url, PHP_URL_HOST );
+						} else {
+							// Strip away endings like /wp-admin or /wp-login.php.
+							$login_url = \explode( '/', $login_url )[0];
 						}
 
 						if ( true !== \is_null( $login_url ) && true === is_case_insensitive_match( $login_url, $this->pressable_site->url ) ) {
-							$login = decode_json_content( \shell_exec( "op item get $login->id --format json" ) );
-							if ( true === is_case_insensitive_match( $this->wp_user_email, $login->fields[0]->value ) ) {
+							$op_username = \trim( \shell_exec( "op item get $login->id --fields label=username" ) );
+							if ( empty( $op_username ) ) {
+								$op_username = \trim( \shell_exec( "op item get $login->id --fields label=user_login" ) );
+							}
+							if ( empty( $op_username ) ) {
+								$output->writeln( "<error>Cannot find username of 1Password login $login->title (ID $login->id) which is a potential match.</error>" );
+								continue;
+							}
+
+							if ( true === is_case_insensitive_match( $this->wp_user_email, $op_username ) ) {
+								return $login;
+							}
+							if ( true !== \is_null( $username ) && true === is_case_insensitive_match( $username, $op_username ) ) {
 								return $login;
 							}
 
-							// Sometimes, the concierge user is stored as the username.
-							if ( true === is_case_insensitive_match( $this->wp_user_email, 'concierge@wordpress.com' ) && true === is_case_insensitive_match( $login->fields[0]->value, 'wpconcierge' ) ) {
-								return $login;
+							// Sometimes, the concierge user is stored as the username instead of the email.
+							if ( true === is_case_insensitive_match( $this->wp_user_email, 'concierge@wordpress.com' ) ) {
+								if ( true === is_case_insensitive_match( 'wpconcierge', $op_username ) ) {
+									return $login;
+								}
+								if ( true === is_case_insensitive_match( 'wordpressconcierge', $op_username ) ) {
+									return $login;
+								}
 							}
 						}
 					}
@@ -327,6 +356,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 
 		// Create or update the entry.
 		if ( 0 === \count( $op_login ) ) {
+			$output->writeln( "<info>Creating 1Password login <fg=cyan;options=bold>{$this->pressable_site->displayName}</>.</info>", OutputInterface::VERBOSITY_DEBUG );
+
 			$result = \shell_exec( "op item create --category login --vault 'eysfzwd3el7tlphjd7koc6qfdu' username='$this->wp_user_email' password='$password' --url 'https://{$this->pressable_site->url}' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 			if ( empty( $result ) ) {
 				$output->writeln( "<error>1Password login could not be created.</error>" );
@@ -334,7 +365,9 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			}
 		} else {
 			$op_login = \reset( $op_login );
-			$result   = \shell_exec( "op item edit $op_login->id password='$password' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+			$output->writeln( "<info>Updating 1Password login <fg=cyan;options=bold>$op_login->title</> (ID $op_login->id).</info>", OutputInterface::VERBOSITY_DEBUG );
+
+			$result = \shell_exec( "op item edit $op_login->id password='$password' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
 			if ( empty( $result ) ) {
 				$output->writeln( "<error>1Password login could not be updated.</error>" );
 				return false;
