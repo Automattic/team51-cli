@@ -11,7 +11,7 @@ use function Amp\call;
 
 class API_Helper {
 
-	private const PRESABLE_TOKEN_FILE         = __DIR__ . '/pressable_token.json';
+	private const PRESABLE_TOKEN_FILE         = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_token.json';
 	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-59 minutes';
 
 	public function call_pressable_api( $query, $method, $data ) {
