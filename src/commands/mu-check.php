@@ -109,7 +109,6 @@ class Mu_Check extends Command {
 	 */
 	private function check_mu_plugins_folder( $site, $sftp_connection ) {
 		$mu_plugins_dir      = '/htdocs/wp-content/mu-plugins';
-		$mu_autoloader_regex = '/function\s*disable_autoupdate_specific_plugins\s*\(\s*\$update,\s*\$item\s*\)\s*{\s*\/\/\s*Array\s*of\s*plugin\s*slugs\s*to\s*never\s*auto-update\s*\$plugins\s*=\s*array\s*\(\s*\'akismet\',\s*\'buddypress\',\s*\);\s*if\s*\(\s*in_array\(\s*\$item->slug,\s*\$plugins\s*\)\s*\)\s*{\s*\/\/\s*Never\s*update\s*plugins\s*in\s*this\s*array\s*return\s*false;\s*}\s*else\s*{\s*\/\/\s*Else,\s*do\s*whatever\s*it\s*was\s*going\s*to\s*do\s*before\s*return\s*\$update;\s*}\s*}\s*add_filter\(\s*\'auto_update_plugin\',\s*\'disable_autoupdate_specific_plugins\',\s*11,\s*2\s*\);/m';
 
 		// If doesn't exist, output to passed-sites.txt
 		$sftp_connection->chdir( $mu_plugins_dir );

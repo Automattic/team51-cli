@@ -241,7 +241,8 @@ class API_Helper {
 		}
 
 		if ( ! empty( $ftp_config['error'] ) ) {
-			return (object) $ftp_config;
+			$this->writeln( sprintf( '<error>Error connecting to site %d: %s</error>', $site_id, $ftp_config['error'] ) );
+			exit;
 		}
 
 		if ( is_array( $return_credentials )) {
