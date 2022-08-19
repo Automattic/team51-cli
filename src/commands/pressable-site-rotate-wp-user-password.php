@@ -56,8 +56,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription( 'Rotates the WP password of the concierge user or that of a given user for a given site and all of its development clones.' )
-			->setHelp( 'This command allows you to rotate the WP password of users on a given Pressable site and all of its development clones. Finally, it attempts to update the 1Password value as well.' );
+		$this->setDescription( 'Rotates the WordPress user password of a given user on Pressable sites.' )
+			->setHelp( 'This command allows you to rotate the WP password of users on either all Pressable sites or on a given one. Finally, it attempts to update the 1Password values of rotated passwords as well.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the WP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' );
@@ -91,9 +91,9 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		if ( $input->getOption( 'all-sites' ) ) {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
 		} else {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? [Y/n]</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
@@ -102,7 +102,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
-			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? (y/n)</question> ', false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? [Y/n]</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
@@ -176,7 +176,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		if ( $input->getOption( 'no-interaction' ) ) {
 			$email = 'concierge@wordpress.com';
 		} else {
-			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? (y/n)</question> ', false );
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {
