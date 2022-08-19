@@ -7,6 +7,9 @@
         "amphp/http-client": "^4.6",
         "ext-json": "*"
     },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest"
+    },
     "autoload": {
         "files": [
             "src/helpers/functions.php",
