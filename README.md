@@ -27,15 +27,31 @@ It's the nickname for our Special Projects team at Automattic.
 Be well, be kind, make things and set them free.
 
 ## Installation
-1. Open the Terminal on your Mac and clone this repository by running:
+1. Open the Terminal on your Mac and install [Homebrew](https://brew.sh/) (if you haven't already).
+1. Keep your Terminal open and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
     - It will ask you an SSH Passphrase, type it and hit Enter (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy)
 1. Make sure [Composer](https://getcomposer.org/) is installed on your computer.
-    - The easiest way to install composer is installing [brew](https://brew.sh/) first, and then running `brew install composer`
+    - The easiest way to install composer is by running `brew install composer`
+1. Make sure [1Password CLI](https://developer.1password.com/docs/cli/get-started/) is installed on your computer.
+    - The easiest way to install 1Password CLI is by running `brew install --cask 1password/tap/1password-cli`
+    - After installation, it's best to [turn on biometric unlocking](https://developer.1password.com/docs/cli/get-started/#turn-on-biometric-unlock) for convenience.
+    - Run a simple command, like `op vault ls`, to verify that it works and to select your default account (select the Team51 account if you have more than one).
 1. Now let's install the CLI! From the `team51-cli` directory, run `./install-osx`.
     - If you get an error `no such file or directory: ./install-osx`, try running `cd team51-cli` first.
-1. Open 1Password and download the `config.json` file from a secure vault named `Team51-CLI Config File`. Place this file inside `team51-cli` directory.
-1. To verify the tool was installed successfully, you can run `team51` from your Terminal
+1. To verify the tool was installed successfully, you can run `team51` from your Terminal.
+
+### For contractors
+Apart from the steps outlined above, you will also need to perform the following:
+1. Go to your `Private` vault in the Team51 1Password account.
+1. Create a login called `Pressable - Personal` and populate it with the login information for your personal Pressable account.
+1. In addition, add three extra fields named *exactly*:
+   1. API app client id
+   1. API app client secret
+   1. API refresh token
+1. Populate the fields with the Pressable API credentials received from Team51.
+
+When running any command, you will need to append the flag `--contractor` (or `-c`) to the command.
 
 ## Usage
 This CLI tool is self-documenting. You can view a list of available commands with `team51 list`.
