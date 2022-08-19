@@ -64,8 +64,8 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription( 'Rotates the SFTP password of the concierge user or that of a given user for a given site.' )
-			->setHelp( 'This command allows you to rotate the SFTP password of users on a given Pressable site. If the user is the concierge@wordpress.com user (default), then the DeployHQ configuration is also updated.' );
+		$this->setDescription( 'Rotates the SFTP user password of a given user on Pressable sites.' )
+			->setHelp( 'This command allows you to rotate the SFTP password of users on either all Pressable sites or on a given one. If the given user is also the website owner (default concierge@wordpress.com), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' );
@@ -108,9 +108,9 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		if ( $input->getOption( 'all-sites' ) ) {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of $this->sftp_user_email on <fg=red;options=bold>ALL</> sites? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of $this->sftp_user_email on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
 		} else {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? (y/n)</question> ", false );
+			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of {$this->pressable_sftp_user->username} (ID {$this->pressable_sftp_user->id}, email {$this->pressable_sftp_user->email}) on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? [Y/n]</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
@@ -119,7 +119,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		}
 
 		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
-			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the SFTP users password? (y/n)</question> ', false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the SFTP users password? [Y/n]</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit;
@@ -335,7 +335,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		if ( $input->getOption( 'no-interaction' ) ) {
 			$email = 'concierge@wordpress.com';
 		} else {
-			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? (y/n)</question> ', false );
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {
