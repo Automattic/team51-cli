@@ -9,6 +9,10 @@ if ( \file_exists( $config_file ) ) {
 }
 
 $template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
+if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) ) {
+	$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.tpl.json';
+}
+
 \exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
 
 // Parse the config file.
