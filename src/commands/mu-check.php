@@ -11,9 +11,9 @@ use Symfony\Component\Console\Input\InputInterface;
 class Mu_Check extends Command {
 	protected static $defaultName = 'mu-check';
 
-	const OUTPUT_PATH = '/Users/taco/Dropbox/Vault/a8c/';
-	const PASSED_FILE = self::OUTPUT_PATH . '/passed-sites.txt';
-	const VAULT_FILE  = self::OUTPUT_PATH . '/site-creds.csv';
+	const OUTPUT_PATH = '/Users/taco/mu-scan/';
+	const PASSED_FILE = self::OUTPUT_PATH . 'passed-sites.txt';
+	const VAULT_FILE  = self::OUTPUT_PATH . 'site-creds.csv';
 
 	private $api_helper;
 	private $output;
@@ -37,34 +37,33 @@ class Mu_Check extends Command {
 		$this->output     = $output;
 
 		// Set up export files.
-		// $this->open_export_files();
+		$this->open_export_files();
 
 		// Get the list of sites via Pressable API.
 		$sites      = $this->get_site_list();
 		$site_names = array_column( $sites, 'name' );
-		$this->output->writeln( sprintf( '<comment>%s</comment>', implode( "\n", $site_names ) ) );
 
-		// foreach ( $sites as $site ) {
-		// 	$this->output->writeln( '<comment>Checking site: ' . $site->url . '</comment>' );
-		// 	$sftp_account = array();
+		foreach ( $sites as $site ) {
+			$this->output->writeln( '<comment>Checking site: ' . $site->url . '</comment>' );
+			$sftp_account = array();
 
-		// 	// Check for SFTP account under SFTP_ACCOUNT_EMAIL.
-		// 	// Get SFTP credentials at the same time.
-		// 	$sftp_connection = $this->api_helper->pressable_sftp_connect( $site->id, $sftp_account );
+			// Check for SFTP account under SFTP_ACCOUNT_EMAIL.
+			// Get SFTP credentials at the same time.
+			$sftp_connection = $this->api_helper->pressable_sftp_connect( $site->id, $sftp_account );
 
-		// 	if ( ! $sftp_connection ) {
-		// 		$this->output->writeln( "<error>Failed to create SFTP account for $site->url" );
-		// 		continue;
-		// 	}
-		// 	// Export credentials to Vault.
-		// 	$this->export_sftp_credentials( $site, $sftp_account );
+			if ( ! $sftp_connection ) {
+				$this->output->writeln( "<error>Failed to create SFTP account for $site->url" );
+				continue;
+			}
+			// Export credentials to Vault.
+			$this->export_sftp_credentials( $site, $sftp_account );
 
-		// 	// Check for mu-plugins folder.
-		// 	$this->check_mu_plugins_folder( $site, $sftp_connection );
-		// }
+			// Check for mu-plugins folder.
+			$this->check_mu_plugins_folder( $site, $sftp_connection );
+		}
 
 		// Clean up files.
-		// $this->close_files( $this->file_handles );
+		$this->close_files( $this->file_handles );
 
 		$output->writeln( "<info>\nAll done!<info>" );
 	}
@@ -138,7 +137,7 @@ class Mu_Check extends Command {
 			}
 
 			// Otherwise, dump the diff to <sitename>-<siteid>-autoloader.diff
-			$outfile = fopen( sprintf( '%s/%s-%s-autoloader.diff', self::OUTPUT_PATH, $site->name, $site->id ), 'w' );
+			$outfile = fopen( sprintf( '%s%s-%s-autoloader.diff', self::OUTPUT_PATH, $site->name, $site->id ), 'w' );
 
 			fwrite( $outfile, implode( "\n", $diff ) );
 			$this->output->writeln( sprintf( '<comment>%s: mu-autoloader.php does not match</comment>', $site->name ) );
@@ -150,7 +149,7 @@ class Mu_Check extends Command {
 		if ( count( $files ) > 3 // Including . and ..
 				|| ! isset( $files['index.php'] ) ) {
 			// If there are more than just index.php, dump the file list to <sitename>-<siteid>-files.txt.
-			$outfile = fopen( sprintf( '%s/%s-%s-files.txt', self::OUTPUT_PATH, $site->name, $site->id ), 'w' );
+			$outfile = fopen( sprintf( '%s%s-%s-files.txt', self::OUTPUT_PATH, $site->name, $site->id ), 'w' );
 			fwrite( $outfile, var_export( array_keys( $files ), true ) );
 			$this->output->writeln( sprintf( '<comment>%s: mu-autoloader.php not found</comment>', $site->name ) );
 			fclose( $outfile );
@@ -191,8 +190,8 @@ class Mu_Check extends Command {
 	 * @return array Array of file handles.
 	 */
 	private function open_site_files( $site_name, $site_id ) {
-		$autoloader_file = sprintf( '%s/%s-%s-autoloader.diff', self::OUTPUT_PATH, $site_name, $site_id );
-		$mu_plugins_file = sprintf( '%s/%s-%s-mu-plugins.txt', self::OUTPUT_PATH, $site_name, $site_id );
+		$autoloader_file = sprintf( '%s%s-%s-autoloader.diff', self::OUTPUT_PATH, $site_name, $site_id );
+		$mu_plugins_file = sprintf( '%s%s-%s-mu-plugins.txt', self::OUTPUT_PATH, $site_name, $site_id );
 
 		$files               = array();
 		$files['autoloader'] = fopen( $autoloader_file, 'w' );
