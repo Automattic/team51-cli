@@ -60,7 +60,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			->setHelp( 'This command allows you to rotate the WP password of users on either all Pressable sites or on a given one. Finally, it attempts to update the 1Password values of rotated passwords as well.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the WP user password.' )
-			->addOption( 'user', 'u', InputOption::VALUE_OPTIONAL, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' );
+			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the site WP user for which to rotate the password. Default is concierge@wordpress.com.' );
 
 		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the WP user password on all sites.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current WP user password. Useful for checking whether a given input is valid.' );
