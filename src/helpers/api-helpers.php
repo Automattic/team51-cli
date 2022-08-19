@@ -108,52 +108,6 @@ class API_Helper {
 		return $result->access_token;
 	}
 
-	/**
-	 * Given a client_id and client_secret, a pair of access/refresh tokens is
-	 * retrieved from Pressable API.
-	 * The idea here is to not use the locally defined PRESSABLE_API_APP_CLIENT_ID constants,
-	 * but get a set of tokens for someone else.
-	 */
-	public function get_pressable_api_auth_tokens( $client_id, $client_secret ) {
-		$api_request_url = 'https://my.pressable.com/auth/token/';
-		$data            = array(
-			'client_id'     => $client_id,
-			'client_secret' => $client_secret,
-			'grant_type'    => 'password',
-			'email'         => PRESSABLE_ACCOUNT_EMAIL,
-			'password'      => PRESSABLE_ACCOUNT_PASSWORD,
-		);
-
-		$data = http_build_query( $data );
-
-		$headers = array(
-			'Content-Type: application/x-www-form-urlencoded',
-			'User-Agent: PHP',
-		);
-
-		$options = array(
-			'http' => array(
-				'header'  => $headers,
-				'method'  => 'POST',
-				'content' => $data,
-			),
-		);
-
-		$context = stream_context_create( $options );
-		$result  = @file_get_contents( $api_request_url, false, $context );
-
-		$result = json_decode( $result );
-
-		if ( empty( $result->refresh_token ) ) {
-			die( "Pressable API Refresh token could not be retrieved. Aborting!\n" );
-		}
-
-		return array(
-			'refresh_token' => $result->refresh_token,
-			'access_token'  => $result->access_token,
-		);
-	}
-
 	public function call_github_api( $query, $data, $method = 'POST' ) {
 		$api_request_url = 'https://api.github.com/' . $query;
 

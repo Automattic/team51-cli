@@ -88,10 +88,27 @@ final class Pressable_API_Helper {
 		}
 
 		// If no access token exists, get a new one.
+		$api_tokens = self::call_auth_api( PRESSABLE_API_APP_CLIENT_ID, PRESSABLE_API_APP_CLIENT_SECRET );
+		if ( false === self::set_cached_tokens( $api_tokens ) ) {
+			console_writeln( '❌ Failed to cache Pressable access tokens.' );
+		}
+
+		return $api_tokens->access_token;
+	}
+
+	/**
+	 * Calls the Pressable auth endpoint to get new tokens.
+	 *
+	 * @param   string  $client_id      The API application client ID.
+	 * @param   string  $client_secret  The API application client secret.
+	 *
+	 * @return  object
+	 */
+	public static function call_auth_api( string $client_id, string $client_secret ): object {
 		console_writeln( 'Obtaining new Pressable OAuth token.', OutputInterface::VERBOSITY_VERBOSE );
 		$post_data = array(
-			'client_id'     => PRESSABLE_API_APP_CLIENT_ID,
-			'client_secret' => PRESSABLE_API_APP_CLIENT_SECRET,
+			'client_id'     => $client_id,
+			'client_secret' => $client_secret,
 		);
 
 		if ( \defined( 'PRESSABLE_ACCOUNT_PASSWORD' ) && \defined( 'PRESSABLE_ACCOUNT_EMAIL' ) ) {
@@ -102,7 +119,7 @@ final class Pressable_API_Helper {
 			$post_data['grant_type']    = 'refresh_token';
 			$post_data['refresh_token'] = self::get_cached_refresh_token();
 		} else {
-			exit( '❌ Please configure your config.json to include Pressable email/password, or refresh and access tokens. Aborting!' . PHP_EOL );
+			exit( '❌ Missing both the Pressable credentials and a refresh token. Aborting!' . PHP_EOL );
 		}
 
 		$result = get_remote_content(
@@ -117,11 +134,8 @@ final class Pressable_API_Helper {
 		if ( empty( $result['body']->access_token ) ) {
 			exit( '❌ Pressable API token could not be retrieved. Aborting!' . PHP_EOL );
 		}
-		if ( false === self::set_cached_tokens( $result['body'] ) ) {
-			console_writeln( '❌ Failed to cache Pressable access tokens.' );
-		}
 
-		return $result['body']->access_token;
+		return $result['body'];
 	}
 
 	// endregion
@@ -171,7 +185,7 @@ final class Pressable_API_Helper {
 	private static function get_cached_refresh_token(): ?string {
 		if ( ! \file_exists( self::CACHED_TOKENS_FILE_PATH ) ) {
 			if ( \defined( 'PRESSABLE_API_REFRESH_TOKEN' ) ) {
-				console_writeln( 'Using PRESSABLE_API_REFRESH_TOKEN from config.json file.' );
+				console_writeln( 'Using PRESSABLE_API_REFRESH_TOKEN from config.json file.', OutputInterface::VERBOSITY_DEBUG );
 				return PRESSABLE_API_REFRESH_TOKEN;
 			}
 
