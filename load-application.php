@@ -2,8 +2,8 @@
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 
-require __DIR__ . '/src/helpers/config-loader.php';
 require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/src/helpers/config-loader.php';
 
 if ( defined( 'ASCII_WELCOME_ART' ) && ! empty( ASCII_WELCOME_ART ) ) {
 	// Respect -q and --quiet.
@@ -13,7 +13,6 @@ if ( defined( 'ASCII_WELCOME_ART' ) && ! empty( ASCII_WELCOME_ART ) ) {
 }
 
 use Symfony\Component\Console\Application;
-
 $application = new Application();
 
 $application->add( new Team51\Command\Create_Production_Site() );
