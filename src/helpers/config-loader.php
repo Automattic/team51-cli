@@ -21,6 +21,12 @@ if ( empty( $config ) ) {
 	exit( 'Config file could not be read or it is empty. Please make sure it is properly formatted. Aborting!' . PHP_EOL );
 }
 
+// Parse overwrite config file.
+$overwrite = array();
+if ( \file_exists( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ) ) {
+	$overwrite = decode_json_content( \file_get_contents( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ), true ) ?? array();
+}
+
 foreach ( $config as $section => $secrets ) {
 	foreach ( $secrets as $name => $secret ) {
 		$constant_name = \strtoupper( $name );
@@ -28,7 +34,7 @@ foreach ( $config as $section => $secrets ) {
 			$constant_name = \strtoupper( $section ) . '_' . $constant_name;
 		}
 
-		\define( $constant_name, $secret );
+		\define( $constant_name, $overwrite[ $section ][ $name ] ?? $secret );
 	}
 }
 
