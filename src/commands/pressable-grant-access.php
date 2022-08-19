@@ -352,7 +352,7 @@ class Pressable_Grant_Access extends Command {
 			$collab_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
 
 			// is_staging flag based on URL.
-			$is_staging = strpos( $site_info->data->url, '.mystagingwebsite.com' ) !== false && strpos( $site_info->data->url, '-production' ) === false;
+			$is_staging = is_numeric( $site_info->data->clonedFromId ) && strpos( $site_info->data->url, '.mystagingwebsite.com' ) !== false && strpos( $site_info->data->url, '-production' ) === false;
 			if ( $is_staging ) {
 				$collab_roles[] = 'wp_access';
 			}
