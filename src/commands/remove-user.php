@@ -157,7 +157,7 @@ class Remove_User extends Command {
 
 		$site_users_endpoints = array_map(
 			function( $site ) use ( $email ) {
-				return WPCOM_API_ENDPOINT . "rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
+				return "https://public-api.wordpress.com/rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
 			},
 			$all_sites->sites
 		);

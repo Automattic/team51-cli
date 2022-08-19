@@ -106,7 +106,7 @@ final class Pressable_API_Helper {
 		}
 
 		$result = get_remote_content(
-			PRESSABLE_API_TOKEN_ENDPOINT,
+			'https://my.pressable.com/auth/token/',
 			array(
 				'Content-Type: application/x-www-form-urlencoded',
 				'User-Agent: PHP',

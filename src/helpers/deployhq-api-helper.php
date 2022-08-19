@@ -36,7 +36,7 @@ final class DeployHQ_API_Helper {
 			array(
 				'Accept: application/json',
 				'Content-type: application/json',
-				'Authorization: Basic ' . \base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
+				'Authorization: Basic ' . \base64_encode( DEPLOYHQ_USERNAME . ':' . DEPLOYHQ_API_KEY ),
 				'User-Agent: PHP',
 			),
 			$method,
@@ -67,10 +67,7 @@ final class DeployHQ_API_Helper {
 	 * @return  string
 	 */
 	private static function get_request_url( string $endpoint ): string {
-		$account = \parse_url( DEPLOY_HQ_API_ENDPOINT, PHP_URL_HOST );
-		$account = \str_replace( '.deployhq.com', '', $account );
-
-		return \str_replace( '<account>', $account, self::BASE_URL ) . \ltrim( $endpoint, '/' );
+		return \str_replace( '<account>', DEPLOYHQ_ACCOUNT, self::BASE_URL ) . \ltrim( $endpoint, '/' );
 	}
 
 	// endregion
