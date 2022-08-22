@@ -29,7 +29,7 @@ if ( empty( $result ) ) {
 }
 
 // Parse the config file.
-$config = decode_json_content( \file_get_contents( $config_file ), true );
+$config = json_decode( \file_get_contents( $config_file ), true );
 if ( empty( $config ) ) {
 	exit( 'Config file could not be read or it is empty. Please make sure it is properly formatted. Aborting!' . PHP_EOL );
 }
@@ -37,7 +37,7 @@ if ( empty( $config ) ) {
 // Parse overwrite config file.
 $overwrite = array();
 if ( \file_exists( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ) ) {
-	$overwrite = decode_json_content( \file_get_contents( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ), true ) ?? array();
+	$overwrite = json_decode( \file_get_contents( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ), true ) ?? array();
 }
 
 foreach ( $config as $section => $secrets ) {
