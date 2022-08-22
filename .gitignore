@@ -1,6 +1,10 @@
 secrets/*
 !secrets/**/*.tpl.*
 
+config.json
+config.example.json
+src/helpers/pressable_token.json
+
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,composer,phpstorm+all,visualstudiocode,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,composer,phpstorm+all,visualstudiocode,windows,linux
 
