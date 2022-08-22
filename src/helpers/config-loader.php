@@ -2,6 +2,14 @@
 
 namespace Team51\Helpers;
 
+// Remove any legacy config files from the hard drive.
+$legacy_config_files = array( 'config.json', 'config.example.json' );
+foreach ( $legacy_config_files as $legacy_config_file ) {
+	if ( \file_exists( TEAM51_CLI_ROOT_DIR . "/$legacy_config_file" ) ) {
+		\unlink( TEAM51_CLI_ROOT_DIR . "/$legacy_config_file" );
+	}
+}
+
 // Generate the config file using the 1Password data.
 $config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.json';
 if ( \file_exists( $config_file ) ) {
