@@ -15,7 +15,7 @@ class API_Helper {
 	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-59 minutes';
 
 	public function call_pressable_api( $query, $method, $data ) {
-		$api_request_url = PRESSABLE_API_ENDPOINT . $query;
+		$api_request_url = 'https://my.pressable.com/v1/' . $query;
 
 		$data = json_encode( $data );
 
@@ -59,7 +59,7 @@ class API_Helper {
 		}
 
 		// Otherwise, generate a new token
-		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
+		$api_request_url = 'https://my.pressable.com/auth/token/';
 
 		$data = array(
 			'client_id'     => PRESSABLE_API_APP_CLIENT_ID,
@@ -115,7 +115,7 @@ class API_Helper {
 	 * but get a set of tokens for someone else.
 	 */
 	public function get_pressable_api_auth_tokens( $client_id, $client_secret ) {
-		$api_request_url = PRESSABLE_API_TOKEN_ENDPOINT;
+		$api_request_url = 'https://my.pressable.com/auth/token/';
 		$data            = array(
 			'client_id'     => $client_id,
 			'client_secret' => $client_secret,
@@ -155,7 +155,7 @@ class API_Helper {
 	}
 
 	public function call_github_api( $query, $data, $method = 'POST' ) {
-		$api_request_url = GITHUB_API_ENDPOINT . $query;
+		$api_request_url = 'https://api.github.com/' . $query;
 
 		$headers = array(
 			'Accept: application/json',
@@ -184,14 +184,15 @@ class API_Helper {
 	}
 
 	public function call_deploy_hq_api( $query, $method, $data ) {
-		$api_request_url = DEPLOY_HQ_API_ENDPOINT . $query;
+		$api_request_url = 'https://<account>.deployhq.com/' . $query;
+		$api_request_url = str_replace( '<account>', DEPLOYHQ_ACCOUNT, $api_request_url );
 
 		$data = json_encode( $data );
 
 		$headers = array(
 			'Accept: application/json',
 			'Content-type: application/json',
-			'Authorization: Basic ' . base64_encode( DEPLOY_HQ_USERNAME . ':' . DEPLOY_HQ_API_KEY ),
+			'Authorization: Basic ' . base64_encode( DEPLOYHQ_USERNAME . ':' . DEPLOYHQ_API_KEY ),
 			'User-Agent: PHP',
 		);
 
@@ -278,7 +279,7 @@ class API_Helper {
 	}
 
 	public function call_wpcom_api( $query, $data, $method = 'GET' ) {
-		$api_request_url = WPCOM_API_ENDPOINT . $query;
+		$api_request_url = 'https://public-api.wordpress.com/' . $query;
 
 		$headers = array(
 			'Accept: application/json',
@@ -307,7 +308,7 @@ class API_Helper {
 	}
 
 	public function call_front_api( $query, $data = array(), $method = 'GET' ) {
-		$api_request_url = FRONT_API_ENDPOINT . $query;
+		$api_request_url = 'https://api2.frontapp.com/' . $query;
 
 		$headers = array(
 			'Accept: application/json',
