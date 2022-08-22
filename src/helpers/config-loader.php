@@ -24,7 +24,7 @@ if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) 
 $result = \shell_exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
 if ( empty( $result ) ) {
 	echo "\033[31mThere was an error generating the config file.\033[0m If the line above contains \'command not found\', you likely need to upgrade to 1Password 8 and install the accompanying CLI tool." . PHP_EOL;
-	echo "\033[36mPlease refer to the README for instructions on doing that and the solution to other common errors.\033[0m" . PHP_EOL;
+	echo "\033[36mPlease refer to the README for instructions on doing that and for the solutions to other common errors.\033[0m" . PHP_EOL;
 	exit( 1 );
 }
 
