@@ -33,6 +33,9 @@ Be well, be kind, make things and set them free.
     - It will ask you an SSH Passphrase, type it and hit Enter (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy)
 1. Make sure [Composer](https://getcomposer.org/) is installed on your computer.
     - The easiest way to install composer is by running `brew install composer`
+1. Make sure you're using [version 8 of 1Password](https://1password.com/mac/).
+    - If you've installed it recently, then you probably are.
+    - If you've been using 1Password for a while, then you probably need to upgrade since v7 doesn't upgrade automatically to v8.
 1. Make sure [1Password CLI](https://developer.1password.com/docs/cli/get-started/) is installed on your computer.
     - The easiest way to install 1Password CLI is by running `brew install --cask 1password/tap/1password-cli`
     - After installation, it's best to [turn on biometric unlocking](https://developer.1password.com/docs/cli/get-started/#turn-on-biometric-unlock) for convenience.
