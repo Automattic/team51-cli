@@ -28,6 +28,7 @@ Be well, be kind, make things and set them free.
 
 ## Installation
 1. Open the Terminal on your Mac and install [Homebrew](https://brew.sh/) (if you haven't already).
+    - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 1. Keep your Terminal open and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
     - It will ask you an SSH Passphrase, type it and hit Enter (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy)
