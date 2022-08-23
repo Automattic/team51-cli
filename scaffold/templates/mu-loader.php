@@ -6,7 +6,7 @@
  * Example: /mu-tools/mu-tools.php
  */
 
-$dirs = glob( dirname(__FILE__) . '/*' , GLOB_ONLYDIR );
+$dirs = glob( dirname( __FILE__ ) . '/*' , GLOB_ONLYDIR );
 
 foreach ( $dirs as $dir ) {
 	if ( file_exists( $dir . DIRECTORY_SEPARATOR . basename( $dir ) . '.php' ) ) {
