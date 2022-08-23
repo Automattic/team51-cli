@@ -23,6 +23,8 @@ plugins/*
 !plugins/EXAMPLE_PLUGIN_NAME
 
 mu-plugins/*
+!mu-plugins/mu-loader.php
+!mu-plugins/colophon
 
 themes/*
 !themes/EXAMPLE_THEME_NAME
