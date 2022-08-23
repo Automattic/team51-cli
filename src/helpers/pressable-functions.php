@@ -2,6 +2,8 @@
 
 namespace Team51\Helpers;
 
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -45,6 +47,50 @@ function get_pressable_sites_by_search_term( string $search_term, array $params 
 		false !== \strpos( $site->url, $search_term )
 	);
 	return \array_filter( $sites, $checker );
+}
+
+/**
+ * Returns a tree-like structure of cloned Pressable sites with the production site as its root for a given site.
+ *
+ * @param   object          $site               The site to get the related ones for.
+ * @param   callable|null   $node_generator     The function to use to generate the node.
+ *
+ * @return  array|null
+ */
+function get_related_pressable_sites( object $site, ?callable $node_generator = null ): ?array {
+	// Ensure we always start with the root/production site.
+	$production_site = $site;
+	while ( ! empty( $production_site->clonedFromId ) ) {
+		$production_site = get_pressable_site_by_id( $production_site->clonedFromId );
+		if ( false !== \is_null( $production_site ) ) {
+			break; // This is as high as we can go. Original site must've been deleted...
+		}
+	}
+
+	// Initialize the tree with the production site.
+	$node_generator = \is_callable( $node_generator ) ? $node_generator : static fn( object $site ) => $site;
+	$related_sites  = array( 0 => array( $production_site->id => $node_generator( $production_site ) ) );
+
+	// Identify the related sites by level.
+	$all_sites = get_pressable_sites();
+
+	do {
+		$has_next_level = false;
+		$current_level  = \count( $related_sites );
+
+		foreach ( \array_keys( $related_sites[ $current_level - 1 ] ) as $parent_site_id ) {
+			foreach ( $all_sites as $maybe_clone_site ) {
+				if ( $maybe_clone_site->clonedFromId !== $parent_site_id ) {
+					continue; // Skip if this is not a clone.
+				}
+
+				$related_sites[ $current_level ][ $maybe_clone_site->id ] = $node_generator( $maybe_clone_site );
+				$has_next_level = true;
+			}
+		}
+	} while ( true === $has_next_level );
+
+	return $related_sites;
 }
 
 /**
@@ -293,6 +339,38 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
 // endregion
 
 // region CONSOLE
+
+/**
+ * Outputs the related sites in a table format.
+ *
+ * @param   OutputInterface $output         The output instance.
+ * @param   array           $sites          The related sites in tree form. Must be an output of @get_related_pressable_sites.
+ * @param   array|null      $headers        The headers of the table.
+ * @param   callable|null   $row_generator  The function to generate the row data from the tree node.
+ *
+ * @return  void
+ */
+function output_related_pressable_sites( OutputInterface $output, array $sites, ?array $headers = null, ?callable $row_generator = null ): void {
+	$row_generator = \is_callable( $row_generator ) ? $row_generator
+		: static fn( $node, $level ) => array( $node->id, $node->name, $node->url, $level, $node->clonedFromId ?: '--' );
+
+	$table = new Table( $output );
+
+	$table->setHeaderTitle( 'Related Pressable sites' );
+	$table->setHeaders( $headers ?? array( 'ID', 'Name', 'URL', 'Level', 'Parent ID' ) );
+	foreach ( $sites as $level => $nodes ) {
+		foreach ( $nodes as $node ) {
+			$table->addRow( $row_generator( $node, $level ) );
+		}
+
+		if ( $level < ( \count( $sites ) - 1 ) ) {
+			$table->addRow( new TableSeparator() );
+		}
+	}
+
+	$table->setStyle( 'box-double' );
+	$table->render();
+}
 
 /**
  * Grabs a value from the console input and tries to retrieve a Pressable site based on it.
