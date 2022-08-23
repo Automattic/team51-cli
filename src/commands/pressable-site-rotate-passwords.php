@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helpers\define_console_verbosity;
+use function Team51\Helpers\maybe_define_console_verbosity;
 use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_from_input;
 use function Team51\Helpers\get_pressable_sites;
@@ -62,7 +62,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
-		define_console_verbosity( $output->getVerbosity() );
+		maybe_define_console_verbosity( $output->getVerbosity() );
 
 		// Retrieve the user email.
 		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );

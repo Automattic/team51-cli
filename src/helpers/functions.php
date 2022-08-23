@@ -150,13 +150,13 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
 // region CONSOLE
 
 /**
- * Defines a constant equal to the console's verbosity level.
+ * Defines a constant equal to the console's verbosity level, if not already defined.
  *
  * @param   int $verbosity  The verbosity level.
  *
  * @return  void
  */
-function define_console_verbosity( int $verbosity ): void {
+function maybe_define_console_verbosity( int $verbosity ): void {
 	\defined( 'TEAM51_CLI_VERBOSITY' ) || \define( 'TEAM51_CLI_VERBOSITY', $verbosity );
 }
 

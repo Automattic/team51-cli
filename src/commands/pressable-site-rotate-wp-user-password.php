@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\decode_json_content;
-use function Team51\Helpers\define_console_verbosity;
+use function Team51\Helpers\maybe_define_console_verbosity;
 use function Team51\Helpers\generate_random_password;
 use function Team51\Helpers\get_email_input;
 use function Team51\Helpers\get_pressable_site_collaborator_by_email;
@@ -70,7 +70,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
-		define_console_verbosity( $output->getVerbosity() );
+		maybe_define_console_verbosity( $output->getVerbosity() );
 
 		// Retrieve the WP user email.
 		$this->wp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );

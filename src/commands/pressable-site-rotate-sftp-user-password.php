@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helpers\define_console_verbosity;
+use function Team51\Helpers\maybe_define_console_verbosity;
 use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
 use function Team51\Helpers\get_deployhq_project_servers;
@@ -78,7 +79,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
-		define_console_verbosity( $output->getVerbosity() );
+		maybe_define_console_verbosity( $output->getVerbosity() );
 
 		if ( $input->getOption( 'all-sites' ) ) {
 			// Retrieve the SFTP user email.
