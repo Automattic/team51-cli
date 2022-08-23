@@ -176,6 +176,32 @@ function console_writeln( string $message, int $verbosity = 0 ): void {
 }
 
 /**
+ * Grabs a value from the console input and validates it against a list of allowed values.
+ *
+ * @param   InputInterface  $input      The input instance.
+ * @param   OutputInterface $output     The output instance.
+ * @param   string          $name       The name of the option.
+ * @param   array           $valid      The valid values for the option.
+ * @param   mixed|null      $default    The default value for the option.
+ *
+ * @return  string|array|null
+ */
+function get_enum_input( InputInterface $input, OutputInterface $output, string $name, array $valid, $default = null ) {
+	$option = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
+
+	if ( $option !== $default ) {
+		foreach ( (array) $option as $value ) {
+			if ( ! \in_array( $value, $valid, true ) ) {
+				$output->writeln( "<error>Invalid value for input '$name': $value</error>" );
+				exit( 1 );
+			}
+		}
+	}
+
+	return $option;
+}
+
+/**
  * Grabs a value from the console input and validates it as an email.
  *
  * @param   InputInterface  $input          The console input.
@@ -196,13 +222,13 @@ function get_email_input( InputInterface $input, OutputInterface $output, ?calla
 	// If we still don't have an email, abort.
 	if ( empty( $email ) ) {
 		$output->writeln( '<error>No email was provided. Aborting!</error>' );
-		exit;
+		exit( 1 );
 	}
 
 	// Check email for validity.
 	if ( false === \filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
 		$output->writeln( '<error>The provided email is invalid. Aborting!</error>' );
-		exit;
+		exit( 1 );
 	}
 
 	return $email;
@@ -229,7 +255,7 @@ function get_site_input( InputInterface $input, OutputInterface $output, ?callab
 	// If we still don't have a site, abort.
 	if ( empty( $site_id_or_url ) ) {
 		$output->writeln( '<error>No site was provided. Aborting!</error>' );
-		exit;
+		exit( 1 );
 	}
 
 	// Strip out everything but the hostname if we have a URL.
@@ -237,7 +263,7 @@ function get_site_input( InputInterface $input, OutputInterface $output, ?callab
 		$site_id_or_url = \parse_url( $site_id_or_url, PHP_URL_HOST );
 		if ( false === $site_id_or_url ) {
 			$output->writeln( '<error>Invalid URL provided. Aborting!</error>' );
-			exit;
+			exit( 1 );
 		}
 	}
 
@@ -266,13 +292,13 @@ function get_user_input( InputInterface $input, OutputInterface $output, ?callab
 	// If we still don't have a user, abort.
 	if ( empty( $user ) ) {
 		$output->writeln( '<error>No user was provided. Aborting!</error>' );
-		exit;
+		exit( 1 );
 	}
 
 	// Check user for validity.
 	if ( true === $validate && ! \is_numeric( $user ) && false === \filter_var( $user, FILTER_VALIDATE_EMAIL ) ) {
 		$output->writeln( '<error>The provided user is invalid. Aborting!</error>' );
-		exit;
+		exit( 1 );
 	}
 
 	return $user;

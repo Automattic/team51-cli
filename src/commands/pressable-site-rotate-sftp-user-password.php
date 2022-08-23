@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helpers\define_console_verbosity;
+use function Team51\Helpers\get_enum_input;
 use function Team51\Helpers\maybe_define_console_verbosity;
 use function Team51\Helpers\get_deployhq_project_by_permalink;
 use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
@@ -36,6 +36,22 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected static $defaultName = 'pressable:rotate-site-sftp-user-password';
 
 	/**
+	 * Whether processing multiple sites or just a single given one.
+	 * Can be one of 'all' or 'related', if set.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $multiple = null;
+
+	/**
+	 * The email of the SFTP user to rotate the password of.
+	 * Required for any of the 'multiple' options.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $sftp_user_email = null;
+
+	/**
 	 * The Pressable site to rotate the SFTP password on.
 	 *
 	 * @var object|null
@@ -49,14 +65,6 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected ?object $pressable_sftp_user = null;
 
-	/**
-	 * The email of the SFTP user to rotate the password of.
-	 * Required for the 'all-sites' flag.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $sftp_user_email = null;
-
 	// endregion
 
 	// region INHERITED METHODS
@@ -66,12 +74,12 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Rotates the SFTP user password of a given user on Pressable sites.' )
-			->setHelp( 'This command allows you to rotate the SFTP password of users on either all Pressable sites or on a given one. If the given user is also the website owner (default concierge@wordpress.com), then the DeployHQ configuration is also updated.' );
+			->setHelp( 'This command allows you to rotate the SFTP password of users on Pressable sites. If the given user is also the website owner (default concierge@wordpress.com), then the DeployHQ configuration is also updated.' );
 
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' );
 
-		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the SFTP user password on all sites.' )
+		$this->addOption( 'multiple', null, InputOption::VALUE_REQUIRED, 'Determines whether the \'site\' argument is optional or not. Accepts one of \'all\' or \'related\'.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current SFTP password. Useful for checking whether a given input is valid.' );
 	}
 
@@ -81,26 +89,33 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		if ( $input->getOption( 'all-sites' ) ) {
-			// Retrieve the SFTP user email.
-			$this->sftp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-			$input->setOption( 'user', $this->sftp_user_email ); // Store the email of the SFTP user in the option field.
-		} else {
-			// Retrieve the site and make sure it exists.
+		// Figure out if we're processing multiple sites or just a single one.
+		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
+
+		// If we're not processing all sites, then we need to get the (main) Pressable site to process.
+		if ( 'all' !== $this->multiple ) {
 			$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
 			if ( false !== \is_null( $this->pressable_site ) ) {
-				exit; // Exit if the site does not exist.
+				exit( 1 ); // Exit if the site does not exist.
 			}
 
-			$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the argument field.
+			// Store the ID of the site in the argument field.
+			$input->setArgument( 'site', $this->pressable_site->id );
+		}
 
+		// If we're processing multiple sites, then we need to get the email of the SFTP user.
+		if ( true !== \is_null( $this->multiple ) ) {
+			$this->sftp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+			$input->setOption( 'user', $this->sftp_user_email ); // Store the email of the SFTP user in the option field.
+		} else { // Otherwise, we can go straight to getting the SFTP user from the input.
 			// Retrieve the SFTP user and make sure it exists.
 			$this->pressable_sftp_user = get_pressable_site_sftp_user_from_input( $input, $output, $this->pressable_site->id, fn() => $this->prompt_user_input( $input, $output ) );
 			if ( false !== \is_null( $this->pressable_sftp_user ) ) {
-				exit; // Exit if the SFTP user does not exist.
+				exit( 1 ); // Exit if the SFTP user does not exist.
 			}
 
-			$input->setOption( 'user', $this->pressable_sftp_user->username ); // Store the username of the SFTP user in the option field.
+			// Store the username of the SFTP user in the option field.
+			$input->setOption( 'user', $this->pressable_sftp_user->username );
 		}
 	}
 
