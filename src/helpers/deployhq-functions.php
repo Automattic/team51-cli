@@ -71,7 +71,7 @@ function get_deployhq_project_permalink_from_pressable_site( object $pressable_s
 
 	$project_name = $pressable_site->name;
 	if ( false !== \strpos( $project_name, '-development' ) ) {
-		// Handles the case where the project name is "project-development-timestamp".
+		// Handles the case where the project name is "project-development-<timestamp>".
 		$project_name = \explode( '-development', $project_name, 2 )[0];
 	} elseif ( ! empty( $pressable_site->clonedFromId ) ) {
 		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring.
