@@ -10,21 +10,21 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helpers\get_enum_input;
-use function Team51\Helpers\get_related_pressable_sites;
-use function Team51\Helpers\maybe_define_console_verbosity;
-use function Team51\Helpers\get_deployhq_project_by_permalink;
-use function Team51\Helpers\get_deployhq_project_permalink_from_pressable_site;
-use function Team51\Helpers\get_deployhq_project_servers;
-use function Team51\Helpers\get_email_input;
-use function Team51\Helpers\get_pressable_site_from_input;
-use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
-use function Team51\Helpers\get_pressable_site_sftp_user_from_input;
-use function Team51\Helpers\get_pressable_site_sftp_users;
-use function Team51\Helpers\get_pressable_sites;
-use function Team51\Helpers\output_related_pressable_sites;
-use function Team51\Helpers\reset_pressable_site_sftp_user_password;
-use function Team51\Helpers\update_deployhq_project_server;
+use function Team51\Helper\get_enum_input;
+use function Team51\Helper\get_related_pressable_sites;
+use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\get_deployhq_project_by_permalink;
+use function Team51\Helper\get_deployhq_project_permalink_from_pressable_site;
+use function Team51\Helper\get_deployhq_project_servers;
+use function Team51\Helper\get_email_input;
+use function Team51\Helper\get_pressable_site_from_input;
+use function Team51\Helper\get_pressable_site_sftp_user_by_email;
+use function Team51\Helper\get_pressable_site_sftp_user_from_input;
+use function Team51\Helper\get_pressable_site_sftp_users;
+use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\output_related_pressable_sites;
+use function Team51\Helper\reset_pressable_site_sftp_user_password;
+use function Team51\Helper\update_deployhq_project_server;
 
 /**
  * CLI command for rotating the SFTP password of users on Pressable sites.

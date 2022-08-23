@@ -1,6 +1,6 @@
 <?php
 
-namespace Team51\Helpers;
+namespace Team51\Helper;
 
 /**
  * Gets the WordPress.com site information by site URL or WordPress.com ID (requires active Jetpack connection for WPORG sites).

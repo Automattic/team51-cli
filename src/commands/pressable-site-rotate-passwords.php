@@ -10,10 +10,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helpers\maybe_define_console_verbosity;
-use function Team51\Helpers\get_email_input;
-use function Team51\Helpers\get_pressable_site_from_input;
-use function Team51\Helpers\get_pressable_sites;
+use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\get_email_input;
+use function Team51\Helper\get_pressable_site_from_input;
+use function Team51\Helper\get_pressable_sites;
 
 /**
  * CLI command for rotating the SFTP and WP user passwords of a given user on one or all Pressable sites.

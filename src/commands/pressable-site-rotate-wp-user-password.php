@@ -9,19 +9,19 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helpers\decode_json_content;
-use function Team51\Helpers\maybe_define_console_verbosity;
-use function Team51\Helpers\generate_random_password;
-use function Team51\Helpers\get_email_input;
-use function Team51\Helpers\get_pressable_site_collaborator_by_email;
-use function Team51\Helpers\get_pressable_sites;
-use function Team51\Helpers\get_pressable_site_from_input;
-use function Team51\Helpers\get_pressable_site_sftp_user_by_email;
-use function Team51\Helpers\get_wpcom_site_user_by_email;
-use function Team51\Helpers\is_case_insensitive_match;
-use function Team51\Helpers\reset_pressable_site_collaborator_wp_password;
-use function Team51\Helpers\reset_pressable_site_owner_wp_password;
-use function Team51\Helpers\set_wpcom_site_user_wp_password;
+use function Team51\Helper\decode_json_content;
+use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\generate_random_password;
+use function Team51\Helper\get_email_input;
+use function Team51\Helper\get_pressable_site_collaborator_by_email;
+use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\get_pressable_site_from_input;
+use function Team51\Helper\get_pressable_site_sftp_user_by_email;
+use function Team51\Helper\get_wpcom_site_user_by_email;
+use function Team51\Helper\is_case_insensitive_match;
+use function Team51\Helper\reset_pressable_site_collaborator_wp_password;
+use function Team51\Helper\reset_pressable_site_owner_wp_password;
+use function Team51\Helper\set_wpcom_site_user_wp_password;
 
 /**
  * CLI command for rotating the WP password of users on Pressable sites.

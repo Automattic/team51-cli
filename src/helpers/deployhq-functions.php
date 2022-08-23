@@ -1,6 +1,6 @@
 <?php
 
-namespace Team51\Helpers;
+namespace Team51\Helper;
 
 /**
  * Gets a list of all projects.

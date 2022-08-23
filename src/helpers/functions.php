@@ -1,6 +1,6 @@
 <?php
 
-namespace Team51\Helpers;
+namespace Team51\Helper;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
