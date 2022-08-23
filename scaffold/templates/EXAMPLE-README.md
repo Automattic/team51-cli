@@ -10,7 +10,7 @@ This repo is for EXAMPLE_REPO_NAME, powered by WordPress.
 
 If the PHPCS checks are taking too long because of a plugin/code that we aren't responsible for, feel free to include that plugin folder in the files `.vipgoci_lint_skip_folders` and `.vipgoci_phpcs_skip_folders`. Please use this feature sparingly. We view the checks as a safety mechanism that can save sites from serious errors.
 
-If `mu-plugins` are needed for a project, create a `mu-plugins` directory and include a `mu-autoloader.php` file within that mu-plugins directory (`/mu-plugins/mu-autoloader.php`). In that `mu-autoloader.php` file, add the following contents:
+If `mu-plugins` are needed for a project, create directories within the `mu-plugins` folder with the filename to be loaded named the same as the folder that it is in. It will be automatically picked up by `mu-plugins/mu-loader.php` which should look something like this:
 
 ```
 <?php
@@ -21,12 +21,12 @@ If `mu-plugins` are needed for a project, create a `mu-plugins` directory and in
  * Example: /mu-tools/mu-tools.php
  */
 
-$dirs = glob(dirname(__FILE__) . '/*' , GLOB_ONLYDIR);
+$dirs = glob( dirname(__FILE__) . '/*' , GLOB_ONLYDIR );
 
-foreach($dirs as $dir) {
-    if(file_exists($dir . DIRECTORY_SEPARATOR . basename($dir) . ".php")) {
-        require($dir . DIRECTORY_SEPARATOR . basename($dir) . ".php");
-    }
+foreach ( $dirs as $dir ) {
+	if ( file_exists( $dir . DIRECTORY_SEPARATOR . basename( $dir ) . '.php' ) ) {
+		require_once $dir . DIRECTORY_SEPARATOR . basename( $dir ) . '.php';
+	}
 }
 ```
 
