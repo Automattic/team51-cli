@@ -199,6 +199,7 @@ class Create_Repository extends Command {
 		$progress_bar->advance();
 
 		$this->execute_command( array( 'git', 'submodule', 'add', 'https://github.com/a8cteam51/colophon', 'mu-plugins/colophon' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+		$this->execute_command( array( 'git', 'submodule', 'add', 'https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in', 'mu-plugins/wc-usage-tracking-auto-opt-in' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
 
 		$this->execute_command( array( 'git', 'commit', "-m 'Added project files from scaffold'" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
