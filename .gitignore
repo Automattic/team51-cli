@@ -1,5 +1,6 @@
 secrets/*
 !secrets/**/*.tpl.*
+!secrets/**/*.dist.*
 
 config.json
 config.example.json

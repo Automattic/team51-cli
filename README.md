@@ -49,12 +49,7 @@ Be well, be kind, make things and set them free.
 
 ### For contractors
 Apart from the steps outlined above, you will also need to perform the following:
-1. Go to your `Private` vault in the Team51 1Password account.
-1. Create a login called `Pressable - Personal` and populate it with the login information for your personal Pressable account.
-1. In addition, add three extra fields named *exactly*:
-   1. API app client id
-   1. API app client secret
-   1. API refresh token
+1. Copy the file `/secrets/config__contractors.dist.json` to `/secrets/config__contractors.json` (remove the `.dist` part).
 1. Populate the fields with the Pressable API credentials received from Team51.
 
 When running any command, you will need to append the flag `--contractor` (or `-c`) to the command.

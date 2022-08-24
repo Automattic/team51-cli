@@ -34,6 +34,15 @@ if ( empty( $config ) ) {
 	exit( 'Config file could not be read or it is empty. Please make sure it is properly formatted. Aborting!' . PHP_EOL );
 }
 
+// Maybe parse contractor config file.
+if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) ) {
+	$contractor_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.json';
+	if ( \file_exists( $contractor_config_file ) ) {
+		$contractor_config = json_decode( \file_get_contents( $contractor_config_file ), true ) ?: array();
+		$config            = \array_merge_recursive( $config, $contractor_config );
+	}
+}
+
 // Parse overwrite config file.
 $overwrite = array();
 if ( \file_exists( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ) ) {
