@@ -1,6 +1,10 @@
 <?php
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
+if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag manually if set through the environment.
+	$argv[] = '-c';
+	$_SERVER['argv'][] = '-c';
+}
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/src/helpers/config-loader.php';
