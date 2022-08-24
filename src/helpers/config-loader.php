@@ -44,11 +44,13 @@ if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) 
 }
 
 // Parse overwrite config file.
-$overwrite = array();
-if ( \file_exists( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ) ) {
-	$overwrite = json_decode( \file_get_contents( TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json' ), true ) ?? array();
+$overwrite_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json';
+if ( \file_exists( $overwrite_config_file ) ) {
+	$overwrite_config = json_decode( \file_get_contents( $overwrite_config_file ), true ) ?: array();
+	$config           = \array_replace_recursive( $config, $overwrite_config );
 }
 
+// Register secrets as constants.
 foreach ( $config as $section => $secrets ) {
 	foreach ( $secrets as $name => $secret ) {
 		$constant_name = \strtoupper( $name );
@@ -56,7 +58,7 @@ foreach ( $config as $section => $secrets ) {
 			$constant_name = \strtoupper( $section ) . '_' . $constant_name;
 		}
 
-		\define( $constant_name, $overwrite[ $section ][ $name ] ?? $secret );
+		\define( $constant_name, $secret );
 	}
 }
 
