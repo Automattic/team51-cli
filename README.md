@@ -37,8 +37,10 @@ Be well, be kind, make things and set them free.
 1. Make sure you're using [version 8 of 1Password](https://1password.com/mac/).
     - If you've installed it recently, then you probably are.
     - If you've been using 1Password for a while, then you probably need to upgrade manually since v7 doesn't automatically upgrade to v8.
+    - Make sure you know the master password to all your 1Password accounts since you'll need to enter it again after the upgrade to v8.
 1. Make sure [1Password CLI](https://developer.1password.com/docs/cli/get-started/) is installed on your computer.
     - The easiest way to install 1Password CLI is by running `brew install --cask 1password/tap/1password-cli`.
+    - The terminal will ask you for a password which should be the same one you use to log in into your computer. After typing it in, hit `Enter`.
     - After installation, [turn on biometric unlocking](https://developer.1password.com/docs/cli/get-started/#turn-on-biometric-unlock) to link your existing accounts with the CLI tool, and for convenient unlocking of your vaults later on.
     - Run a simple command, like `op vault ls`, to verify that it works and to select your default account (select the Team51 account if you have more than one).
 1. Now let's install the CLI! From the `team51-cli` directory, run `./install-osx`.
