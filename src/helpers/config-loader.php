@@ -1,6 +1,6 @@
 <?php
 
-namespace Team51\Helpers;
+namespace Team51\Helper;
 
 // Remove any legacy config files from the hard drive.
 $legacy_config_files = array( 'config.json', 'config.example.json' );
