@@ -91,6 +91,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
+		// Retrieve and validate the modifier options.
 		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
 		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
 

@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use function Team51\Helper\get_enum_input;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\get_email_input;
 use function Team51\Helper\get_pressable_site_from_input;
@@ -26,20 +27,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 */
 	protected static $defaultName = 'pressable:rotate-site-passwords';
 
-	/**
-	 * The Pressable site to rotate the passwords on.
-	 *
-	 * @var object|null
-	 */
-	protected ?object $pressable_site = null;
-
-	/**
-	 * The email of the user to rotate the passwords for.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $user_email = null;
-
 	// endregion
 
 	// region INHERITED METHODS
@@ -54,7 +41,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the passwords.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user for which to rotate the passwords. Default is concierge@wordpress.com.' );
 
-		$this->addOption( 'all-sites', null, InputOption::VALUE_NONE, 'Rotate the passwords on all sites.' )
+		$this->addOption( 'multiple', null, InputOption::VALUE_REQUIRED, 'Determines whether the \'site\' argument is optional or not. Accepts one of \'all\' or \'related\'.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current passwords. Useful for checking whether a given input is valid.' );
 	}
 
@@ -64,29 +51,38 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		// Retrieve the user email.
-		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-		$input->setOption( 'user', $this->user_email ); // Store the email in the input for subcommands to use.
+		// Retrieve and validate the multiple option.
+		$multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
 
-		// Retrieve the site and make sure it exists.
-		if ( ! $input->getOption( 'all-sites' ) ) {
-			$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
-			if ( false !== \is_null( $this->pressable_site ) ) {
-				exit; // Exit if the site does not exist.
+		// Retrieve the given site if applicable.
+		if ( 'all' !== $multiple ) {
+			$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
+			if ( false !== \is_null( $pressable_site ) ) {
+				exit( 1 ); // Exit if the site does not exist.
 			}
 
-			$input->setArgument( 'site', $this->pressable_site->id ); // Store the ID of the site in the input for subcommands to use.
+			// Store the ID of the site in the input for subcommands to use.
+			$input->setArgument( 'site', $pressable_site->id );
 		}
+
+		// Retrieve the user email which is always required.
+		$user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+		$input->setOption( 'user', $user_email ); // Store the email in the input for subcommands to use.
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		if ( $input->getOption( 'all-sites' ) ) {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for $this->user_email on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
-		} else {
-			$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for $this->user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? [Y/n]</question> ", false );
+		switch ( $input->getOption( 'multiple' ) ) {
+			case 'all':
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for {$input->getOption( 'user' )} on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
+				break;
+			case 'related':
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of {$input->getOption( 'user' )} on {$input->getArgument('site')} and all its related sites? [Y/n]</question> ", false );
+				break;
+			default:
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of {$input->getOption( 'user' )} on {$input->getArgument('site')}? [Y/n]</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
@@ -94,7 +90,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 			exit;
 		}
 
-		if ( $input->getOption( 'all-sites' ) && ! $input->getOption( 'dry-run' ) ) {
+		if ( 'all' === $input->getOption( 'multiple' ) && false === (bool) $input->getOption( 'dry-run' ) ) {
 			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the passwords? [Y/n]</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
@@ -108,7 +104,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * @noinspection NullPointerExceptionInspection
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<fg=magenta;options=bold>Rotating passwords for $this->user_email.</>" );
+		$output->writeln( "<fg=magenta;options=bold>Rotating passwords for {$input->getOption( 'user' )}.</>" );
 
 		// Rotate the SFTP user(s) password.
 		$output->writeln( '' ); // Empty line for UX purposes.
@@ -118,8 +114,8 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$sftp_password_rotate_command_input = new ArrayInput(
 			array(
 				'site'        => $input->getArgument( 'site' ),
-				'--user'      => $this->user_email,
-				'--all-sites' => $input->getOption( 'all-sites' ),
+				'--user'      => $input->getOption( 'user' ),
+				'--multiple'  => $input->getOption( 'multiple' ),
 				'--dry-run'   => $input->getOption( 'dry-run' ),
 			)
 		);
@@ -136,8 +132,8 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$wp_password_rotate_command_input = new ArrayInput(
 			array(
 				'site'        => $input->getArgument( 'site' ),
-				'--user'      => $this->user_email,
-				'--all-sites' => $input->getOption( 'all-sites' ),
+				'--user'      => $input->getOption( 'user' ),
+				'--multiple'  => $input->getOption( 'multiple' ),
 				'--dry-run'   => $input->getOption( 'dry-run' ),
 			)
 		);
@@ -162,7 +158,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * @return  string
 	 */
 	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
-		if ( $input->getOption( 'no-interaction' ) ) {
+		if ( ! $input->isInteractive() ) {
 			$email = 'concierge@wordpress.com';
 		} else {
 			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
@@ -186,7 +182,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	 * @return  string|null
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
-		if ( ! $input->getOption( 'no-interaction' ) ) {
+		if ( $input->isInteractive() ) {
 			$question = new Question( '<question>Enter the site ID or URL to rotate the passwords on:</question> ' );
 			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
 
