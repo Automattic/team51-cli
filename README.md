@@ -31,15 +31,15 @@ Be well, be kind, make things and set them free.
     - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 1. Keep your Terminal open and clone this repository by running:
     - `git clone git@github.com:Automattic/team51-cli.git`
-    - It will ask you an SSH Passphrase, type it and hit Enter (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy)
+    - The Terminal will ask you for a so-called SSH Passphrase which you must type and hit `Enter` (if you're unsure what the passphrase is, try entering the same you'd use for the AutoProxxy).
 1. Make sure [Composer](https://getcomposer.org/) is installed on your computer.
-    - The easiest way to install composer is by running `brew install composer`
+    - The easiest way to install composer is by running `brew install composer`.
 1. Make sure you're using [version 8 of 1Password](https://1password.com/mac/).
     - If you've installed it recently, then you probably are.
-    - If you've been using 1Password for a while, then you probably need to upgrade since v7 doesn't upgrade automatically to v8.
+    - If you've been using 1Password for a while, then you probably need to upgrade manually since v7 doesn't automatically upgrade to v8.
 1. Make sure [1Password CLI](https://developer.1password.com/docs/cli/get-started/) is installed on your computer.
-    - The easiest way to install 1Password CLI is by running `brew install --cask 1password/tap/1password-cli`
-    - After installation, it's best to [turn on biometric unlocking](https://developer.1password.com/docs/cli/get-started/#turn-on-biometric-unlock) for convenience.
+    - The easiest way to install 1Password CLI is by running `brew install --cask 1password/tap/1password-cli`.
+    - After installation, [turn on biometric unlocking](https://developer.1password.com/docs/cli/get-started/#turn-on-biometric-unlock) to link your existing accounts with the CLI tool, and for convenient unlocking of your vaults later on.
     - Run a simple command, like `op vault ls`, to verify that it works and to select your default account (select the Team51 account if you have more than one).
 1. Now let's install the CLI! From the `team51-cli` directory, run `./install-osx`.
     - If you get an error `no such file or directory: ./install-osx`, try running `cd team51-cli` first.
@@ -66,9 +66,12 @@ A copy of that documentation possibly will land here in the future if it's usefu
 ## Troubleshooting
 
 ### Before anything else
-If you haven't used the CLI in a while and you're getting a lot of `Deprecated` notices or PHP `Fatal error`, try running `./install-osx` again to make sure all the dependencies are up to date. 
+If you haven't used the CLI in a while, and you're getting a lot of `Deprecated` notices or PHP `Fatal error`, try running `./install-osx` again to make sure all the dependencies are up-to-date. 
 
-Remember: you need be inside the `team51-cli` directory in order to execute the install command.
+Remember: you need be inside the `team51-cli` directory in order to execute the installation command.
+
+### `error: Your local changes to the following files would be overwritten by merge: ...`
+If you see this error when running a command, and you don't remember intentionally changing the mentioned files on your computer, you should run `git reset --hard` to discard all the changes and get back to the state of the remote repository.
 
 ### `no such file or directory: ./install-osx`
 Most likely you are not inside the team51 directory. Try with `cd team51-cli`. If that doesn't work, verify where you are located by running `pwd` and then use the *change directory* command (`cd`) to navigate to the team51-cli directory we cloned in the steps above.
@@ -78,14 +81,6 @@ If you get the error `./install-osx: line 2: composer: command not found`, you c
 
 ### `brew: command not found`
 If you don't have [brew](https://brew.sh/) yet, install it by executing this from your Terminal: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` — Tip: you can use brew to install all sort of apps on your Mac. Give it [a try](https://formulae.brew.sh/cask/zoom)
-
-### `Warning: file_get_contents: failed to open stream`
-```
-Warning: file_get_contents(/Users/.../team51-cli/config.json): failed to open stream: No such file or directory in /Users/.../team51-cli/src/helpers/config-loader.php on line 5
-
-Config file couldn't be read. Aborting!
-```
-To fix this issue, open 1Password and search for a file called `config.json`. Download it and move it inside the `team51-cli` directory.
 
 ### `failed to open stream: Too many open files`
 
