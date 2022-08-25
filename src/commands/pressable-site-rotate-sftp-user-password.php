@@ -129,10 +129,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		} else { // Multiple websites.
 			if ( 'related' === $this->multiple ) {
 				$this->pressable_sites = get_related_pressable_sites( $pressable_site );
-				output_related_pressable_sites( $output, $this->pressable_sites );
-
-				// Flatten out the related websites tree.
-				$this->pressable_sites = \array_merge( ...$this->pressable_sites );
+				$this->pressable_sites = \array_merge( ...$this->pressable_sites ); // Flatten out the related websites tree.
 			} else { // 'all'
 				$this->pressable_sites = get_pressable_sites();
 			}
@@ -163,6 +160,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of {$input->getOption( 'user' )} on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
 				break;
 			case 'related':
+				output_related_pressable_sites( $output, get_related_pressable_sites( $this->pressable_sites[0] ) );
 				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the SFTP user password of {$input->getOption( 'user' )} on all the sites listed above? [Y/n]</question> ", false );
 				break;
 			default:

@@ -111,16 +111,16 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		// Compile the lists of Pressable sites to process.
-		if ( \is_null( $this->multiple ) ) { // One single, given website.
-			$this->pressable_sites = array( $pressable_site );
-		} elseif ( 'related' === $this->multiple ) {
-			$this->pressable_sites = get_related_pressable_sites( $pressable_site );
-			output_related_pressable_sites( $output, $this->pressable_sites );
-
-			// Flatten out the related websites tree.
-			$this->pressable_sites = \array_merge( ...$this->pressable_sites );
-		} else { // 'all'
-			$this->pressable_sites = get_pressable_sites();
+		switch ( $this->multiple ) {
+			case 'all':
+				$this->pressable_sites = get_pressable_sites();
+				break;
+			case 'related':
+				$this->pressable_sites = get_related_pressable_sites( $pressable_site );
+				$this->pressable_sites = \array_merge( ...$this->pressable_sites ); // Flatten out the related websites tree.
+				break;
+			default:
+				$this->pressable_sites = array( $pressable_site );
 		}
 	}
 
@@ -133,6 +133,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
 				break;
 			case 'related':
+				output_related_pressable_sites( $output, get_related_pressable_sites( $this->pressable_sites[0] ) );
 				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on all the sites listed above? [Y/n]</question> ", false );
 				break;
 			default:
