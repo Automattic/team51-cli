@@ -164,7 +164,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( "<fg=magenta;options=bold>Rotating the WP user password of $this->wp_user_email on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</>" );
 
 			// Rotate the WP user password.
-			$result = $this->rotate_wp_user_password( $input, $output, $new_wp_user_password, $wp_username );
+			$result = $this->rotate_site_wp_user_password( $output, $pressable_site, $new_wp_user_password, $wp_username );
 			if ( true !== $result ) {
 				$output->writeln( '<error>Failed to rotate WP user password.</error>' );
 				continue;
@@ -226,7 +226,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( $input->isInteractive() ) {
 			$question = new Question( '<question>Enter the site ID or URL to rotate the WP password on:</question> ' );
-			$question->setAutocompleterValues( \array_filter( \array_map( static fn( $site ) => empty( $site->clonedFromId ) ? $site->url : false, get_pressable_sites() ?? array() ) ) );
+			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
 
 			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
@@ -235,34 +235,34 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	}
 
 	/**
-	 * Rotates the WP password of the user on a given site.
+	 * Rotates the WP password of the given user on a given site.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
-	 * @param   string|null         $password   The new password.
-	 * @param   string|null         $username   The username of the user, if found.
+	 * @param   OutputInterface     $output             The output instance.
+	 * @param   object              $pressable_site     The Pressable site object.
+	 * @param   string|null         $password           The new password.
+	 * @param   string|null         $username           The username of the user, if found.
 	 *
 	 * @return  bool|null   Whether the password was successfully set. Null means that an API attempt wasn't even made (most likely, no user found).
 	 * @noinspection PhpDocMissingThrowsInspection
 	 */
-	private function rotate_wp_user_password( InputInterface $input, OutputInterface $output, ?string &$password = null, ?string &$username = null ): ?bool {
+	private function rotate_site_wp_user_password( OutputInterface $output, object $pressable_site, ?string &$password = null, ?string &$username = null ): ?bool {
 		$result = null;
 
 		/* @noinspection PhpUnhandledExceptionInspection */
 		$new_password = $password ?? generate_random_password();
 
 		// First attempt to set the password via the WPCOM/Jetpack API.
-		$wpcom_user = get_wpcom_site_user_by_email( $this->pressable_site->url, $this->wp_user_email );
-		if ( false === \is_null( $wpcom_user ) ) { // User found on site and Jetpack connection is active.
+		$wpcom_user = get_wpcom_site_user_by_email( $pressable_site->url, $this->wp_user_email );
+		if ( ! \is_null( $wpcom_user ) ) { // User found on site and Jetpack connection is active.
 			$output->writeln( "<comment>WP user $wpcom_user->login (ID $wpcom_user->ID, email $wpcom_user->email) found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
 			$output->writeln( "<info>Setting the WP user password for $wpcom_user->login (ID $wpcom_user->ID, email $wpcom_user->email) via the WPCOM API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 			$username = $wpcom_user->login;
-			if ( ! $input->getOption( 'dry-run' ) ) {
-				$result = set_wpcom_site_user_wp_password( $this->pressable_site->url, $wpcom_user->ID, $new_password );
-			} else {
+			if ( true === $this->dry_run ) {
 				$output->writeln( '<comment>Dry run: WP user password setting skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 				$result = true;
+			} else {
+				$result = set_wpcom_site_user_wp_password( $pressable_site->url, $wpcom_user->ID, $new_password );
 			}
 		} else {
 			$output->writeln( "<comment>WP user $this->wp_user_email <fg=red;options=bold>NOT</> found via the WPCOM API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
@@ -271,35 +271,35 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		// If the password wasn't set via the WPCOM/Jetpack API, maybe try resetting it via the Pressable API.
 		if ( true !== $result ) {
 			// Pressable has special endpoints for owners vs collaborators.
-			$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $this->pressable_site->id, $this->wp_user_email );
-			if ( false === \is_null( $pressable_sftp_user ) && true === $pressable_sftp_user->owner ) { // SFTP user found on site and is a site owner.
+			$pressable_sftp_user = get_pressable_site_sftp_user_by_email( $pressable_site->id, $this->wp_user_email );
+			if ( ! \is_null( $pressable_sftp_user ) && true === $pressable_sftp_user->owner ) { // SFTP user found on site and is a site owner.
 				$output->writeln( "<info>Resetting the WP user password for the Pressable site owner $pressable_sftp_user->username (ID $pressable_sftp_user->id, email $pressable_sftp_user->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
-				if ( ! $input->getOption( 'dry-run' ) ) {
-					$new_password = reset_pressable_site_owner_wp_password( $this->pressable_site->id );
-					$result       = ( true !== \is_null( $new_password ) );
-				} else {
+				if ( true === $this->dry_run ) {
 					$output->writeln( '<comment>Dry run: WP user password reset of Pressable site owner skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
 					/* @noinspection PhpUnhandledExceptionInspection */
 					$new_password = generate_random_password();
 					$result       = true;
+				} else {
+					$new_password = reset_pressable_site_owner_wp_password( $pressable_site->id );
+					$result       = ! \is_null( $new_password );
 				}
 			} else {
-				$pressable_collaborator = get_pressable_site_collaborator_by_email( $this->pressable_site->id, $this->wp_user_email );
-				if ( true !== \is_null( $pressable_collaborator ) ) {
+				$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $this->wp_user_email );
+				if ( ! \is_null( $pressable_collaborator ) ) {
 					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 					$username = $pressable_collaborator->wpUsername;
-					if ( ! $input->getOption( 'dry-run' ) ) {
-						$new_password = reset_pressable_site_collaborator_wp_password( $this->pressable_site->id, $pressable_collaborator->id );
-						$result       = ( true !== \is_null( $new_password ) );
-					} else {
+					if ( true === $this->dry_run ) {
 						$output->writeln( '<comment>Dry run: WP user password reset of Pressable site collaborator skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
 						/* @noinspection PhpUnhandledExceptionInspection */
 						$new_password = generate_random_password();
 						$result       = true;
+					} else {
+						$new_password = reset_pressable_site_collaborator_wp_password( $pressable_site->id, $pressable_collaborator->id );
+						$result       = ! \is_null( $new_password );
 					}
 				} else {
 					$output->writeln( "<comment>WP user $this->wp_user_email <fg=red;options=bold>NOT</> found via the Pressable API.</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
