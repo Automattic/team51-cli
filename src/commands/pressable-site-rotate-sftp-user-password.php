@@ -234,7 +234,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	// region HELPERS
 
 	/**
-	 * Prompts the user for a site if not in 'no-interaction' mode.
+	 * Prompts the user for a site if in interactive mode.
 	 *
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
@@ -253,7 +253,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	}
 
 	/**
-	 * Prompts the user for an email or returns the default if in 'no-interaction' mode.
+	 * Prompts the user for an email or returns the default if not in interactive mode.
 	 *
 	 * @param   InputInterface      $input      The input interface.
 	 * @param   OutputInterface     $output     The output interface.
