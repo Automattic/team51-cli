@@ -11,10 +11,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use function Team51\Helper\get_enum_input;
+use function Team51\Helper\get_pressable_site_by_id;
+use function Team51\Helper\get_related_pressable_sites;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\get_email_input;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\output_related_pressable_sites;
 
 /**
  * CLI command for rotating the SFTP and WP user passwords of a given user on one or all Pressable sites.
@@ -25,7 +28,29 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'pressable:rotate-site-passwords';
+	protected static $defaultName = 'pressable:rotate-site-passwords'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
+	/**
+	 * Whether processing multiple sites or just a single given one.
+	 * Can be one of 'all' or 'related', if set.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $multiple = null;
+
+	/**
+	 * The email of the user to process.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $user_email = null;
+
+	/**
+	 * Whether to actually rotate the password or just simulate doing so.
+	 *
+	 * @var bool|null
+	 */
+	protected ?bool $dry_run = null;
 
 	// endregion
 
@@ -51,23 +76,24 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		// Retrieve and validate the multiple option.
-		$multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
+		// Retrieve and validate the modifier options.
+		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
+		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
+
+		// Retrieve the user email which is always required.
+		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+		$input->setOption( 'user', $this->user_email ); // Store the email of the user in the input.
 
 		// Retrieve the given site if applicable.
-		if ( 'all' !== $multiple ) {
+		if ( 'all' !== $this->multiple ) {
 			$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
 			if ( false !== \is_null( $pressable_site ) ) {
 				exit( 1 ); // Exit if the site does not exist.
 			}
 
-			// Store the ID of the site in the input for subcommands to use.
+			// Store the ID of the site in the argument field.
 			$input->setArgument( 'site', $pressable_site->id );
 		}
-
-		// Retrieve the user email which is always required.
-		$user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-		$input->setOption( 'user', $user_email ); // Store the email in the input for subcommands to use.
 	}
 
 	/**
@@ -76,25 +102,26 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		switch ( $input->getOption( 'multiple' ) ) {
 			case 'all':
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for {$input->getOption( 'user' )} on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords for $this->user_email on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
 				break;
 			case 'related':
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of {$input->getOption( 'user' )} on {$input->getArgument('site')} and all its related sites? [Y/n]</question> ", false );
+				output_related_pressable_sites( $output, get_related_pressable_sites( get_pressable_site_by_id( $input->getArgument( 'site' ) ) ) );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of $this->user_email on all the sites listed above? [Y/n]</question> ", false );
 				break;
 			default:
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of {$input->getOption( 'user' )} on {$input->getArgument('site')}? [Y/n]</question> ", false );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the passwords of $this->user_email on {$input->getArgument('site')}? [Y/n]</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
-			exit;
+			exit( 2 );
 		}
 
-		if ( 'all' === $input->getOption( 'multiple' ) && false === (bool) $input->getOption( 'dry-run' ) ) {
+		if ( 'all' === $this->multiple && false === $this->dry_run ) {
 			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the passwords? [Y/n]</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
-				exit;
+				exit( 2 );
 			}
 		}
 	}
@@ -113,10 +140,10 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$sftp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-sftp-user-password' );
 		$sftp_password_rotate_command_input = new ArrayInput(
 			array(
-				'site'        => $input->getArgument( 'site' ),
-				'--user'      => $input->getOption( 'user' ),
-				'--multiple'  => $input->getOption( 'multiple' ),
-				'--dry-run'   => $input->getOption( 'dry-run' ),
+				'site'       => $input->getArgument( 'site' ),
+				'--user'     => $this->user_email,
+				'--multiple' => $this->multiple,
+				'--dry-run'  => $this->dry_run,
 			)
 		);
 		$sftp_password_rotate_command_input->setInteractive( false );
@@ -131,10 +158,10 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
 		$wp_password_rotate_command_input = new ArrayInput(
 			array(
-				'site'        => $input->getArgument( 'site' ),
-				'--user'      => $input->getOption( 'user' ),
-				'--multiple'  => $input->getOption( 'multiple' ),
-				'--dry-run'   => $input->getOption( 'dry-run' ),
+				'site'       => $input->getArgument( 'site' ),
+				'--user'     => $this->user_email,
+				'--multiple' => $this->multiple,
+				'--dry-run'  => $this->dry_run,
 			)
 		);
 		$wp_password_rotate_command_input->setInteractive( false );
