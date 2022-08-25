@@ -200,6 +200,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			// Rotate Pressable SFTP password.
 			$new_pressable_sftp_password = $this->reset_site_sftp_user_password( $output, $pressable_site->id, $pressable_sftp_user->username );
 			if ( \is_null( $new_pressable_sftp_password ) ) {
+				$output->writeln( '<error>Failed to reset SFTP user password.</error>' );
 				continue;
 			}
 
@@ -219,6 +220,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 			$result = $this->handle_deployhq_project_server_update( $input, $output, $pressable_site, $pressable_sftp_user->username, $new_pressable_sftp_password );
 			if ( false === $result ) {
+				$output->writeln( '<error>Failed to update DeployHQ project server password.</error>' );
 				$output->writeln( "<info>If needed, please update the DeployHQ project server password manually to: $new_pressable_sftp_password</info>" );
 				continue;
 			}
@@ -295,9 +297,6 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			$output->writeln( '<comment>Dry run: SFTP user password rotation skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 		} else {
 			$new_sftp_password = reset_pressable_site_sftp_user_password( $site_id, $username );
-			if ( \is_null( $new_sftp_password ) ) {
-				$output->writeln( '<error>Failed to reset SFTP user password.</error>' );
-			}
 		}
 
 		return $new_sftp_password;
@@ -407,10 +406,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 					'password'      => $new_sftp_password,
 				)
 			);
-			if ( \is_null( $deployhq_server ) ) {
-				$output->writeln( '<error>Failed to update DeployHQ project server password.</error>' );
-				$result = false;
-			}
+			$result          = ! \is_null( $deployhq_server );
 		}
 
 		return $result;
