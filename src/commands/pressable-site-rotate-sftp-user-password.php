@@ -35,7 +35,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'pressable:rotate-site-sftp-user-password';
+	protected static $defaultName = 'pressable:rotate-site-sftp-user-password'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
 	 * Whether processing multiple sites or just a single given one.
@@ -190,7 +190,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		foreach ( $this->pressable_sites as $index => $pressable_site ) {
 			$pressable_sftp_user = $this->pressable_sftp_users[ $index ];
-			if ( \is_null( $pressable_sftp_user ) ) { // This can only happen if we're processing multiple sites.
+			if ( \is_null( $pressable_sftp_user ) ) { // This can only happen if we're processing multiple sites. For single sites, the command would've aborted during initialization.
 				$output->writeln( "<error>The SFTP user {$input->getOption( 'user' )} does not exist on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url). Skipping site...</error>" );
 				continue;
 			}
@@ -318,7 +318,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		// Retrieve the DeployHQ project for the site.
 		$deployhq_project = $this->get_deployhq_project_from_site( $input, $output, $site );
 		if ( \is_null( $deployhq_project ) ) {
-			$output->writeln( "<error>Failed to retrieve DeployHQ project.</error>" );
+			$output->writeln( '<error>Failed to retrieve DeployHQ project.</error>' );
 			return false;
 		}
 
@@ -364,14 +364,16 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 			if ( $input->isInteractive() ) {
 				$question = new Question( '<question>Enter the DeployHQ project permalink:</question> ' );
-				$question->setValidator( function( string $answer ) {
-					$deployhq_project = get_deployhq_project_by_permalink( \str_replace( ' ', '-', \trim( $answer ) ) );
-					if ( \is_null( $deployhq_project ) ) {
-						throw new \RuntimeException( 'Invalid DeployHQ project permalink.' );
-					}
+				$question->setValidator(
+					function( string $answer ) {
+						$deployhq_project = get_deployhq_project_by_permalink( \str_replace( ' ', '-', \trim( $answer ) ) );
+						if ( \is_null( $deployhq_project ) ) {
+							throw new \RuntimeException( 'Invalid DeployHQ project permalink.' );
+						}
 
-					return $deployhq_project;
-				} );
+						return $deployhq_project;
+					}
+				);
 				$question->setMaxAttempts( 3 );
 
 				$deployhq_project = $this->getHelper( 'question' )->ask( $input, $output, $question );
