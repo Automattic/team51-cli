@@ -159,7 +159,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		foreach ( $this->pressable_sites as $pressable_site ) {
-			unset( $wp_username ); // Make sure we don't carry over the previous site's WP username.
+			unset( $wp_username, $new_wp_user_password ); // Make sure we don't carry over the previous site's WP username and new password.
 
 			$output->writeln( "<fg=magenta;options=bold>Rotating the WP user password of $this->wp_user_email on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</>" );
 
