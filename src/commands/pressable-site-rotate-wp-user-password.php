@@ -173,6 +173,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( '<fg=green;options=bold>WP user password rotated.</>' );
 			$output->writeln( "<comment>New WP user password:</comment> <fg=green;options=bold>$new_wp_user_password</>", OutputInterface::VERBOSITY_DEBUG );
 
+			/*
 			// Update the 1Password password value.
 			$result = $this->update_1password_login( $input, $output, $new_wp_user_password, $wp_username );
 			if ( true !== $result ) {
@@ -182,6 +183,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			}
 
 			$output->writeln( '<fg=green;options=bold>WP user password updated in 1Password.</>' );
+			*/
 		}
 
 		return 0;
