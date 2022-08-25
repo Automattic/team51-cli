@@ -20,7 +20,7 @@ final class Pressable_API_Helper {
 	/**
 	 * The full path to the access token file.
 	 */
-	private const CACHED_TOKENS_FILE_PATH = __DIR__ . '/pressable_cached_tokens.json';
+	private const CACHED_TOKENS_FILE_PATH = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_cached_tokens.json';
 
 	/**
 	 * The time that the access token is valid for. According to the documentation, that is 1 hour.
@@ -101,7 +101,7 @@ final class Pressable_API_Helper {
 		}
 
 		$result = get_remote_content(
-			PRESSABLE_API_TOKEN_ENDPOINT,
+			'https://my.pressable.com/auth/token/',
 			array(
 				'Content-Type: application/x-www-form-urlencoded',
 				'User-Agent: PHP',

@@ -1,12 +1,12 @@
 {
     "require": {
         "ext-json": "*",
+        "ext-sodium": "*",
         "symfony/console": "^4.3",
         "symfony/filesystem": "^4.3",
         "symfony/process": "^4.3",
         "phpseclib/phpseclib": "^3.0.7",
-        "amphp/http-client": "^4.6",
-        "ext-json": "*"
+        "amphp/http-client": "^4.6"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
