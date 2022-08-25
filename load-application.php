@@ -1,7 +1,7 @@
 <?php
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
-if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag manually if set through the environment.
+if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
 	$argv[] = '-c';
 	$_SERVER['argv'][] = '-c';
 }
