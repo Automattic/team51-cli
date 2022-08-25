@@ -29,7 +29,7 @@ if ( empty( $result ) ) {
 }
 
 // Parse the config file.
-$config = json_decode( \file_get_contents( $config_file ), true );
+$config = decode_json_content( \file_get_contents( $config_file ), true );
 if ( empty( $config ) ) {
 	exit( 'Config file could not be read or it is empty. Please make sure it is properly formatted. Aborting!' . PHP_EOL );
 }
@@ -38,7 +38,7 @@ if ( empty( $config ) ) {
 if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) ) {
 	$contractor_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.json';
 	if ( \file_exists( $contractor_config_file ) ) {
-		$contractor_config = json_decode( \file_get_contents( $contractor_config_file ), true ) ?: array();
+		$contractor_config = decode_json_content( \file_get_contents( $contractor_config_file ), true ) ?: array();
 		$config            = \array_merge_recursive( $config, $contractor_config );
 	}
 }
@@ -46,7 +46,7 @@ if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) 
 // Parse overwrite config file.
 $overwrite_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json';
 if ( \file_exists( $overwrite_config_file ) ) {
-	$overwrite_config = json_decode( \file_get_contents( $overwrite_config_file ), true ) ?: array();
+	$overwrite_config = decode_json_content( \file_get_contents( $overwrite_config_file ), true ) ?: array();
 	$config           = \array_replace_recursive( $config, $overwrite_config );
 }
 

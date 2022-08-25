@@ -21,5 +21,13 @@
 	    "classmap": [
             "src/"
         ]
+    },
+    "scripts": {
+        "coding-standards:check": [
+            "@php phpcs --standard=phpcs.dist.xml -s -v"
+        ],
+        "coding-standards:fix": [
+            "@php phpcbf --standard=phpcs.dist.xml -v"
+        ]
     }
 }

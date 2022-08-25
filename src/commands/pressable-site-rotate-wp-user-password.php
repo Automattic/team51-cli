@@ -292,7 +292,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				if ( ! \is_null( $pressable_collaborator ) ) {
 					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
-					$username = $pressable_collaborator->wpUsername;
+					$username = $pressable_collaborator->wpUsername; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 					if ( true === $this->dry_run ) {
 						$output->writeln( '<comment>Dry run: WP user password reset of Pressable site collaborator skipped.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
@@ -346,7 +346,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 						$login_url = \trim( $login_url->href );
 						if ( false !== \strpos( $login_url, 'http' ) ) {
 							// Strip away everything but the domain itself.
-							$login_url = \parse_url( $login_url, PHP_URL_HOST );
+							$login_url = \parse_url( $login_url, PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 						} else {
 							// Strip away endings like /wp-admin or /wp-login.php.
 							$login_url = \explode( '/', $login_url )[0];

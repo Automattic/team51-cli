@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="Team51 WordPress Extra">
+    <description>Best WordPress practices for non-WordPress code.</description>
+
+    <!-- Check all PHP files in the src directory tree by default. -->
+    <arg name="extensions" value="php"/>
+    <file>./src</file>
+
+    <!-- WordPress coding standards. -->
+    <rule ref="WordPress-Extra"/>
+
+    <!-- Ignore WordPress-specific warnings. -->
+    <rule ref="WordPress.WP">
+        <exclude name="WordPress.WP.AlternativeFunctions"/>
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
+    </rule>
+
+    <!-- Ignore WordPress-specific PHP recommendations. -->
+    <rule ref="WordPress.PHP">
+        <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
+    </rule>
+</ruleset>

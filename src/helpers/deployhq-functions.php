@@ -73,18 +73,18 @@ function get_deployhq_project_permalink_from_pressable_site( object $pressable_s
 	if ( false !== \strpos( $project_name, '-development' ) ) {
 		// Handles the case where the project name is "project-development-<timestamp>".
 		$project_name = \explode( '-development', $project_name, 2 )[0];
-	} elseif ( ! empty( $pressable_site->clonedFromId ) ) {
+	} elseif ( ! empty( $pressable_site->clonedFromId ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring.
-		$pressable_site = get_pressable_site_by_id( $pressable_site->clonedFromId );
+		$pressable_site = get_pressable_site_by_id( $pressable_site->clonedFromId ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		if ( true !== \is_null( $pressable_site ) ) {
 			// Safeguard against a deleted site (discovered in the wild during testing).
 			$project_name = get_deployhq_project_permalink_from_pressable_site( $pressable_site );
 		}
-	} elseif ( false !== \strpos( $pressable_site->displayName, '-development' ) ) {
+	} elseif ( false !== \strpos( $pressable_site->displayName, '-development' ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		// Handles the legacy case where a labelled temporary clone is missing the "-development" substring
 		// and no 'clonedFromId' is available for some reason. For this to work, the display name of the clone
 		// must be updated MANUALLY to include the "-development" substring.
-		$project_name = \explode( '-development', $pressable_site->displayName, 2 )[0];
+		$project_name = \explode( '-development', $pressable_site->displayName, 2 )[0]; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 	}
 
 	return \explode( '-production', $project_name, 2 )[0];

@@ -60,8 +60,8 @@ function get_pressable_sites_by_search_term( string $search_term, array $params 
 function get_related_pressable_sites( object $site, ?callable $node_generator = null ): ?array {
 	// Ensure we always start with the root/production site.
 	$production_site = $site;
-	while ( ! empty( $production_site->clonedFromId ) ) {
-		$production_site = get_pressable_site_by_id( $production_site->clonedFromId );
+	while ( ! empty( $production_site->clonedFromId ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$production_site = get_pressable_site_by_id( $production_site->clonedFromId ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		if ( false !== \is_null( $production_site ) ) {
 			break; // This is as high as we can go. Original site must've been deleted...
 		}
@@ -80,7 +80,7 @@ function get_related_pressable_sites( object $site, ?callable $node_generator = 
 
 		foreach ( \array_keys( $related_sites[ $current_level - 1 ] ) as $parent_site_id ) {
 			foreach ( $all_sites as $maybe_clone_site ) {
-				if ( $maybe_clone_site->clonedFromId !== $parent_site_id ) {
+				if ( $maybe_clone_site->clonedFromId !== $parent_site_id ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 					continue; // Skip if this is not a clone.
 				}
 
@@ -352,7 +352,7 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
  */
 function output_related_pressable_sites( OutputInterface $output, array $sites, ?array $headers = null, ?callable $row_generator = null ): void {
 	$row_generator = \is_callable( $row_generator ) ? $row_generator
-		: static fn( $node, $level ) => array( $node->id, $node->name, $node->url, $level, $node->clonedFromId ?: '--' );
+		: static fn( $node, $level ) => array( $node->id, $node->name, $node->url, $level, $node->clonedFromId ?: '--' ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 	$table = new Table( $output );
 
