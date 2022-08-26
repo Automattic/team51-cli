@@ -69,7 +69,8 @@ class Create_Development_Site extends Command {
 			"sites/$production_site_id/clone",
 			'POST',
 			array(
-				'name' => $site_name,
+				'name'    => $site_name,
+				'staging' => true,
 			)
 		);
 
