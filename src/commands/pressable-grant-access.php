@@ -343,7 +343,7 @@ class Pressable_Grant_Access extends Command {
 		return function( string $email, $site_id ) use ( $input, $output ): void {
 			$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site_id . '.</comment>' );
 
-			$site_info = $this->api_helper->call_pressable_api(
+			$site = $this->api_helper->call_pressable_api(
 				"sites/{$site_id}",
 				'GET', array()
 			);
@@ -351,7 +351,8 @@ class Pressable_Grant_Access extends Command {
 			// Collaborator's roles.
 			$collab_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
 
-			if ( true === $site_info->data->staging ) {
+			$is_staging = $site->data->staging || false !== strpos( $site->data->url, '-development' );
+			if ( true === $is_staging ) {
 				$collab_roles[] = 'wp_access';
 			}
 
