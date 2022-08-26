@@ -2,8 +2,8 @@
 <?php
 
 // Respect -q and --quiet.
-if ( ! in_array( '-q', $argv ) && ! in_array( '--quiet', $argv ) ) {
-	echo 'Checking for updates..' . PHP_EOL;
+if ( ! in_array( '-q', $argv, true ) && ! in_array( '--quiet', $argv, true ) ) {
+    echo "Checking for updates.." . PHP_EOL;
 }
 
 exec( sprintf( 'git -C %s %s --recurse-submodules=yes', __DIR__, 'pull' ) );
