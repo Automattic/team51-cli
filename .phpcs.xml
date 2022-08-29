@@ -14,9 +14,10 @@
         <!-- Ignore WordPress-specific warnings. -->
         <exclude name="WordPress.WP.DeprecatedFunctions"/>
         <exclude name="WordPress.WP.AlternativeFunctions"/>
-        <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
+        <exclude name="WordPress.Security.EscapeOutput"/>
 
         <!-- Ignore WordPress-specific PHP recommendations. -->
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
         <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
     </rule>
 </ruleset>

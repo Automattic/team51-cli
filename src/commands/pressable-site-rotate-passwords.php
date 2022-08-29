@@ -20,7 +20,7 @@ use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\output_related_pressable_sites;
 
 /**
- * CLI command for rotating the SFTP and WP user passwords of a given user on one or all Pressable sites.
+ * CLI command for rotating the SFTP and WP user passwords of a given user on Pressable sites.
  */
 final class Pressable_Site_Rotate_Passwords extends Command {
 	// region FIELDS AND CONSTANTS
