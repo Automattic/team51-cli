@@ -367,7 +367,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			}
 		} else {
 			$op_login_entry = \reset( $op_login_entries );
-			$output->writeln( "<info>Updating 1Password login <fg=cyan;options=bold>$op_login_entry->title</> (ID $op_login_entry->id).</info>", OutputInterface::VERBOSITY_DEBUG );
+			$output->writeln( "<info>Updating 1Password login entry <fg=cyan;options=bold>$op_login_entry->title</> (ID $op_login_entry->id).</info>", OutputInterface::VERBOSITY_DEBUG );
 
 			$result = update_1password_item(
 				$op_login_entry->id,

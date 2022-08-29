@@ -344,7 +344,7 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
  *
  * @return  bool|null
  */
-function is_development_pressable_site( string $site_id, bool $legacy = false ): ?bool {
+function is_pressable_development_site( string $site_id, bool $legacy = false ): ?bool {
 	$site = get_pressable_site_by_id( $site_id );
 	if ( \is_null( $site ) ) {
 		return null;
@@ -364,11 +364,12 @@ function is_development_pressable_site( string $site_id, bool $legacy = false ):
  * Returns whether a given Pressable site should be considered a production site.
  *
  * @param   string  $site_id    The site ID.
+ * @param   bool    $legacy     Whether to check for legacy logic too or not.
  *
  * @return  bool|null
  */
-function is_production_pressable_site( string $site_id ): ?bool {
-	$is_development = is_development_pressable_site( $site_id );
+function is_pressable_production_site( string $site_id, bool $legacy = false ): ?bool {
+	$is_development = is_pressable_development_site( $site_id, $legacy );
 	return \is_null( $is_development ) ? null : ! $is_development;
 }
 
@@ -394,25 +395,19 @@ function convert_pressable_site( string $site_id ): ?object {
  * Converts a given Pressable site if it's not already in the desired state.
  *
  * @param   string  $site_id    The site ID.
- * @param   string  $direction  The direction to convert the site. Options are 'development' and 'production'.
+ * @param   string  $direction  The direction to convert the site. Options are 'staging' and 'live'.
  *
  * @return  object|null
  */
 function maybe_convert_pressable_site( string $site_id, string $direction ): ?object {
 	switch ( \strtolower( $direction ) ) {
-		case 'development':
-			if ( is_production_pressable_site( $site_id ) ) {
-				return convert_pressable_site( $site_id );
-			}
-			break;
-		case 'production':
-			if ( is_development_pressable_site( $site_id ) ) {
-				return convert_pressable_site( $site_id );
-			}
-			break;
+		case 'staging':
+			return is_pressable_production_site( $site_id ) ? convert_pressable_site( $site_id ) : get_pressable_site_by_id( $site_id );
+		case 'live':
+			return is_pressable_development_site( $site_id ) ? convert_pressable_site( $site_id ) : get_pressable_site_by_id( $site_id );
+		default:
+			return null;
 	}
-
-	return null;
 }
 
 /**
@@ -423,9 +418,9 @@ function maybe_convert_pressable_site( string $site_id, string $direction ): ?ob
  *
  * @link    https://my.pressable.com/documentation/api/v1#add-domain-to-site
  *
- * @return  object|null
+ * @return  object[]|null
  */
-function add_pressable_site_domain( string $site_id, string $domain ): ?object {
+function add_pressable_site_domain( string $site_id, string $domain ): ?array {
 	$result = Pressable_API_Helper::call_api( "sites/$site_id/domains", 'POST', array( 'name' => $domain ) );
 	if ( \is_null( $result ) || empty( $result->data ) ) {
 		return null;
@@ -445,7 +440,7 @@ function add_pressable_site_domain( string $site_id, string $domain ): ?object {
  * @return  object|null
  */
 function set_pressable_site_primary_domain( string $site_id, string $domain_id ): ?object {
-	$result = Pressable_API_Helper::call_api( "sites/$site_id/domains/$domain_id/primary", 'POST' );
+	$result = Pressable_API_Helper::call_api( "sites/$site_id/domains/$domain_id/primary", 'PUT' );
 	if ( \is_null( $result ) || empty( $result->data ) ) {
 		return null;
 	}
