@@ -7,16 +7,16 @@
     <file>./src</file>
 
     <!-- WordPress coding standards. -->
-    <rule ref="WordPress-Extra"/>
+    <rule ref="WordPress-Extra">
+        <!-- Ignore that command file names don't start with 'class-'. -->
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName" />
 
-    <!-- Ignore WordPress-specific warnings. -->
-    <rule ref="WordPress.WP">
+        <!-- Ignore WordPress-specific warnings. -->
+        <exclude name="WordPress.WP.DeprecatedFunctions"/>
         <exclude name="WordPress.WP.AlternativeFunctions"/>
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
-    </rule>
 
-    <!-- Ignore WordPress-specific PHP recommendations. -->
-    <rule ref="WordPress.PHP">
+        <!-- Ignore WordPress-specific PHP recommendations. -->
         <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
     </rule>
 </ruleset>

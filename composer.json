@@ -24,10 +24,10 @@
     },
     "scripts": {
         "coding-standards:check": [
-            "@php phpcs --standard=phpcs.dist.xml -s -v"
+            "@php phpcs --standard=.phpcs.xml -s -v"
         ],
         "coding-standards:fix": [
-            "@php phpcbf --standard=phpcs.dist.xml -v"
+            "@php phpcbf --standard=.phpcs.xml -v"
         ]
     }
 }
