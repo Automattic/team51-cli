@@ -123,13 +123,13 @@ function update_1password_item( string $item_id, array $fields, array $flags = a
  *
  * @link    https://developer.1password.com/docs/cli/reference/management-commands/item#item-delete
  *
- * @return  object|null
+ * @return  void
  */
-function delete_1password_item( string $item_id, array $flags = array(), array $global_flags = array() ): ?object {
+function delete_1password_item( string $item_id, array $flags = array(), array $global_flags = array() ): void {
 	$flags   = \array_intersect_key( $flags, \array_flip( array( 'archive', 'vault' ) ) );
 	$command = _build_1password_command_string( "op item delete $item_id", $flags, array( 'vault' ), $global_flags );
 
-	return decode_json_content( \shell_exec( "$command --format json" ) );
+	\shell_exec( "$command --format json" );
 }
 
 /**
