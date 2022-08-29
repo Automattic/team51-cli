@@ -336,6 +336,123 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
 	return $new_password->data;
 }
 
+/**
+ * Returns whether a given Pressable site should be considered a development site.
+ *
+ * @param   string  $site_id    The site ID.
+ * @param   bool    $legacy     Whether to check for legacy logic too or not.
+ *
+ * @return  bool|null
+ */
+function is_development_pressable_site( string $site_id, bool $legacy = false ): ?bool {
+	$site = get_pressable_site_by_id( $site_id );
+	if ( \is_null( $site ) ) {
+		return null;
+	}
+
+	$is_development = (bool) $site->staging;
+	if ( ! $is_development && $legacy ) {
+		// Previously, the 'create-development-site' command did not set the staging flag.
+		// This is a legacy check to ensure that staging sites are still considered staging sites. It's not 100% accurate, but it's better than nothing.
+		$is_development = ( false !== strpos( $site->url, '-development' ) );
+	}
+
+	return $is_development;
+}
+
+/**
+ * Returns whether a given Pressable site should be considered a production site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @return  bool|null
+ */
+function is_production_pressable_site( string $site_id ): ?bool {
+	$is_development = is_development_pressable_site( $site_id );
+	return \is_null( $is_development ) ? null : ! $is_development;
+}
+
+/**
+ * Converts a staging site to a live site, and a live site to a staging site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#convert-site
+ *
+ * @return  object|null
+ */
+function convert_pressable_site( string $site_id ): ?object {
+	$result = Pressable_API_Helper::call_api( "sites/$site_id/convert", 'PUT' );
+	if ( \is_null( $result ) || empty( $result->data ) ) {
+		return null;
+	}
+
+	return $result->data;
+}
+
+/**
+ * Converts a given Pressable site if it's not already in the desired state.
+ *
+ * @param   string  $site_id    The site ID.
+ * @param   string  $direction  The direction to convert the site. Options are 'development' and 'production'.
+ *
+ * @return  object|null
+ */
+function maybe_convert_pressable_site( string $site_id, string $direction ): ?object {
+	switch ( \strtolower( $direction ) ) {
+		case 'development':
+			if ( is_production_pressable_site( $site_id ) ) {
+				return convert_pressable_site( $site_id );
+			}
+			break;
+		case 'production':
+			if ( is_development_pressable_site( $site_id ) ) {
+				return convert_pressable_site( $site_id );
+			}
+			break;
+	}
+
+	return null;
+}
+
+/**
+ * Adds a new given domain to a given Pressable site.
+ *
+ * @param   string  $site_id    The site ID.
+ * @param   string  $domain     The domain to add.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#add-domain-to-site
+ *
+ * @return  object|null
+ */
+function add_pressable_site_domain( string $site_id, string $domain ): ?object {
+	$result = Pressable_API_Helper::call_api( "sites/$site_id/domains", 'POST', array( 'name' => $domain ) );
+	if ( \is_null( $result ) || empty( $result->data ) ) {
+		return null;
+	}
+
+	return $result->data;
+}
+
+/**
+ * Sets a given domain as the primary domain of a given Pressable site.
+ *
+ * @param   string  $site_id    The site ID.
+ * @param   string  $domain_id  The domain ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#set-primary-domain
+ *
+ * @return  object|null
+ */
+function set_pressable_site_primary_domain( string $site_id, string $domain_id ): ?object {
+	$result = Pressable_API_Helper::call_api( "sites/$site_id/domains/$domain_id/primary", 'POST' );
+	if ( \is_null( $result ) || empty( $result->data ) ) {
+		return null;
+	}
+
+	return $result->data;
+}
+
 // endregion
 
 // region CONSOLE
