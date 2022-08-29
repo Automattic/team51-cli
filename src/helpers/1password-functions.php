@@ -20,6 +20,32 @@ function list_1password_items( array $flags = array(), array $global_flags = arr
 }
 
 /**
+ * Filters 1Password items based on a given search function.
+ *
+ * @param   callable    $search_func    The function to use to search for the item. Must resolve to true for a valid item and false otherwise.
+ * @param   array       $flags          The flags to filter the results by.
+ * @param   array       $global_flags   The global flags to pass to the command.
+ *
+ * @return  array|null
+ */
+function search_1password_items( callable $search_func, array $flags = array(), array $global_flags = array() ): ?array {
+	static $op_items = array();
+
+	// Cache the list of items to search through for performance/rate-limiting reasons.
+	$flags_hash = \hash( 'sha256', encode_json_content( \array_merge( $flags, $global_flags ) ) );
+	if ( ! isset( $op_items[ $flags_hash ] ) || true !== ( $global_flags['cache'] ?? true ) ) {
+		$op_items[ $flags_hash ] = list_1password_items( $flags, $global_flags );
+		if ( \is_null( $op_items[ $flags_hash ] ) ) {
+			unset( $op_items[ $flags_hash ] );
+			return null;
+		}
+	}
+
+	// Search through the cached list for matching items.
+	return \array_filter( $op_items[ $flags_hash ], $search_func );
+}
+
+/**
  * Creates a new 1Password item.
  *
  * @param   array   $fields         The fields to set on the new item.
@@ -122,14 +148,14 @@ function _build_1password_command_string( string $command, array $flags, array $
 
 	foreach ( $flags as $flag => $value ) {
 		if ( \in_array( $flag, $value_flags, true ) ) {
-			$command .= " --$flag " . \is_array( $value ) ? \implode( ',', $value ) : $value;
+			$command .= " --$flag " . \implode( ',', (array) $value );
 		} elseif ( $value ) {
 			$command .= " --$flag";
 		}
 	}
 	foreach ( $global_flags as $flag => $value ) {
 		if ( \in_array( $flag, array( 'account', 'config', 'encoding', 'session' ), true ) ) {
-			$command .= " --$flag " . \is_array( $value ) ? \implode( ',', $value ) : $value;
+			$command .= " --$flag " . \implode( ',', (array) $value );
 		} elseif ( $value ) {
 			$command .= " --$flag";
 		}

@@ -9,9 +9,11 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use function Team51\Helper\decode_json_content;
+use function Team51\Helper\create_1password_item;
+use function Team51\Helper\get_1password_item;
 use function Team51\Helper\get_enum_input;
 use function Team51\Helper\get_related_pressable_sites;
+use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\generate_random_password;
 use function Team51\Helper\get_email_input;
@@ -20,11 +22,12 @@ use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\get_wpcom_site_user_by_email;
-use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\output_related_pressable_sites;
 use function Team51\Helper\reset_pressable_site_collaborator_wp_password;
 use function Team51\Helper\reset_pressable_site_owner_wp_password;
+use function Team51\Helper\search_1password_items;
 use function Team51\Helper\set_wpcom_site_user_wp_password;
+use function Team51\Helper\update_1password_item;
 
 /**
  * CLI command for rotating the WP password of users on Pressable sites.
@@ -174,17 +177,15 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( '<fg=green;options=bold>WP user password rotated.</>' );
 			$output->writeln( "<comment>New WP user password:</comment> <fg=green;options=bold>$new_wp_user_password</>", OutputInterface::VERBOSITY_DEBUG );
 
-			/*
 			// Update the 1Password password value.
-			$result = $this->update_1password_login( $input, $output, $new_wp_user_password, $wp_username );
+			$result = $this->update_1password_login( $output, $pressable_site, $new_wp_user_password, $wp_username );
 			if ( true !== $result ) {
-				$output->writeln( '<error>Failed to update 1Password value.</error>' );
-				$output->writeln( "<info>If needed, please update the 1Password value manually to: $new_wp_user_password</info>" );
+				$output->writeln( '<error>Failed to update 1Password entry.</error>' );
+				$output->writeln( "<info>If needed, please update the 1Password entry manually to: $new_wp_user_password</info>" );
 				continue;
 			}
 
 			$output->writeln( '<fg=green;options=bold>WP user password updated in 1Password.</>' );
-			*/
 		}
 
 		return 0;
@@ -317,103 +318,123 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	/**
 	 * Updates the 1Password entry for the WP user and site.
 	 *
-	 * The 1Password CLI has a limitation that prevents setting multiple URLs per entry, so it's irrelevant whether we
-	 * actually managed to set the same password everywhere or not. We need one entry per site anyway.
-	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
-	 * @param   string              $password   The password to set.
-	 * @param   string|null         $username   The username of the WP user, if known.
+	 * @param   OutputInterface     $output             The output interface.
+	 * @param   object              $pressable_site     The Pressable site.
+	 * @param   string              $password           The password to set.
+	 * @param   string|null         $username           The username of the WP user, if known.
 	 *
 	 * @return  bool|null   True if the update was successful, null if the update was never attempted.
 	 */
-	private function update_1password_login( InputInterface $input, OutputInterface $output, string $password, ?string $username = null ): ?bool {
-		static $op_items = null;
-
-		if ( true === \is_null( $op_items ) ) { // Performance and rate-limiting optimization.
-			$op_items = decode_json_content( \shell_exec( 'op item list --categories login --format json' ) );
-			if ( true === \is_null( $op_items ) ) {
-				$output->writeln( '<error>1Password logins could not be retrieved.</error>' );
-				return null;
-			}
-		}
-
-		// Find main production site login.
-		$op_login = \array_filter(
-			\array_map(
-				function ( object $login ) use ( $output, $username ) {
-					$login_urls = \property_exists( $login, 'urls' ) ? (array) $login->urls : array();
-					foreach ( $login_urls as $login_url ) {
-						$login_url = \trim( $login_url->href );
-						if ( false !== \strpos( $login_url, 'http' ) ) {
-							// Strip away everything but the domain itself.
-							$login_url = \parse_url( $login_url, PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
-						} else {
-							// Strip away endings like /wp-admin or /wp-login.php.
-							$login_url = \explode( '/', $login_url )[0];
-						}
-
-						if ( true !== \is_null( $login_url ) && true === is_case_insensitive_match( $login_url, $this->pressable_site->url ) ) {
-							$op_username = \trim( \shell_exec( "op item get $login->id --fields label=username" ) );
-							if ( empty( $op_username ) ) {
-								$op_username = \trim( \shell_exec( "op item get $login->id --fields label=user_login" ) );
-							}
-							if ( empty( $op_username ) ) {
-								$output->writeln( "<error>Cannot find username of 1Password login $login->title (ID $login->id) which is a potential match.</error>" );
-								continue;
-							}
-
-							if ( true === is_case_insensitive_match( $this->wp_user_email, $op_username ) ) {
-								return $login;
-							}
-							if ( true !== \is_null( $username ) && true === is_case_insensitive_match( $username, $op_username ) ) {
-								return $login;
-							}
-
-							// Sometimes, the concierge user is stored as the username instead of the email.
-							if ( true === is_case_insensitive_match( $this->wp_user_email, 'concierge@wordpress.com' ) ) {
-								if ( true === is_case_insensitive_match( 'wpconcierge', $op_username ) ) {
-									return $login;
-								}
-								if ( true === is_case_insensitive_match( 'wordpressconcierge', $op_username ) ) {
-									return $login;
-								}
-							}
-						}
-					}
-
-					return null;
-				},
-				$op_items
+	private function update_1password_login( OutputInterface $output, object $pressable_site, string $password, ?string $username = null ): ?bool {
+		// Find matching 1Password entries for the WP user and site.
+		$op_login_entries = search_1password_items(
+			fn( object $op_login ) => $this->match_1password_login_entry( $op_login, $pressable_site->url, $username ),
+			array(
+				'categories' => 'login',
+				'tags'       => 'team51-cli',
 			)
 		);
-		if ( 1 < \count( $op_login ) ) {
-			$output->writeln( "<error>Multiple 1Password logins found for $this->wp_user_email on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</error>" );
+		if ( 1 < \count( $op_login_entries ) ) {
+			$output->writeln( "<error>Multiple 1Password login entries found for $this->wp_user_email on $pressable_site->displayName (ID $pressable_site->id, URL $pressable_site->url).</error>" );
 			return false;
 		}
 
 		// Create or update the entry.
-		if ( 0 === \count( $op_login ) ) {
-			$output->writeln( "<info>Creating 1Password login <fg=cyan;options=bold>{$this->pressable_site->displayName}</>.</info>", OutputInterface::VERBOSITY_DEBUG );
+		if ( 0 === \count( $op_login_entries ) ) {
+			$output->writeln( "<info>Creating 1Password login entry for <fg=cyan;options=bold>$this->wp_user_email</> on <fg=cyan;options=bold>$pressable_site->displayName</>.</info>", OutputInterface::VERBOSITY_DEBUG );
 
-			$result = \shell_exec( "op item create --category login --vault 'eysfzwd3el7tlphjd7koc6qfdu' username='$this->wp_user_email' password='$password' --url 'https://{$this->pressable_site->url}' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+			$result = create_1password_item(
+				array(
+					'username' => $this->wp_user_email,
+					'password' => $password,
+				),
+				\array_filter(
+					array(
+						'title'    => $pressable_site->displayName, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+						'url'      => "https://$pressable_site->url",
+						'category' => 'login',
+						'tags'     => 'team51-cli',
+						// Store in the shared vault if the user is the concierge, otherwise default to the private vault.
+						'vault'    => 'concierge@wordpress.com' === $this->wp_user_email ? 'eysfzwd3el7tlphjd7koc6qfdu' : null,
+					)
+				),
+				array(),
+				$this->dry_run
+			);
 			if ( empty( $result ) ) {
-				$output->writeln( '<error>1Password login could not be created.</error>' );
+				$output->writeln( '<error>1Password login entry could not be created.</error>' );
 				return false;
 			}
 		} else {
-			$op_login = \reset( $op_login );
-			$output->writeln( "<info>Updating 1Password login <fg=cyan;options=bold>$op_login->title</> (ID $op_login->id).</info>", OutputInterface::VERBOSITY_DEBUG );
+			$op_login_entry = \reset( $op_login_entries );
+			$output->writeln( "<info>Updating 1Password login <fg=cyan;options=bold>$op_login_entry->title</> (ID $op_login_entry->id).</info>", OutputInterface::VERBOSITY_DEBUG );
 
-			// The URL flag is required because otherwise a login entry valid for prod and staging will update both times with different passwords, and one will be lost...
-			$result = \shell_exec( "op item edit $op_login->id password='$password' --url 'https://{$this->pressable_site->url}' --title '{$this->pressable_site->displayName}'" . ( $input->getOption( 'dry-run' ) ? ' --dry-run' : '' ) );
+			$result = update_1password_item(
+				$op_login_entry->id,
+				array(
+					'username' => $this->wp_user_email,
+					'password' => $password,
+				),
+				array(
+					'title' => $pressable_site->displayName, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+					'url'   => "https://$pressable_site->url",
+				),
+				array(),
+				$this->dry_run
+			);
 			if ( empty( $result ) ) {
-				$output->writeln( '<error>1Password login could not be updated.</error>' );
+				$output->writeln( '<error>1Password login entry could not be updated.</error>' );
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * Returns true if the given 1Password login entry matches the given site.
+	 *
+	 * @param   object      $op_login   The 1Password login entry.
+	 * @param   string      $site_url   The site URL.
+	 * @param   string|null $username   The username of the WP user, if known.
+	 *
+	 * @return  bool
+	 */
+	private function match_1password_login_entry( object $op_login, string $site_url, ?string $username ): bool {
+		$result = false;
+
+		$login_urls = \property_exists( $op_login, 'urls' ) ? (array) $op_login->urls : array();
+		foreach ( $login_urls as $login_url ) {
+			$login_url = \trim( $login_url->href );
+			if ( false !== \strpos( $login_url, 'http' ) ) { // Strip away everything but the domain itself.
+				$login_url = \parse_url( $login_url, PHP_URL_HOST );
+			} else { // Strip away endings like /wp-admin or /wp-login.php.
+				$login_url = \explode( '/', $login_url, 2 )[0];
+			}
+
+			if ( ! empty( $login_url ) && is_case_insensitive_match( $login_url, $site_url ) ) {
+				$op_username = get_1password_item( $op_login->id, array( 'fields' => 'label=username' ) );
+				if ( empty( $op_username ) || ! \property_exists( $op_username, 'value' ) ) {
+					continue;
+				}
+
+				$op_username = \trim( $op_username->value );
+				if ( empty( $op_username ) ) {
+					continue;
+				}
+
+				if ( true === is_case_insensitive_match( $this->wp_user_email, $op_username ) ) {
+					$result = true;
+					break;
+				}
+				if ( ! empty( $username ) && true === is_case_insensitive_match( $username, $op_username ) ) {
+					$result = true;
+					break;
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	// endregion
