@@ -81,7 +81,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 		$this->addArgument( 'site', InputArgument::OPTIONAL, 'ID or URL of the site for which to rotate the SFTP user password.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'ID, email, or username of the site SFTP user for which to rotate the password. Default is concierge@wordpress.com.' );
 
-		$this->addOption( 'multiple', null, InputOption::VALUE_REQUIRED, 'Determines whether the \'site\' argument is optional or not. Accepts one of \'all\' or \'related\'.' )
+		$this->addOption( 'multiple', null, InputOption::VALUE_REQUIRED, 'Determines whether the \'site\' argument is optional or not. Accepts only \'related\' currently.' )
 			->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will keep the current SFTP password. Useful for checking whether a given input is valid.' );
 	}
 
@@ -93,7 +93,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 
 		// Retrieve and validate the modifier options.
 		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
-		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'all', 'related' ) );
+		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'related' ) );
 
 		// If processing a given site, retrieve it from the input.
 		if ( 'all' !== $this->multiple ) {
