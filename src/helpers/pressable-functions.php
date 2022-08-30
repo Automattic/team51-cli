@@ -339,37 +339,33 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
 /**
  * Returns whether a given Pressable site should be considered a development site.
  *
+ * Previously, the 'create-development-site' command did not set the staging flag. The check for the '-development' substring
+ * is not 100% accurate, but it's the best we can do. For example, it will fail if the 'create-development-site' was called
+ * with the flags 'temporary-clone' and 'label' because the '-development' substring will be then replaced with the given label.
+ *
  * @param   string  $site_id    The site ID.
- * @param   bool    $legacy     Whether to check for legacy logic too or not.
  *
  * @return  bool|null
  */
-function is_pressable_development_site( string $site_id, bool $legacy = false ): ?bool {
+function is_pressable_development_site( string $site_id ): ?bool {
 	$site = get_pressable_site_by_id( $site_id );
 	if ( \is_null( $site ) ) {
 		return null;
 	}
 
-	$is_development = (bool) $site->staging;
-	if ( ! $is_development && $legacy ) {
-		// Previously, the 'create-development-site' command did not set the staging flag.
-		// This is a legacy check to ensure that staging sites are still considered staging sites. It's not 100% accurate, but it's better than nothing.
-		$is_development = ( false !== strpos( $site->url, '-development' ) );
-	}
-
-	return $is_development;
+	return $site->staging
+		|| ( false !== \strpos( $site->url, '-development' ) );
 }
 
 /**
  * Returns whether a given Pressable site should be considered a production site.
  *
  * @param   string  $site_id    The site ID.
- * @param   bool    $legacy     Whether to check for legacy logic too or not.
  *
  * @return  bool|null
  */
-function is_pressable_production_site( string $site_id, bool $legacy = false ): ?bool {
-	$is_development = is_pressable_development_site( $site_id, $legacy );
+function is_pressable_production_site( string $site_id ): ?bool {
+	$is_development = is_pressable_development_site( $site_id );
 	return \is_null( $is_development ) ? null : ! $is_development;
 }
 
@@ -389,25 +385,6 @@ function convert_pressable_site( string $site_id ): ?object {
 	}
 
 	return $result->data;
-}
-
-/**
- * Converts a given Pressable site if it's not already in the desired state.
- *
- * @param   string  $site_id    The site ID.
- * @param   string  $direction  The direction to convert the site. Options are 'staging' and 'live'.
- *
- * @return  object|null
- */
-function maybe_convert_pressable_site( string $site_id, string $direction ): ?object {
-	switch ( \strtolower( $direction ) ) {
-		case 'staging':
-			return is_pressable_production_site( $site_id ) ? convert_pressable_site( $site_id ) : get_pressable_site_by_id( $site_id );
-		case 'live':
-			return is_pressable_development_site( $site_id ) ? convert_pressable_site( $site_id ) : get_pressable_site_by_id( $site_id );
-		default:
-			return null;
-	}
 }
 
 /**
