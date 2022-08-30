@@ -14,6 +14,7 @@ use function Team51\Helper\convert_pressable_site;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\is_1password_item_url_match;
 use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\search_1password_items;
@@ -195,7 +196,7 @@ final class Pressable_Site_Add_Domain extends Command {
 			$output->writeln( '<comment>Updating site URL in 1Password.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
 			$op_login_entries = search_1password_items(
-				fn( object $op_item ) => $this->match_1password_login_entry( $op_item ),
+				fn( object $op_item ) => is_1password_item_url_match( $op_item, $this->pressable_site->url ),
 				array(
 					'categories' => 'login',
 					'tags'       => 'team51-cli',
@@ -206,6 +207,7 @@ final class Pressable_Site_Add_Domain extends Command {
 			$this->pressable_site = get_pressable_site_by_id( $this->pressable_site->id ); // Refresh the site data. The displayName field is likely to have changed.
 			foreach ( $op_login_entries as $op_login_entry ) {
 				$output->writeln( "<info>Updating 1Password login entry <fg=cyan;options=bold>$op_login_entry->title</> (ID $op_login_entry->id).</info>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+
 				$result = update_1password_item(
 					$op_login_entry->id,
 					array(
@@ -243,31 +245,6 @@ final class Pressable_Site_Add_Domain extends Command {
 		}
 
 		return $site ?? null;
-	}
-
-	/**
-	 * Returns true if the given 1Password login entry matches the site.
-	 *
-	 * @param   object  $op_login   The 1Password login entry.
-	 *
-	 * @return  bool
-	 */
-	private function match_1password_login_entry( object $op_login ): bool {
-		$result = false;
-
-		$login_urls = \property_exists( $op_login, 'urls' ) ? (array) $op_login->urls : array();
-		foreach ( $login_urls as $login_url ) {
-			$login_url = \trim( $login_url->href );
-			if ( false !== \strpos( $login_url, 'http' ) ) { // Strip away everything but the domain itself.
-				$login_url = \parse_url( $login_url, PHP_URL_HOST );
-			} else { // Strip away endings like /wp-admin or /wp-login.php.
-				$login_url = \explode( '/', $login_url, 2 )[0];
-			}
-
-			$result = is_case_insensitive_match( $this->pressable_site->url, $login_url );
-		}
-
-		return $result;
 	}
 
 	// endregion

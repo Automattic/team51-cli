@@ -13,6 +13,7 @@ use function Team51\Helper\create_1password_item;
 use function Team51\Helper\get_1password_item;
 use function Team51\Helper\get_enum_input;
 use function Team51\Helper\get_related_pressable_sites;
+use function Team51\Helper\is_1password_item_url_match;
 use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\generate_random_password;
@@ -403,33 +404,17 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	private function match_1password_login_entry( object $op_login, string $site_url, ?string $username ): bool {
 		$result = false;
 
-		$login_urls = \property_exists( $op_login, 'urls' ) ? (array) $op_login->urls : array();
-		foreach ( $login_urls as $login_url ) {
-			$login_url = \trim( $login_url->href );
-			if ( false !== \strpos( $login_url, 'http' ) ) { // Strip away everything but the domain itself.
-				$login_url = \parse_url( $login_url, PHP_URL_HOST );
-			} else { // Strip away endings like /wp-admin or /wp-login.php.
-				$login_url = \explode( '/', $login_url, 2 )[0];
+		if ( true === is_1password_item_url_match( $op_login, $site_url ) ) {
+			$op_username = get_1password_item( $op_login->id, array( 'fields' => 'label=username' ) );
+			if ( ! empty( $op_username ) && \property_exists( $op_username, 'value' ) ) {
+				$op_username = \trim( $op_username->value );
 			}
 
-			if ( ! empty( $login_url ) && is_case_insensitive_match( $login_url, $site_url ) ) {
-				$op_username = get_1password_item( $op_login->id, array( 'fields' => 'label=username' ) );
-				if ( empty( $op_username ) || ! \property_exists( $op_username, 'value' ) ) {
-					continue;
-				}
-
-				$op_username = \trim( $op_username->value );
-				if ( empty( $op_username ) ) {
-					continue;
-				}
-
+			if ( ! empty( $op_username ) ) {
 				if ( true === is_case_insensitive_match( $this->wp_user_email, $op_username ) ) {
 					$result = true;
-					break;
-				}
-				if ( ! empty( $username ) && true === is_case_insensitive_match( $username, $op_username ) ) {
+				} elseif ( ! empty( $username ) && true === is_case_insensitive_match( $username, $op_username ) ) {
 					$result = true;
-					break;
 				}
 			}
 		}
