@@ -68,8 +68,12 @@ class Update_Repository_Secret extends Command {
 	 * @return void
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
+		$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
+		$config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.json';
+		\shell_exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
 
-		$config = json_decode( file_get_contents( TEAM51_CLI_ROOT_DIR . '/config.json' ) );
+		$config = json_decode( file_get_contents( $config_file ) );
+		\unlink( $config_file );
 
 		$this->output   = $output;
 		$success_repo   = $this->verify_input_repo_name( $input );
@@ -185,7 +189,8 @@ class Update_Repository_Secret extends Command {
 	}
 
 	private function verify_secret_exists( string $secret_name, $config ) {
-		if ( 'GH_BOT_TOKEN' !== $secret_name && empty( $config->$secret_name ) ) { // Legacy is a beach!
+		$secret_boom = \array_map( 'strtolower', \explode( '_', $secret_name, 2 ) );
+		if ( 'GH_BOT_TOKEN' !== $secret_name && empty( $config->{$secret_boom[0]}->{$secret_boom[1]} ) ) { // Legacy is a beach!
 			$this->output->writeln( '<error>Secret does not exist in config.json file.</error>' );
 			return false;
 		}
@@ -196,8 +201,9 @@ class Update_Repository_Secret extends Command {
 			$secret_name = 'GITHUB_API_BOT_SECRETS_TOKEN';
 			$this->verify_secret_exists( $secret_name, $config );
 		}
-		if ( ! empty( $config->$secret_name ) ) {
-			$secret = $config->$secret_name;
+		$secret_boom = \array_map( 'strtolower', \explode( '_', $secret_name, 2 ) );
+		if ( ! empty( $config->{$secret_boom[0]}->{$secret_boom[1]} ) ) {
+			$secret = $config->{$secret_boom[0]}->{$secret_boom[1]};
 		} else {
 			$this->output->writeln( '<error>Secret could not be retrieved. Aborting!</error>' );
 		}

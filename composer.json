@@ -1,10 +1,14 @@
 {
     "require": {
+        "ext-json": "*",
         "symfony/console": "^4.3",
         "symfony/filesystem": "^4.3",
         "symfony/process": "^4.3",
         "phpseclib/phpseclib": "^3.0.7",
-        "amphp/parallel-functions": "^1.0"
+        "amphp/http-client": "^4.6"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest"
     },
     "autoload": {
 	    "classmap": ["src/"]

@@ -30,7 +30,7 @@ class Pressable_Grant_Access extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Grants user access to a Pressable site' )
-		->setHelp( 'Requires --email and --site. Grants access to Pressable a site, using site ID or site domain.' )
+		->setHelp( 'Requires --email and --site. Grants access to a Pressable site, using site ID or site domain.' )
 		->addOption( 'email', null, InputOption::VALUE_REQUIRED, 'The user email.' )
 		->addOption( 'site', null, InputOption::VALUE_OPTIONAL, 'The Pressable site. Can be a numeric site ID or by domain.' )
 		->addOption( 'search', null, InputOption::VALUE_OPTIONAL, 'Search for any site by domain.' );
@@ -224,8 +224,12 @@ class Pressable_Grant_Access extends Command {
 
 		$site_name = $this->get_site( $input, $output );
 
-		// Find the site by name. Fail if we can't find it.
-		$site = $this->search_for_site_url( $site_name );
+		if ( is_numeric( $site_name ) ) {
+			$site = $this->get_site_by_id( (int) $site_name );
+		} else {
+			// Find the site by name. Fail if we can't find it.
+			$site = $this->search_for_site_url( $site_name );
+		}
 		if ( ! $site ) {
 			$output->writeln( '<error>Site not found.</error>' );
 			exit;
@@ -253,7 +257,7 @@ class Pressable_Grant_Access extends Command {
 		$sites = $this->api_helper->call_pressable_api( 'sites', 'GET', array() );
 
 		// If we have no results, return an empty null.
-		if ( is_null( $sites ) || empty( $sites->data ) ) {
+		if ( empty( $sites->data ) ) {
 			return null;
 		}
 
@@ -284,6 +288,19 @@ class Pressable_Grant_Access extends Command {
 
 		// Return null if not found.
 		return null;
+	}
+
+	/**
+	 * Search for a site by ID
+	 */
+	private function get_site_by_id( int $site_id ): ?\stdClass {
+		$site = $this->api_helper->call_pressable_api( "sites/$site_id", 'GET', array() );
+		// If we have no results, return an empty null.
+		if ( empty( $site->data ) ) {
+			return null;
+		}
+
+		return $site->data;
 	}
 
 	/**
@@ -334,7 +351,7 @@ class Pressable_Grant_Access extends Command {
 				array(
 					'email'   => $email,
 					'siteIds' => array( $site_id ),
-					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'wp_access' ),
+					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance' ),
 				)
 			);
 
