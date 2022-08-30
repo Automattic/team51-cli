@@ -219,6 +219,8 @@ final class Pressable_Site_Add_Domain extends Command {
 					$output->writeln( "<error>Failed to update 1Password login entry <fg=cyan;options=bold>$op_login_entry->title</> (ID $op_login_entry->id). Please update manually!</error>" );
 				}
 			}
+
+			$output->writeln( '<fg=green;options=bold>Relevant 1Password login entries have been updated.</>' );
 		}
 
 		return 0;
