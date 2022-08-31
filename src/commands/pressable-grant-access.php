@@ -343,19 +343,6 @@ class Pressable_Grant_Access extends Command {
 		return function( string $email, $site_id ) use ( $input, $output ): void {
 			$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site_id . '.</comment>' );
 
-			$site = $this->api_helper->call_pressable_api(
-				"sites/{$site_id}",
-				'GET', array()
-			);
-
-			// Collaborator's roles.
-			$collab_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
-
-			$is_staging = $site->data->staging || false !== strpos( $site->data->url, '-development' );
-			if ( true === $is_staging ) {
-				$collab_roles[] = 'wp_access';
-			}
-
 			// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
 			// POST /sites/{site_id}/collaborators would be a better fit if it allowed the `roles` parame
 			$async_result = $this->api_helper->call_pressable_api(
@@ -364,7 +351,7 @@ class Pressable_Grant_Access extends Command {
 				array(
 					'email'   => $email,
 					'siteIds' => array( $site_id ),
-					'roles'   => $collab_roles,
+					'roles'   => array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance' ),
 				)
 			);
 
