@@ -64,6 +64,10 @@ final class Pressable_API_Helper {
 				$message = $result['body']->error;
 			}
 
+			if ( \property_exists( $result['body'], 'errors' ) ) {
+				$message .= ' ' . \implode( ', ', $result['body']->errors );
+			}
+
 			console_writeln(
 				"❌ Pressable API error ($endpoint): {$result['headers']['http_code']} $message",
 				404 === $result['headers']['http_code'] ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
