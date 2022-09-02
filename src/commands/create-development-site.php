@@ -2,6 +2,7 @@
 
 namespace Team51\Command;
 
+use Symfony\Component\Console\Input\ArrayInput;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -115,6 +116,12 @@ class Create_Development_Site extends Command {
 		$progress_bar->finish();
 		$output->writeln( '' );
 		$output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
+
+		$output->writeln( '<comment>Creating 1Password login entry for the concierge user.</comment>' );
+		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
+		$wp_password_rotate_command_input = new ArrayInput( array( 'site' => $pressable_site->data->id ) );
+		$wp_password_rotate_command_input->setInteractive( false );
+		$wp_password_rotate_command->run( $wp_password_rotate_command_input, $output );
 
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
