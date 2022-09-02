@@ -58,7 +58,7 @@ class Create_Development_Site extends Command {
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
 			if ( ! empty( $input->getOption( 'label' ) ) ) {
 				$site_name = str_replace( '-development', '', $site_name );
-				$label  = $input->getOption( 'label' );
+				$label     = $input->getOption( 'label' );
 			} else {
 				$label = time();
 			}
@@ -77,7 +77,7 @@ class Create_Development_Site extends Command {
 		// catching and displaying useful errors here
 		if ( $pressable_site->errors ) {
 			$site_creation_errors = '';
-			foreach( $pressable_site->errors as $error ) {
+			foreach ( $pressable_site->errors as $error ) {
 				$site_creation_errors .= $error;
 			}
 			$output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
