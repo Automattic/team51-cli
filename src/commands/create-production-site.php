@@ -16,10 +16,10 @@ class Create_Production_Site extends Command {
 	const DEPLOYHQ_ZONE_US_EAST = 6;
 	const DEPLOYHQ_ZONE_US_WEST = 9;
 
-	const PRESSABLE_ZONE_EUROPE  = 'AMS';
+	const PRESSABLE_ZONE_EUROPE     = 'AMS';
 	const PRESSABLE_ZONE_US_CENTRAL = 'DFW';
-	const PRESSABLE_ZONE_US_EAST = 'DCA';
-	const PRESSABLE_ZONE_US_WEST = 'BUR';
+	const PRESSABLE_ZONE_US_EAST    = 'DCA';
+	const PRESSABLE_ZONE_US_WEST    = 'BUR';
 
 	protected function configure() {
 		$this
@@ -28,15 +28,13 @@ class Create_Production_Site extends Command {
 		->addOption( 'site-name', null, InputOption::VALUE_REQUIRED, 'This is root name that will be given to the site. Think of it as really the project name. No need to specify "prod" or "development" in the naming here. The script will take care of that for you -- no spaces, hyphens, non-alphanumeric characters, or capitalized letters.' )
 		->addOption( 'connect-to-repo', null, InputOption::VALUE_REQUIRED, "The repository you'd like to have automatically configured in DeployHQ to work with the new site. This accepts the repository slug.\nOnly GitHub repositories are supported and they must be in the a8cteam51 organization, otherwise the script won't have access." )
 		->addOption( 'zone-id', null, InputOption::VALUE_REQUIRED, "The datacenter zone to be setup on Pressable and DeployHQ. Can be EU or US. By default it's US Central. Additionally, you can use US-East or US-West" )
-		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, "The template that will be used while creating the project on DeployHQ. By default the DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE config param is used." );
+		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, 'The template that will be used while creating the project on DeployHQ. By default the DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE config param is used.' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper();
 
 		$manual_task_notices = array();
-
-		$allow_interaction = ! $input->getOption( 'no-interaction' );
 
 		if ( empty( $input->getOption( 'site-name' ) ) ) {
 			$output->writeln( '<error>Site name is required for production site creation.</error>' );
@@ -49,36 +47,34 @@ class Create_Production_Site extends Command {
 		}
 
 		// Assign default datacenter zones for Pressable and DeployHQ.
-		$deployhq_zone_id = self::DEPLOYHQ_ZONE_US_EAST;
+		$deployhq_zone_id  = self::DEPLOYHQ_ZONE_US_EAST;
 		$pressable_zone_id = self::PRESSABLE_ZONE_US_CENTRAL;
 		if ( ! empty( $input->getOption( 'zone-id' ) ) ) {
 			$z_id = $input->getOption( 'zone-id' );
 			$z_id = strtolower( $z_id );
-			$z_id = str_replace( ' ', '', $z_id );
-			$z_id = str_replace( '-', '', $z_id );
+			$z_id = str_replace( array( ' ', '-' ), '', $z_id );
 
-			if ( $z_id === 'us' || $z_id === 'uscentral') {
+			if ( \in_array( $z_id, array( 'us', 'uscentral' ), true ) ) {
 				$deployhq_zone_id  = self::DEPLOYHQ_ZONE_US_EAST;
 				$pressable_zone_id = self::PRESSABLE_ZONE_US_CENTRAL;
 			}
 
-			if ( $z_id === 'eu' || $z_id === 'eur' || $z_id === 'europe' ) {
+			if ( \in_array( $z_id, array( 'eu', 'eur', 'europe' ), true ) ) {
 				$deployhq_zone_id  = self::DEPLOYHQ_ZONE_EUROPE;
 				$pressable_zone_id = self::PRESSABLE_ZONE_EUROPE;
 			}
 
-			if ( $z_id === 'uswest' || $z_id === 'west' ) {
+			if ( \in_array( $z_id, array( 'uswest', 'west' ), true ) ) {
 				$deployhq_zone_id  = self::DEPLOYHQ_ZONE_US_WEST;
 				$pressable_zone_id = self::PRESSABLE_ZONE_US_WEST;
 			}
-			if ( $z_id === 'useast' || $z_id === 'east' ) {
+			if ( \in_array( $z_id, array( 'useast', 'east' ), true ) ) {
 				$deployhq_zone_id  = self::DEPLOYHQ_ZONE_US_EAST;
 				$pressable_zone_id = self::PRESSABLE_ZONE_US_EAST;
 			}
-
 		}
 
-//		Assign default DeployHQ Project Template
+		// Assign default DeployHQ Project Template
 		$deployhq_template_id = DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE;
 		if ( ! empty( $input->getOption( 'template-id' ) ) ) {
 			$deployhq_template_id = $input->getOption( 'template-id' );
@@ -100,7 +96,7 @@ class Create_Production_Site extends Command {
 			'sites',
 			'POST',
 			array(
-				'name' => $site_name,
+				'name'            => $site_name,
 				'datacenter_code' => $pressable_zone_id,
 			)
 		);
@@ -165,11 +161,15 @@ class Create_Production_Site extends Command {
 		}
 
 		$output->writeln( '<comment>Creating new project in DeployHQ</comment>' );
-		$project_info = $api_helper->call_deploy_hq_api( 'projects', 'POST', array(
-			'name'        => $project_name,
-			'zone_id'     => $deployhq_zone_id,
-			'template_id' => $deployhq_template_id
-		) );
+		$project_info = $api_helper->call_deploy_hq_api(
+			'projects',
+			'POST',
+			array(
+				'name'        => $project_name,
+				'zone_id'     => $deployhq_zone_id,
+				'template_id' => $deployhq_template_id,
+			)
+		);
 
 		if ( empty( $project_info ) || empty( $project_info->permalink ) ) {
 			$output->writeln( '<error>Failed to create new project in DeployHQ. Aborting!</error>' );
