@@ -64,8 +64,8 @@ final class Pressable_API_Helper {
 				$message = $result['body']->error;
 			}
 
-			if ( \property_exists( $result['body'], 'errors' ) ) {
-				$message .= ' ' . \implode( ', ', $result['body']->errors );
+			if ( \property_exists( $result['body'], 'errors' ) && ! empty( $result['body']->errors ) ) {
+				$message .= ' ' . \implode( ', ', (array) $result['body']->errors );
 			}
 
 			console_writeln(
