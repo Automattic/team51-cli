@@ -3,7 +3,6 @@
 namespace Team51\Command;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -129,6 +128,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 
 	/**
 	 * {@inheritDoc}
+	 * @noinspection PhpUnhandledExceptionInspection
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$output->writeln( "<fg=magenta;options=bold>Rotating passwords for {$input->getOption( 'user' )}.</>" );
@@ -137,7 +137,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$output->writeln( '' ); // Empty line for UX purposes.
 		$output->writeln( '<fg=blue;options=bold>----- SFTP User(s) Password -----</>' );
 
-		/* @noinspection PhpUnhandledExceptionInspection */
 		run_app_command(
 			$this->getApplication(),
 			Pressable_Site_Rotate_SFTP_User_Password::getDefaultName(),
@@ -156,7 +155,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$output->writeln( '' ); // Empty line for UX purposes.
 		$output->writeln( '<fg=blue;options=bold>----- WP User(s) Password -----</>' );
 
-		/* @noinspection PhpUnhandledExceptionInspection */
 		run_app_command(
 			$this->getApplication(),
 			Pressable_Site_Rotate_WP_User_Password::getDefaultName(),
