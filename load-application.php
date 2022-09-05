@@ -2,18 +2,16 @@
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
-	$argv[] = '-c';
+	$argv[]            = '-c';
 	$_SERVER['argv'][] = '-c';
 }
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/src/helpers/config-loader.php';
 
-if ( defined( 'ASCII_WELCOME_ART' ) && ! empty( ASCII_WELCOME_ART ) ) {
-	// Respect -q and --quiet.
-	if ( ! in_array( '-q', $argv ) && ! in_array( '--quiet', $argv ) ) {
-		echo ASCII_WELCOME_ART . PHP_EOL;
-	}
+// Respect -q and --quiet.
+if ( ! in_array( '-q', $argv, true ) && ! in_array( '--quiet', $argv, true ) ) {
+	echo ASCII_WELCOME_ART . PHP_EOL;
 }
 
 use Symfony\Component\Console\Application;

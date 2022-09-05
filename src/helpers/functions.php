@@ -29,7 +29,7 @@ function get_remote_content( string $url, array $headers = array(), string $meth
 	);
 	$context = \stream_context_create( $options );
 
-	$result = @\file_get_contents( $url, false, $context );
+	$result = @\file_get_contents( $url, false, $context ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	if ( false === $result ) {
 		return null;
 	}

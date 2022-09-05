@@ -129,7 +129,7 @@ function delete_1password_item( string $item_id, array $flags = array(), array $
 	$flags   = \array_intersect_key( $flags, \array_flip( array( 'archive', 'vault' ) ) );
 	$command = _build_1password_command_string( "op item delete $item_id", $flags, array( 'vault' ), $global_flags );
 
-	\shell_exec( "$command --format json" );
+	\shell_exec( $command );
 }
 
 /**
