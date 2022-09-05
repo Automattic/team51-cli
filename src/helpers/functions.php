@@ -2,6 +2,9 @@
 
 namespace Team51\Helper;
 
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\ExceptionInterface;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -102,6 +105,27 @@ function encode_json_content( $data ): ?string {
 		console_writeln( "JSON Encoding Exception: {$exception->getMessage()}" );
 		return null;
 	}
+}
+
+/**
+ * Runs a command and returns the exit code.
+ *
+ * @param   Application         $application        The application instance.
+ * @param   string              $command_name       The name of the command to run.
+ * @param   array               $command_input      The input to pass to the command.
+ * @param   OutputInterface     $output             The output to use for the command.
+ * @param   bool                $interactive        Whether to run the command in interactive mode.
+ *
+ * @return int  The command exit code.
+ * @throws ExceptionInterface   If the command does not exist or if the input is invalid.
+ */
+function run_app_command( Application $application, string $command_name, array $command_input, OutputInterface $output, bool $interactive = false ): int {
+	$command = $application->find( $command_name );
+
+	$input = new ArrayInput( $command_input );
+	$input->setInteractive( $interactive );
+
+	return $command->run( $input, $output );
 }
 
 // endregion

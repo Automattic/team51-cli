@@ -18,6 +18,7 @@ use function Team51\Helper\get_email_input;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\output_related_pressable_sites;
+use function Team51\Helper\run_app_command;
 
 /**
  * CLI command for rotating the SFTP and WP user passwords of a given user on Pressable sites.
@@ -128,7 +129,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 
 	/**
 	 * {@inheritDoc}
-	 * @noinspection NullPointerExceptionInspection
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$output->writeln( "<fg=magenta;options=bold>Rotating passwords for {$input->getOption( 'user' )}.</>" );
@@ -137,37 +137,39 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$output->writeln( '' ); // Empty line for UX purposes.
 		$output->writeln( '<fg=blue;options=bold>----- SFTP User(s) Password -----</>' );
 
-		$sftp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-sftp-user-password' );
-		$sftp_password_rotate_command_input = new ArrayInput(
-			array(
-				'site'       => $input->getArgument( 'site' ),
-				'--user'     => $this->user_email,
-				'--multiple' => $this->multiple,
-				'--dry-run'  => $this->dry_run,
-			)
-		);
-		$sftp_password_rotate_command_input->setInteractive( false );
-
 		/* @noinspection PhpUnhandledExceptionInspection */
-		$sftp_password_rotate_command->run( $sftp_password_rotate_command_input, $output );
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Rotate_SFTP_User_Password::getDefaultName(),
+			\array_filter(
+				array(
+					'site'       => $input->getArgument( 'site' ),
+					'--user'     => $this->user_email,
+					'--multiple' => $this->multiple,
+					'--dry-run'  => $this->dry_run,
+				)
+			),
+			$output
+		);
 
 		// Rotate the WP user(s) password.
 		$output->writeln( '' ); // Empty line for UX purposes.
 		$output->writeln( '<fg=blue;options=bold>----- WP User(s) Password -----</>' );
 
-		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
-		$wp_password_rotate_command_input = new ArrayInput(
-			array(
-				'site'       => $input->getArgument( 'site' ),
-				'--user'     => $this->user_email,
-				'--multiple' => $this->multiple,
-				'--dry-run'  => $this->dry_run,
-			)
-		);
-		$wp_password_rotate_command_input->setInteractive( false );
-
 		/* @noinspection PhpUnhandledExceptionInspection */
-		$wp_password_rotate_command->run( $wp_password_rotate_command_input, $output );
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Rotate_WP_User_Password::getDefaultName(),
+			\array_filter(
+				array(
+					'site'       => $input->getArgument( 'site' ),
+					'--user'     => $this->user_email,
+					'--multiple' => $this->multiple,
+					'--dry-run'  => $this->dry_run,
+				)
+			),
+			$output
+		);
 
 		return 0;
 	}

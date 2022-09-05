@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use function Team51\Helper\run_app_command;
 
 class Create_Production_Site extends Command {
 	protected static $defaultName = 'create-production-site';
@@ -136,10 +137,13 @@ class Create_Production_Site extends Command {
 		$output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
 
 		$output->writeln( '<comment>Creating 1Password login entry for the concierge user.</comment>' );
-		$wp_password_rotate_command       = $this->getApplication()->find( 'pressable:rotate-site-wp-user-password' );
-		$wp_password_rotate_command_input = new ArrayInput( array( 'site' => $pressable_site->data->id ) );
-		$wp_password_rotate_command_input->setInteractive( false );
-		$wp_password_rotate_command->run( $wp_password_rotate_command_input, $output );
+		/* @noinspection PhpUnhandledExceptionInspection */
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Rotate_WP_User_Password::getDefaultName(),
+			array( 'site' => $pressable_site->data->id ),
+			$output
+		);
 
 		$jetpack_activation_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/activate', (int) $pressable_site->data->id );
 		$jetpack_connection_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/next_url', (int) $pressable_site->data->id );
