@@ -2,7 +2,6 @@
 
 namespace Team51\Command;
 
-use Symfony\Component\Console\Input\ArrayInput;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
