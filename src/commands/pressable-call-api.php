@@ -24,7 +24,8 @@ class Pressable_Call_Api extends Command {
 		->setHelp( 'Refer to the API docs for more details: https://my.pressable.com/documentation/api/v1' )
 		->addOption( 'query', null, InputOption::VALUE_REQUIRED, 'The query string for the request. This is everything after "https://my.pressable.com/v1/" in URL. (e.g., "sites/1234"' )
 		->addOption( 'method', null, InputOption::VALUE_OPTIONAL, 'The query type (GET, POST, etc.). Default is GET.' )
-		->addOption( 'data', null, InputOption::VALUE_OPTIONAL, 'A JSON string of the data to pass on. (e.g.: {"paginate":true}' );
+		->addOption( 'data', null, InputOption::VALUE_OPTIONAL, 'A JSON string of the data to pass on. (e.g.: {"paginate":true}' )
+		->addOption( 'format', null, InputOption::VALUE_OPTIONAL, 'The format of the response output (text, json). Default is json. "text" will dump using the print_r() function.', 'json' );
 	}
 
 	/**
@@ -47,6 +48,13 @@ class Pressable_Call_Api extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$this->api_helper = new API_Helper();
 		$this->output     = $output;
+
+		if ( ! in_array( $input->getOption( 'format' ), array( 'text', 'json' ), true ) ) {
+			$this->output->writeln( '<error>Invalid output format</error>' );
+			return;
+		}
+
+		$this->format = $input->getOption( 'format' );
 
 		$this->handle_api_call( $input, $output );
 
@@ -152,7 +160,8 @@ class Pressable_Call_Api extends Command {
 		// The API Helper encodes the JSON data. Decode it here so that it fits properly.
 		$result = $this->api_helper->call_pressable_api( $query, $method, json_decode( $data ) );
 
-		$output->writeln( sprintf( '<info>API call result: %s</info>', print_r( $result, true ) ) );
+		$dump = 'json' === $this->format ? json_encode( $result, JSON_PRETTY_PRINT ) : print_r( $result, true );
+		$output->writeln( sprintf( '<info>API call result: %s</info>', $dump ) );
 	}
 
 }
