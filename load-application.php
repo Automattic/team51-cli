@@ -40,6 +40,7 @@ $application->add( new Team51\Command\Pressable_Call_Api() );
 $application->add( new Team51\Command\Jetpack_Modules() );
 $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
+$application->add( new Team51\Command\Triage_GraphQL() );
 
 foreach ( $application->all() as $command ) {
 	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
