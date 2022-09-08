@@ -18,12 +18,13 @@ class Dump_Commands extends Command {
 			// TODO: Update link to point to an actual doc
 			->setHelp( "This command allows you to dump a list of all commands with their description and help.\nFor more details on using this to update the CLI documentation, check here: https://github.com/Automattic/team51-cli/wiki" )
 			->addOption( 'format', 'f', InputOption::VALUE_REQUIRED, 'The format to use (md, txt, json, xml)', 'md' )
-			->addOption( 'save', '', InputOption::VALUE_REQUIRED, 'Save the output to a file', false );
+			->addOption( 'save', '', InputOption::VALUE_NONE, 'Save the output to a file' )
+			->addOption( 'split', '', InputOption::VALUE_NONE, 'Split the output into individual files (Only applies if --save option is set)' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$commands   = $this->getApplication()->all();
-		$descriptor = new MarkdownDescriptor();
+		$descriptor = $this->get_descriptor( $input->getOption( 'format' ) );
 		foreach ( $commands as $command ) {
 			$output->writeln( '## ' . $command->getName() );
 			$descriptor->describe( $output, $command );
