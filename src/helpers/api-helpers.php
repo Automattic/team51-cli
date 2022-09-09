@@ -351,6 +351,8 @@ class API_Helper {
 			$promises[ $endpoint ] = call(
 				static function () use ( $method, $client, $endpoint ) {
 					$request = new Request( $endpoint, $method );
+					$request->setInactivityTimeout( 60000 );
+					$request->setTransferTimeout( 60000 );
 					$request->setHeader( 'Accept', 'application/json' );
 					$request->setHeader( 'Content-Type', 'application/json' );
 					$request->setHeader( 'Authorization', 'Bearer ' . WPCOM_API_ACCOUNT_TOKEN );
