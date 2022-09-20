@@ -39,7 +39,7 @@ class Remove_User extends Command {
 
 		$output->writeln( '<comment>Getting collaborator data from Pressable.</comment>' );
 
-		// Each site will have a separate collborator instance/ID for the same user/email.
+		// Each site will have a separate collaborator instance/ID for the same user/email.
 		$collaborator_data = array();
 
 		$collaborators = $this->api_helper->call_pressable_api(
@@ -139,10 +139,13 @@ class Remove_User extends Command {
 	}
 
 	/**
-	 * Given an email, return the list of sites w
+	 * Given an email, return the list of sites owned by that user.
 	 */
 	private function get_wpcom_users( $email ) {
 		$wp_bearer_token = WPCOM_API_ACCOUNT_TOKEN;
+		$exclude_sites   = array(
+			'https://woocommerce.com',
+		);
 
 		$this->output->writeln( '<comment>Fetching list of WordPress.com & Jetpack sites...</comment>' );
 
@@ -153,13 +156,26 @@ class Remove_User extends Command {
 			exit;
 		}
 
-		$this->output->writeln( "<comment>Searching for '$email' across " . count( $all_sites->sites ) . ' WordPress.com & Jetpack sites...</comment>' );
+		// Filter out sites from exclude list.
+		$filtered_sites = array_filter(
+			$all_sites->sites,
+			function( $site ) use ( $exclude_sites ) {
+				foreach ( $exclude_sites as $exclude ) {
+					if ( $exclude === $site->URL ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		);
+
+		$this->output->writeln( "<comment>Searching for '$email' across " . count( $filtered_sites ) . ' WordPress.com & Jetpack sites...</comment>' );
 
 		$site_users_endpoints = array_map(
 			function( $site ) use ( $email ) {
 				return "https://public-api.wordpress.com/rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
 			},
-			$all_sites->sites
+			$filtered_sites
 		);
 
 		// concurrent call for all endpoints.
@@ -174,7 +190,7 @@ class Remove_User extends Command {
 		);
 
 		$data = array();
-		foreach ( $all_sites->sites as $site ) {
+		foreach ( $filtered_sites as $site ) {
 			foreach ( $site_users_endpoints as $endpoint ) {
 				if ( str_contains( $endpoint, $site->ID ) && isset( $sites_users[ $endpoint ] ) ) {
 					$data[] = (object) array(
