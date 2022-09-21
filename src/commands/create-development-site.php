@@ -69,6 +69,7 @@ class Create_Development_Site extends Command {
 			'POST',
 			array(
 				'name' => $site_name,
+				'staging' => true,
 			)
 		);
 
