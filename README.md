@@ -58,7 +58,7 @@ When running any command, you will need to append the flag `--contractor` (or `-
 This CLI tool is self-documenting. You can view a list of available commands with `team51 list`.
 You can then do `team51 <command-name> --help`.
 
-A copy of that documentation possibly will land here in the future if it's useful.
+A copy of that documentation is also available on the [Github Wiki for this repository](https://github.com/Automattic/team51-cli/wiki/team51-commands). When developing, if you add any new commands or update any descriptions, help, or arguments, [follow these instructions to update the documentation](https://github.com/Automattic/team51-cli/wiki/Updating-the-CLI-command-documentation).
 
 ## Troubleshooting
 
