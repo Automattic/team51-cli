@@ -116,6 +116,27 @@ class Create_Development_Site extends Command {
 		$output->writeln( '' );
 		$output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
 
+		// Add Safety Net.
+
+		$output->writeln( '<comment>Adding Safety Net.</comment>' );
+
+		$sftp_connection = $api_helper->pressable_sftp_connect( $pressable_site->data->id );
+
+		if ( ! $sftp_connection ) {
+			$output->writeln( '<error>Failed to connect to Pressable SFTP server. Aborting!</error>' );
+			exit;
+		}
+
+		// Upload set-develop-environment plugin.
+		$set_develop_environment_plugin = file_get_contents( TEAM51_CLI_ROOT_DIR . '/scaffold/develop/set-develop-environment.php' );
+
+		$sftp_connection->put( 'mu-plugins/set-develop-environment.php', $set_develop_environment_plugin );
+		// Confirm if Safety Net should be installed.
+
+		// Check if we need an MU Loader, and install it if we do.
+
+		// Install Safety Net.
+
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
 			'environment' => 'development',
@@ -125,7 +146,7 @@ class Create_Development_Site extends Command {
 		// Set server config elements common to production and development environments.
 		$server_config['server_path'] = 'wp-content';
 
-		// Grab SFTP connection info from Pressable.
+		// Grab SFTP connection info from Pressable for DeployHQ.
 		$ftp_data = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}/ftp", 'GET', array() );
 
 		if ( ! empty( $ftp_data->data ) ) {
@@ -315,5 +336,10 @@ class Create_Development_Site extends Command {
 	// Confirm that Pressable site data exists
 	protected function is_pressable_site( $site ) {
 		return ! ( empty( $site->data ) || empty( $site->data->id ) );
+	}
+
+	// Checks for the existence of a tag for a site
+	protected function site_has_tag( $site, $tag ) {
+		return ! empty( $site->data->tags ) && in_array( $tag, $site->data->tags, true );
 	}
 }
