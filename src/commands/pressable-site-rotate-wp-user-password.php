@@ -356,7 +356,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 						'category' => 'login',
 						'tags'     => 'team51-cli',
 						// Store in the shared vault if the user is the concierge, otherwise default to the private vault.
-						'vault'    => 'concierge@wordpress.com' === $this->wp_user_email ? 'eysfzwd3el7tlphjd7koc6qfdu' : null,
+						'vault'    => 'concierge@wordpress.com' === $this->wp_user_email ? 'kcwtp3hlkjj247dvqlriyopecu' : null,
 					)
 				),
 				array(),
