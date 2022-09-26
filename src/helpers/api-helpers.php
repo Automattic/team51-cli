@@ -380,6 +380,30 @@ class API_Helper {
 		return $response;
 	}
 
+	public function call_github_graphql_api( $query, $associative = false ) {
+		$api_request_url = 'https://api.github.com/graphql';
+
+		$headers = array(
+			'Authorization: bearer ' . GITHUB_API_TOKEN,
+			'User-Agent: PHP',
+		);
+
+		$options = array(
+			'http' => array(
+				'header'        => $headers,
+				'method'        => 'POST',
+				'ignore_errors' => true,
+			),
+		);
+
+		$options['http']['content'] = json_encode( ['query' => $query ] );
+
+		$context = stream_context_create( $options );
+		$result  = @file_get_contents( $api_request_url, false, $context );
+
+		return json_decode( $result, $associative );
+	}
+
 	/**
 	 * Retrieves the last stored Pressable access token. If token is expired, returns false
 	 */
