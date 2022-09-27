@@ -25,6 +25,7 @@ plugins/*
 mu-plugins/*
 !mu-plugins/mu-loader.php
 !mu-plugins/colophon
+!mu-plugins/safety-net
 !mu-plugins/wc-usage-tracking-auto-opt-in
 
 themes/*
