@@ -47,11 +47,11 @@ class Create_Development_Site extends Command {
 
 		// If the production site was created with this script, follow the same naming convention.
 		if ( false !== strpos( $pressable_site->data->name, '-production' ) ) {
-      $site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
-      $project_name = str_replace( '-development', '', $site_name );
+			$site_name    = str_replace( '-production', '-development', $pressable_site->data->name );
+			$project_name = str_replace( '-development', '', $site_name );
 		} else {
-      $site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
-      $project_name = $pressable_site->data->name;
+			$site_name    = str_replace( '-development', '', $pressable_site->data->name ) . '-development';
+			$project_name = $pressable_site->data->name;
 		}
 
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
@@ -73,15 +73,15 @@ class Create_Development_Site extends Command {
 			)
 		);
 
-    // catching and displaying useful errors here
-    if ( $pressable_site->errors ) {
-      $site_creation_errors = '';
-      foreach( $pressable_site->errors as $error ) {
-        $site_creation_errors .= $error;
-      }
-      $output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
-      exit;
-    }
+		// catching and displaying useful errors here
+		if ( $pressable_site->errors ) {
+			$site_creation_errors = '';
+			foreach( $pressable_site->errors as $error ) {
+				$site_creation_errors .= $error;
+			}
+			$output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
+			exit;
+		}
 
 		// TODO this code is duplicated above
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
@@ -132,12 +132,6 @@ class Create_Development_Site extends Command {
 			foreach ( $ftp_data->data as $ftp_user ) {
 				if ( true === $ftp_user->owner ) { // If concierge@wordpress.com is the owner, grab the info.
 					$server_config['pressable_sftp_username'] = $ftp_user->username;
-					$server_config['pressable_sftp_hostname'] = $ftp_user->sftpDomain;
-
-					$password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-					if ( ! empty( $password_reset->data ) ) {
-						$server_config['pressable_sftp_password'] = $password_reset->data;
-					}
 				}
 			}
 		}
@@ -241,6 +235,7 @@ class Create_Development_Site extends Command {
 					'server' => array(
 						'name'               => $server_config['name'],
 						'protocol_type'      => 'ssh',
+						'use_ssh_keys'       => true,
 						'server_path'        => $server_config['server_path'],
 						'email_notify_on'    => 'never',
 						'root_path'          => '',
@@ -248,9 +243,8 @@ class Create_Development_Site extends Command {
 						'notification_email' => '',
 						'branch'             => $server_config['branch'],
 						'environment'        => $server_config['environment'],
-						'hostname'           => $server_config['pressable_sftp_hostname'],
+						'hostname'           => 'ssh.atomicsites.net',
 						'username'           => $server_config['pressable_sftp_username'],
-						'password'           => $server_config['pressable_sftp_password'],
 						'port'               => 22,
 					),
 				)
