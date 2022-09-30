@@ -160,20 +160,14 @@ class Create_Production_Site extends Command {
 			foreach ( $ftp_data->data as $ftp_user ) {
 				if ( true === $ftp_user->owner ) { // If concierge@wordpress.com is the owner, grab the info.
 					$server_config['pressable_sftp_username'] = $ftp_user->username;
-					$server_config['pressable_sftp_hostname'] = $ftp_user->sftpDomain;
-
-					$password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-					if ( ! empty( $password_reset->data ) ) {
-						$server_config['pressable_sftp_password'] = $password_reset->data;
-					}
 				}
 			}
 		}
 
 		$output->writeln( '<comment>Creating new project in DeployHQ</comment>' );
 		$project_info = $api_helper->call_deploy_hq_api( 'projects', 'POST', array(
-			'name'    => $project_name,
-			'zone_id' => $deployhq_zone_id,
+			'name'        => $project_name,
+			'zone_id'     => $deployhq_zone_id,
 			'template_id' => $deployhq_template_id
 		) );
 
@@ -182,6 +176,21 @@ class Create_Production_Site extends Command {
 			exit;
 		} else {
 			$output->writeln( "<info>Created new project in DeployHQ.</info>\n" );
+		}
+
+		$output->writeln( "<comment>Adding private key to DeployHQ project.</comment>" );
+
+		$project_info = $api_helper->call_deploy_hq_api( 'projects/' . $project_info->permalink, 'PUT', array(
+			'project' => array(
+				'custom_private_key' => DEPLOYHQ_PRIVATE_KEY
+			)
+		) );
+
+		if ( empty( $project_info ) || empty( $project_info->public_key ) ) {
+			$output->writeln( '<error>Failed to add private key to DeployHQ project. Aborting!</error>' );
+			exit;
+		} else {
+			$output->writeln( "<info>Successfully added private key to DeployHQ project.</info>\n" );
 		}
 
 		$repository_url = "git@github.com:a8cteam51/$github_repo.git";
@@ -219,6 +228,7 @@ class Create_Production_Site extends Command {
 					'server' => array(
 						'name'               => $server_config['name'],
 						'protocol_type'      => 'ssh',
+						'use_ssh_keys'       => true,
 						'server_path'        => $server_config['server_path'],
 						'email_notify_on'    => 'never',
 						'root_path'          => '',
@@ -226,9 +236,8 @@ class Create_Production_Site extends Command {
 						'notification_email' => '',
 						'branch'             => $server_config['branch'],
 						'environment'        => $server_config['environment'],
-						'hostname'           => $server_config['pressable_sftp_hostname'],
+						'hostname'           => 'ssh.atomicsites.net',
 						'username'           => $server_config['pressable_sftp_username'],
-						'password'           => $server_config['pressable_sftp_password'],
 						'port'               => 22,
 					),
 				)
