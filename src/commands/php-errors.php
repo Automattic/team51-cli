@@ -18,7 +18,7 @@ class Get_PHP_Errors extends Command {
 	protected function configure() {
 		$this
 		->setDescription( "Pulls the 3 most recent fatal errors from the site's PHP error log." )
-		->setHelp( 'Ex: team51 php-errors asia.si.edu' )
+		->setHelp( 'Ex: team51 php-errors asia.si.edu --raw' )
 		->addArgument( 'site-domain', InputArgument::REQUIRED, 'Site domain/URL (e.g. asia.si.edu).' )
 		->addOption( 'raw', null, InputOption::VALUE_NONE, 'You can get an unprocessed dump to stdout of the entire php-errors log by passing --raw.' )
 		->addOption( 'table', null, InputOption::VALUE_NONE, 'Print the results in a table by using --table.' )
