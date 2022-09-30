@@ -184,34 +184,6 @@ class Create_Production_Site extends Command {
 			$output->writeln( "<info>Created new project in DeployHQ.</info>\n" );
 		}
 
-		// Make sure we received a public_key when we created the project.
-		$output->writeln( '<comment>Verifying we received a public key when we created the new DeployHQ project.</comment>' );
-		if ( empty( $project_info ) || empty( $project_info->public_key ) ) {
-			$output->writeln( '<error>Failed to retrieve public key from new DeployHQ project. Aborting!</error>' );
-			exit;
-		} else {
-			$output->writeln( "<info>Successfully retrieved public key from new DeployHQ project.</info>\n" );
-		}
-
-		$github_api_query = 'repos/' . GITHUB_API_OWNER . '/' . $github_repo . '/keys';
-
-		$output->writeln( "<comment>Adding DeployHQ public key to GitHub repository's deploy keys.</comment>" );
-		$github_deploy_key_request = $api_helper->call_github_api(
-			$github_api_query,
-			array(
-				'title'     => 'DeployHQ',
-				'key'       => $project_info->public_key,
-				'read_only' => false,
-			)
-		);
-
-		if ( empty( $github_deploy_key_request ) || empty( $github_deploy_key_request->id ) ) {
-			$output->writeln( '<error>Failed to add DeployHQ public key to GitHub repository. Aborting!</error>' );
-			exit;
-		} else {
-			$output->writeln( "<info>Successfully added DeployHQ public key to GitHub repository.</info>\n" );
-		}
-
 		$repository_url = "git@github.com:a8cteam51/$github_repo.git";
 
 		$output->writeln( '<comment>Connecting DeployHQ project to GitHub repository.</comment>' );
