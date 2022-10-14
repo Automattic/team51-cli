@@ -2,7 +2,6 @@
 
 namespace Team51\Command;
 
-use phpseclib3\File\ANSI;
 use phpseclib3\Net\SSH2;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
