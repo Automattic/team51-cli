@@ -17,6 +17,7 @@ use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\is_1password_item_url_match;
 use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\run_app_command;
 use function Team51\Helper\search_1password_items;
 use function Team51\Helper\set_pressable_site_primary_domain;
 use function Team51\Helper\update_1password_item;
@@ -187,6 +188,47 @@ final class Pressable_Site_Add_Domain extends Command {
 				} else {
 					$output->writeln( '<fg=green;options=bold>Domain already set as primary.</>' );
 					$primary_domain = $site_domain;
+				}
+
+				// Run a search-replace on the database for completion/correction.
+				if ( $this->pressable_site->url !== $site_domain->domainName ) {
+					$output->writeln( '<comment>Running search-replace via WP-CLI.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+
+					/* @noinspection PhpUnhandledExceptionInspection */
+					$search_replace_result = run_app_command(
+						$this->getApplication(),
+						Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+						\array_filter(
+							array(
+								'site'           => $this->pressable_site->id,
+								'wp-cli-command' => "search-replace {$this->pressable_site->url} $site_domain->domainName",
+							)
+						),
+						$output
+					);
+					if ( 0 !== $search_replace_result ) {
+						$output->writeln( '<error>Failed to run search-replace via WP-CLI. Please run it manually!</error>' );
+					} else {
+						$output->writeln( '<fg=green;options=bold>Search-replace via WP-CLI completed.</>' );
+
+						/* @noinspection PhpUnhandledExceptionInspection */
+						$cache_flush_result = run_app_command(
+							$this->getApplication(),
+							Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+							\array_filter(
+								array(
+									'site'           => $this->pressable_site->id,
+									'wp-cli-command' => 'cache flush',
+								)
+							),
+							$output
+						);
+						if ( 0 !== $cache_flush_result ) {
+							$output->writeln( '<error>Failed to flush object cache via WP-CLI. Please flush it manually!</error>' );
+						} else {
+							$output->writeln( '<fg=green;options=bold>Object cache flushed via WP-CLI.</>' );
+						}
+					}
 				}
 
 				break;
