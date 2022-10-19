@@ -18,8 +18,8 @@ class Site_List extends Command {
 		$this
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
-		->addArgument( 'export', InputArgument::OPTIONAL, 'Optional, output the results to a csv or json file by using csv-export or json-export.' )
-		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, 'Optional, exclude columns from csv output (e.g. --exclude="Site name, Host"). Possible values: Site Name, Domain, Site ID, and Host. Case not important.' );
+		->addArgument( 'export', InputArgument::OPTIONAL, "Optional.\nExports the results to a csv or json file saved in the team51-cli folder as sites.csv or sites.json. \nExample usage:\nsite-list csv-export\nsite-list json-export\n" )
+		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, "Optional.\nExclude columns from the export option. Possible values: Site Name, Domain, Site ID, and Host. Letter case is not important.\nExample usage:\nsite-list csv-export --exclude='Site name, Host'\nsite-list json-export --exclude='site id,host'\n" );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
