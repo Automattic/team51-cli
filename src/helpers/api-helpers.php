@@ -293,7 +293,9 @@ class API_Helper {
 				'header'        => $headers,
 				'ignore_errors' => true,
 				'method'        => $method,
+				'timeout'       => 120,
 			),
+
 		);
 
 		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {

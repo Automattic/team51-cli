@@ -6,6 +6,11 @@ config.json
 config.example.json
 src/helpers/pressable_token.json
 
+.idea
+sites.csv
+sites.json
+
+
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,composer,phpstorm+all,visualstudiocode,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,composer,phpstorm+all,visualstudiocode,windows,linux
 
@@ -345,3 +350,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/node,macos,composer,phpstorm+all,visualstudiocode,windows,linux
+
