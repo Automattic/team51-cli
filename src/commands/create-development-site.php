@@ -126,6 +126,18 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
+		$output->writeln( '<comment>Setting the WP_ENVIRONMENT_TYPE constant via WP-CLI.</comment>' );
+		/* @noinspection PhpUnhandledExceptionInspection */
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+			array(
+				'site'           => $pressable_site->data->id,
+				'wp-cli-command' => "config set WP_ENVIRONMENT_TYPE staging --type=constant",
+			),
+			$output
+		);
+
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
 			'environment' => 'development',
