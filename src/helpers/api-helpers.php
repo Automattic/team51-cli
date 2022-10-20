@@ -14,7 +14,7 @@ class API_Helper {
 	private const PRESABLE_TOKEN_FILE         = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_token.json';
 	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-59 minutes';
 
-	public function call_pressable_api( $query, $method, $data ) {
+	public function call_pressable_api( $query, $method, $data = [] ) {
 		$api_request_url = 'https://my.pressable.com/v1/' . $query;
 
 		$data = json_encode( $data );
@@ -249,6 +249,38 @@ class API_Helper {
 		}
 
 		return $sftp_connection;
+	}
+
+	/**
+	 * Gets the SFTP username for a site owner or a specific email address.
+	 *
+	 * @param int         $site_id The site ID.
+	 * @param string|bool $email   The email address to get the SFTP username for. (Defaults to site owner — normally concierge@wordpress.com)
+	 * @return string The SFTP username. Returns false if the username could not be retrieved.
+	 */
+	public function get_sftp_user( $site_id, $email = false ) {
+		$route = "sites/$site_id/ftp";
+
+		$response = $this->call_pressable_api( $route, 'GET' );
+
+		if ( empty( $response ) || 'Success' !== $response->message ) {
+			return false;
+		}
+		
+		$account_list = $response->data;
+		$account_index = false;
+
+		if ( false === $email ) {
+			$account_index = array_search( true, array_column( $account_list, 'owner' ), true );
+		} else {
+			$account_index = array_search( $email, array_column( $account_list, 'email' ) );
+		}
+
+		if ( false === $account_index ) {
+			return false;
+		}
+
+		return $account_list[ $account_index ]->username;
 	}
 
 	public function log_to_slack( $message ) {

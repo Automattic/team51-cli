@@ -41,6 +41,7 @@ $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
 $application->add( new Team51\Command\Triage_GraphQL() );
 $application->add( new Team51\Command\Dump_Commands() );
+$application->add( new Team51\Command\PressableConnect() );
 
 $application->add( new Team51\Command\Site_List() );
 
