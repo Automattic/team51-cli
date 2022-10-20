@@ -295,6 +295,76 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
 }
 
 /**
+ * Adds a collaborator with the given email address to a given site. We reuse the bulk create endpoint because the single
+ * create endpoint does not support the `roles` parameter.
+ *
+ * @param   string  $site_id                The site ID.
+ * @param   string  $collaborator_email     The collaborator email.
+ * @param   array   $collaborator_roles     The collaborator roles.
+ * @param   bool    $skip_object_query      Whether to skip querying the collaborator after creation.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#collaborator-bulk-create
+ *
+ * @return  object|null
+ */
+function create_pressable_site_collaborator( string $collaborator_email, string $site_id, array $collaborator_roles, bool $skip_object_query = false ): ?object {
+	// First send the request to create the collaborator.
+	$result = bulk_create_pressable_site_collaborators( $collaborator_email, array( $site_id ), $collaborator_roles );
+	if ( true !== $result ) {
+		return null;
+	}
+
+	// If we're skipping the object query, return early.
+	if ( true === $skip_object_query ) {
+		return (object) array(
+			'email'  => $collaborator_email,
+			'siteId' => $site_id,
+		);
+	}
+
+	// Now query the collaborator object. Adding the collaborator might take some time, so we need to retry it.
+	for ( $try = 0, $delay = 1; $try <= 3; $try++, $delay *= 2 ) {
+		$collaborator = get_pressable_site_collaborator_by_email( $site_id, $collaborator_email );
+		if ( ! \is_null( $collaborator ) ) {
+			break;
+		}
+
+		sleep( $delay );
+	}
+
+	return $collaborator;
+}
+
+/**
+ * Adds a collaborator with the given a email address to a list of sites.
+ *
+ * @param   string  $collaborator_email     The collaborator email.
+ * @param   array   $site_ids               The site IDs.
+ * @param   array   $collaborator_roles     The collaborator roles.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#collaborator-bulk-create
+ *
+ * @return  bool
+ */
+function bulk_create_pressable_site_collaborators( string $collaborator_email, array $site_ids, array $collaborator_roles = array() ): bool {
+	$result = Pressable_API_Helper::call_api(
+		'collaborators/batch_create',
+		'POST',
+		array(
+			'email'   => $collaborator_email,
+			'siteIds' => $site_ids,
+			'roles'   => $collaborator_roles,
+		)
+	);
+
+	if ( ! \is_null( $result ) && ! empty( $result->message ) ) {
+		console_writeln( $result->message, OutputInterface::VERBOSITY_VERBOSE );
+	}
+
+	return ! \is_null( $result );
+}
+
+/**
  * If one of your collaborators is unable to log into the site’s WordPress dashboard because of a forgotten, or unknown, password,
  * this can be used to set their WP Admin password to a randomly generated value.
  *
