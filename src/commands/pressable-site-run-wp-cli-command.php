@@ -2,18 +2,16 @@
 
 namespace Team51\Command;
 
-use phpseclib3\Net\SSH2;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\get_pressable_site_from_input;
-use function Team51\Helper\get_pressable_site_sftp_users;
 use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\maybe_define_console_verbosity;
-use function Team51\Helper\reset_pressable_site_sftp_user_password;
 
 /**
  * CLI command for running a WP-CLI command on a Pressable site.
@@ -99,35 +97,14 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$output->writeln( "<fg=magenta;options=bold>Running the command `wp $this->wp_command` on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
 
-		// Find the SFTP owner of the site because we need their credentials for the SSH connection.
-		$pressable_site_owner = $this->find_site_owner();
-		if ( \is_null( $pressable_site_owner ) ) {
-			$output->writeln( '<error>Could not find the owner of the site.</error>' );
-			return 1;
-		}
-
-		$output->writeln( "<fg=green;options=bold>Pressable site owner $pressable_site_owner->username (ID $pressable_site_owner->id, email $pressable_site_owner->email) found.</>", OutputInterface::VERBOSITY_VERBOSE );
-
-		// Reset the owner's SSH/SFTP password, so we can use it.
-		$new_pressable_ssh_password = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $pressable_site_owner->username );
-		if ( \is_null( $new_pressable_ssh_password ) ) {
-			$output->writeln( '<error>Could not reset the site owner\'s SSH password.</error>' );
-			return 1;
-		}
-
-		$output->writeln( '<fg=green;options=bold>Pressable site owner SSH password reset.</>', OutputInterface::VERBOSITY_VERBOSE );
-		$output->writeln( "<comment>New SFTP/SSH owner password:</comment> <fg=green;options=bold>$new_pressable_ssh_password</>", OutputInterface::VERBOSITY_DEBUG );
-
-		// Open an SSH connection to the site.
-		$ssh = new SSH2( 'ssh.atomicsites.net' );
-		if ( ! $ssh->login( $pressable_site_owner->username, $new_pressable_ssh_password ) ) {
-			$output->writeln( '<error>Could not log in to the SSH server.</error>' );
+		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
+		if ( \is_null( $ssh ) ) {
+			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
 			return 1;
 		}
 
 		$output->writeln( '<fg=green;options=bold>SSH connection established.</>', OutputInterface::VERBOSITY_VERBOSE );
 
-		// Execute the WP-CLI command and output the result.
 		$ssh->setTimeout( 0 ); // Disable timeout in case the command takes a long time.
 		$ssh->exec(
 			"wp $this->wp_command",
@@ -177,25 +154,6 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 		}
 
 		return $command ?? null;
-	}
-
-	/**
-	 * Returns the Pressable owner object of the given site.
-	 *
-	 * @return  object|null
-	 */
-	private function find_site_owner(): ?object {
-		$site_owner = null;
-
-		$site_sftp_users = get_pressable_site_sftp_users( $this->pressable_site->id );
-		foreach ( $site_sftp_users as $site_sftp_user ) {
-			if ( $site_sftp_user->owner ) {
-				$site_owner = $site_sftp_user;
-				break;
-			}
-		}
-
-		return $site_owner;
 	}
 
 	// endregion
