@@ -198,11 +198,9 @@ final class Pressable_Site_Add_Domain extends Command {
 					$search_replace_result = run_app_command(
 						$this->getApplication(),
 						Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
-						\array_filter(
-							array(
-								'site'           => $this->pressable_site->id,
-								'wp-cli-command' => "search-replace {$this->pressable_site->url} $site_domain->domainName",
-							)
+						array(
+							'site'           => $this->pressable_site->id,
+							'wp-cli-command' => "search-replace {$this->pressable_site->url} $site_domain->domainName",
 						),
 						$output
 					);
