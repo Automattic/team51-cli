@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
+use Team51\Helper\Pressable_Connection_Helper;
 
 class Get_PHP_Errors extends Command {
 	protected static $defaultName = 'php-errors';
@@ -71,9 +72,8 @@ class Get_PHP_Errors extends Command {
 
 		$output->writeln( "<comment>Connecting to SFTP for $site_domain.</comment>" );
 
-		$sftp_connection = $api_helper->pressable_sftp_connect( $pressable_site->id );
-
-		if ( ! empty( $sftp_connection->error ) ) {
+		$sftp_connection = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->id );
+		if ( \is_null( $sftp_connection ) ) {
 			$output->writeln( "<error>Failed to connect to SFTP for $site_domain. Aborting!</error>" );
 			exit;
 		}
