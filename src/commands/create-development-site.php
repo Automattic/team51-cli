@@ -304,15 +304,4 @@ class Create_Development_Site extends Command {
 
 		exit;
 	}
-
-	// Convert a text string to something ready to be used as a unique, machine-friendly identifier
-	protected function _slugify( $_text ) {
-
-		$_slug = strtolower( $_text ); // convert to lowercase
-		$_slug = preg_replace( '/\s+/', '-', $_slug ); // convert all contiguous whitespace to a single hyphen
-		$_slug = preg_replace( '/[^a-z0-9\-]/', '', $_slug ); // Lowercase alphanumeric characters and dashes are allowed.
-		$_slug = preg_replace( '/-+/', '-', $_slug ); // convert multiple contiguous hyphens to a single hyphen
-
-		return $_slug;
-	}
 }
