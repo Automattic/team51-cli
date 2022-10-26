@@ -2,7 +2,7 @@
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
-	$argv[] = '-c';
+	$argv[]            = '-c';
 	$_SERVER['argv'][] = '-c';
 }
 
@@ -41,6 +41,7 @@ $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
 $application->add( new Team51\Command\Triage_GraphQL() );
 $application->add( new Team51\Command\Dump_Commands() );
+$application->add( new Team51\Command\Block_Library_Handlers() );
 
 foreach ( $application->all() as $command ) {
 	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
