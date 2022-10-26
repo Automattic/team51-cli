@@ -4,7 +4,6 @@ namespace Team51\Helper;
 
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
-use phpseclib3\Net\SFTP;
 use function Amp\Promise\wait;
 use function Amp\Promise\all;
 use function Amp\call;
