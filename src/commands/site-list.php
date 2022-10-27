@@ -19,11 +19,17 @@ class Site_List extends Command {
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
 		->addArgument( 'export', InputArgument::OPTIONAL, "Optional.\nExports the results to a csv or json file saved in the team51-cli folder as sites.csv or sites.json. \nExample usage:\nsite-list csv-export\nsite-list json-export\n" )
+		->addOption( 'full-audit', null, InputOption::VALUE_OPTIONAL, "Optional.\nProduces a full list of sites, with reasons why they were or were not filtered. \nExample usage:\nsite-list --full-audit\n" )
 		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, "Optional.\nExclude columns from the export option. Possible values: Site Name, Domain, Site ID, and Host. Letter case is not important.\nExample usage:\nsite-list csv-export --exclude='Site name, Host'\nsite-list json-export --exclude='site id,host'\n" );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper;
+
+		if ( $input->getOption( 'full-audit' ) ) {
+			$full_audit      = true;
+			$audit_site_list = array();
+		}
 
 		$output->writeln( '<info>Fetching sites...<info>' );
 
@@ -38,6 +44,22 @@ class Site_List extends Command {
 		$output->writeln( "<info>{$site_count} sites found in total. Filtering...<info>" );
 
 		$all_sites = $all_sites->sites;
+
+		$pressable_data = $api_helper->call_pressable_api(
+			'sites/',
+			'GET',
+			array()
+		);
+
+		if ( empty( $pressable_data->data ) ) {
+			$output->writeln( "<error>Failed to retrieve Pressable sites. Aborting!</error>" );
+			exit;
+		}
+
+		$pressable_sites = array();
+		foreach ( $pressable_data->data as $_pressable_site ) {
+			$pressable_sites[] = $_pressable_site->url;
+		}
 
 		$ignore = array(
 			'staging',
@@ -58,73 +80,26 @@ class Site_List extends Command {
 			'tonyconrad.wordpress.com',
 		);
 
-		$filtered_sites = array();
+		$alt_site_list = array();
 		foreach ( $all_sites as $site ) {
-			$found = false;
-			foreach ( $ignore as $word ) {
-				if ( false !== strpos( $site->URL, $word ) ) {
-					$passed = false;
-					foreach ( $free_pass as $pass ) {
-						if ( false !== strpos( $site->URL, $pass ) ) {
-							$passed = true;
-							break;
-						}
-					}
-					if ( false === $passed ) {
-						$found = true;
-						break;
-					}
-				}
-			}
-			if ( false === $found && false === $site->is_private ) {
-				$filtered_sites[] = $site;
-			}
-		}
-
-		$filtered_site_list = array_filter(
-			$filtered_sites,
-			function( $site ) {
-				return false === $site->is_coming_soon;
-			}
-		);
-
-		$pressable_data = $api_helper->call_pressable_api(
-			'sites/',
-			'GET',
-			array()
-		);
-
-		if ( empty( $pressable_data->data ) ) {
-			$output->writeln( "<error>Failed to retrieve Pressable sites. Aborting!</error>" );
-			exit;
-		}
-
-		$pressable_sites = array();
-		foreach ( $pressable_data->data as $_pressable_site ) {
-			$pressable_sites[] = $_pressable_site->url;
-		}
-
-		$final_site_list = array();
-		foreach ( $filtered_site_list as $site ) {
-			if ( true === $site->is_wpcom_atomic ) {
-				$server = 'Atomic';
-			} elseif ( true === $site->jetpack ) {
-				if ( in_array( parse_url( $site->URL, PHP_URL_HOST  ), $pressable_sites ) ) {
-					$server = 'Pressable';
-				} else {
-					$server = 'Other';
-				}
-			} else {
-				$server = 'Simple';
-			}
-
-			$final_site_list[] = array(
+			$alt_site_list[] = array(
 				preg_replace( '/[^a-zA-Z0-9\s&!\/|\'#.()-:]/', '', $site->name ),
 				$site->URL,
+				$this->eval_ignore_list( $site, $ignore ),
+				$this->eval_pass_list( $site, $free_pass ),
+				$this->eval_is_private( $site ),
+				$this->eval_is_coming_soon( $site ),
+				$this->eval_which_host( $site, $pressable_sites ),
 				$site->ID,
-				$server,
 			);
 		}
+
+/**
+ * To do:
+ * Check if wpcom api returns multi-site.
+ */
+
+		$final_site_list = $this->filter_public_sites( $alt_site_list );
 
 		$site_table = new Table( $output );
 		$site_table->setStyle( 'box-double' );
@@ -164,6 +139,76 @@ class Site_List extends Command {
 			}
 			$this->create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns );
 			$output->writeln( '<info>Exported to sites.json in the team51 root folder.<info>' );
+		}
+	}
+
+	protected function eval_which_host( $site, $pressable_sites ) {
+		if ( true === $site->is_wpcom_atomic ) {
+			$server = 'Atomic';
+		} elseif ( true === $site->jetpack ) {
+			if ( in_array( parse_url( $site->URL, PHP_URL_HOST ), $pressable_sites ) ) {
+				$server = 'Pressable';
+			} else {
+				$server = 'Other';
+			}
+		} else {
+			$server = 'Simple';
+		}
+		return $server;
+	}
+
+	protected function filter_public_sites( $site_list ) {
+		$filtered_site_list = array();
+		foreach ( $site_list as $site) {
+			if ( '' === $site[4] && '' === $site[5] ) {
+				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
+					$filtered_site_list[] = array(
+						$site[0],
+						$site[1],
+						$site[7],
+						$site[6],
+					);
+				}
+			}
+		}
+		return $filtered_site_list;
+	}
+
+	protected function eval_ignore_list( $site, $ignore ) {
+		$filtered_on = '';
+		foreach ( $ignore as $word ) {
+			if ( false !== strpos( $site->URL, $word ) ) {
+				$filtered_on = $word;
+				break;
+			}
+		}
+		return $filtered_on;
+	}
+
+	protected function eval_pass_list( $site, $free_pass ) {
+		$filtered_on = '';
+		foreach ( $free_pass as $pass ) {
+			if ( false !== strpos( $site->URL, $pass ) ) {
+				$filtered_on = $pass;
+				break;
+			}
+		}
+		return $filtered_on;
+	}
+
+	protected function eval_is_private( $site ) {
+		if ( true === $site->is_private ) {
+			return 'is_private';
+		} else {
+			return '';
+		}
+	}
+
+	protected function eval_is_coming_soon( $site ) {
+		if ( true === $site->is_coming_soon ) {
+			return 'is_coming_soon';
+		} else {
+			return '';
 		}
 	}
 
