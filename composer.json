@@ -30,5 +30,10 @@
         "coding-standards:fix": [
             "@php phpcbf --standard=.phpcs.xml -v"
         ]
+    },
+    "config": {
+        "platform": {
+            "php": "7.4"
+        }
     }
 }
