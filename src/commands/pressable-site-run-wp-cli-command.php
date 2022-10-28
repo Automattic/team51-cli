@@ -76,7 +76,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 		}
 
 		// Store the command in the argument field.
-		$this->wp_command = \escapeshellcmd( \trim( \ltrim( \trim( $this->wp_command ), 'wp' ) ) );
+		$this->wp_command = \escapeshellcmd( \trim( \preg_replace( '/^wp/', '', \trim( $this->wp_command ) ) ) );
 		$input->setArgument( 'wp-cli-command', $this->wp_command );
 	}
 
