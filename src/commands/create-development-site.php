@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\run_app_command;
 
 class Create_Development_Site extends Command {
@@ -125,6 +126,52 @@ class Create_Development_Site extends Command {
 			array( 'site' => $pressable_site->data->id ),
 			$output
 		);
+
+		$progress_bar = new ProgressBar( $output, 30 );
+		$progress_bar->start();
+		for ( $i = 0; $i < 30; $i++ ) {
+			$progress_bar->advance();
+			sleep( 1 );
+		}
+		$progress_bar->finish();
+
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+			array(
+				'site'           => $pressable_site->data->id,
+				'wp-cli-command' => 'config set WP_ENVIRONMENT_TYPE staging --type=constant',
+			),
+			$output
+		);
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+			array(
+				'site'           => $pressable_site->data->id,
+				'wp-cli-command' => 'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
+			),
+			$output
+		);
+
+		$ssh = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
+		if ( ! is_null( $ssh ) ) {
+			$ssh->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
+			$ssh->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
+				if ( false === strpos( $result, 'safety-net' ) ) {
+					$output->writeln( "<error>Failed to install SafetyNet on {$pressable_site->data->id}.</error>" );
+				}
+				if ( false === strpos( $result, 'mu-loader.php' ) && false === strpos( $result, 'mu-autoloader.php' ) ) {
+					$output->writeln( "<comment>No mu-plugins loader found. Trying to copy one over...</comment>" );
+
+					$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
+					$result = $sftp->put( '/htdocs/wp-content/mu-plugins/mu-loader.php', file_get_contents(__DIR__ . '/../../scaffold/templates/mu-loader.php' ) );
+					if ( ! $result ) {
+						$output->writeln( "<error>Failed to copy mu-loader.php to {$pressable_site->data->id}.</error>" );
+					}
+				}
+			} );
+		}
 
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
