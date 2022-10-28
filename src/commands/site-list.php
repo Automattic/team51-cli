@@ -25,14 +25,12 @@ class Site_List extends Command {
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper;
-		$full_audit = false;
+
+		$audit = false;
 
 		if ( $input->getOption( 'audit' ) ) {
-			switch ( $input->getOption( 'audit' ) ) {
-				case 'full':
-					$full_audit = true;
-					break;
-			}
+			$audit      = true;
+			$audit_type = $input->getOption( 'audit' );
 		}
 
 		$output->writeln( '<info>Fetching sites...<info>' );
@@ -85,6 +83,7 @@ class Site_List extends Command {
 			'wpspecialprojects.wordpress.com',
 			'tumblr.wordpress.com',
 			'tonyconrad.wordpress.com',
+			/*'killscreen.com/previously',*/
 		);
 
 		$alt_site_list = array();
@@ -102,10 +101,40 @@ class Site_List extends Command {
 			);
 		}
 
-/**
- * To do:
- * Check if wpcom api returns multi-site.
- */
+		if ( $audit ) {
+			$audited_site_list = $this->eval_site_list( $alt_site_list, $audit_type );
+
+			$site_table = new Table( $output );
+			$site_table->setStyle( 'box-double' );
+			$site_table->setHeaders( array( 'Site Name', 'Domain', '$ignore', '$free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'Host', 'Result', 'Site ID' ) );
+
+			$site_table->setRows( $audited_site_list );
+			$site_table->render();
+
+			$is_private_count     = $this->count_sites( $audited_site_list, 'is_private', 4 );
+			$is_coming_soon_count = $this->count_sites( $audited_site_list, 'is_coming_soon', 5 );
+			$is_multisite_count   = $this->count_sites( $audited_site_list, 'is_subsite', 6 );
+			$pass_count           = $this->count_sites( $audited_site_list, 'PASS', 8 );
+			$fail_count           = $this->count_sites( $audited_site_list, 'FAIL', 8 );
+			$atomic_count         = $this->count_sites( $audited_site_list, 'Atomic', 7 );
+			$pressable_count      = $this->count_sites( $audited_site_list, 'Pressable', 7 );
+			$other_count          = $this->count_sites( $audited_site_list, 'Other', 7 );
+			$simple_count         = $this->count_sites( $audited_site_list, 'Simple', 7 );
+
+			$output->writeln( "<info>{$is_private_count} Private sites.<info>" );
+			$output->writeln( "<info>{$is_coming_soon_count} 'Coming Soon' sites.<info>" );
+			$output->writeln( "<info>{$is_multisite_count} Subsite sites.<info>" );
+			$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
+			$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
+			$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
+			$output->writeln( "<info>{$other_count} sites hosted elsewhere.<info>" );
+			$output->writeln( "<info>{$pass_count} sites passed all filters.<info>" );
+			$output->writeln( "<info>{$fail_count} sites failed at least one filter.<info>" );
+
+			$site_count = count( $audited_site_list );
+			$output->writeln( "<info>{$site_count} sites total.<info>" );
+			exit();
+		}
 
 		$final_site_list = $this->filter_public_sites( $alt_site_list );
 
@@ -116,10 +145,10 @@ class Site_List extends Command {
 		$site_table->setRows( $final_site_list );
 		$site_table->render();
 
-		$atomic_count    = $this->count_sites( $final_site_list, 'Atomic' );
-		$pressable_count = $this->count_sites( $final_site_list, 'Pressable' );
-		$other_count     = $this->count_sites( $final_site_list, 'Other' );
-		$simple_count    = $this->count_sites( $final_site_list, 'Simple' );
+		$atomic_count    = $this->count_sites( $final_site_list, 'Atomic', 3 );
+		$pressable_count = $this->count_sites( $final_site_list, 'Pressable', 3 );
+		$other_count     = $this->count_sites( $final_site_list, 'Other', 3 );
+		$simple_count    = $this->count_sites( $final_site_list, 'Simple', 3 );
 
 		$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
 		$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
@@ -168,7 +197,7 @@ class Site_List extends Command {
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
 		foreach ( $site_list as $site) {
-			if ( '' === $site[4] && '' === $site[5] && '' === $site[7] ) {
+			if ( '' === $site[4] && '' === $site[5] && ( '' === $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$filtered_site_list[] = array(
 						$site[0],
@@ -180,6 +209,40 @@ class Site_List extends Command {
 			}
 		}
 		return $filtered_site_list;
+	}
+
+	protected function eval_site_list( $site_list, $audit_type ) {
+		$audit_site_list = array();
+		foreach ( $site_list as $site ) {
+			if ( 'no-staging' === $audit_type && false !== strpos( $site[1], 'staging' ) ) {
+				continue;
+			}
+			if ( 'full' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
+				continue;
+			}
+			if ( '' === $site[4] && '' === $site[5] && ( '' === $site[7] || '' !== $site[3] ) ) {
+				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
+					$result = 'PASS';
+				} else {
+					$result = 'FAIL';
+				}
+			} else {
+				$result = 'FAIL';
+			}
+			$audit_site_list[] = array(
+				$site[0],
+				$site[1],
+				$site[2],
+				$site[3],
+				$site[4],
+				$site[5],
+				$site[7],
+				$site[6],
+				$result,
+				$site[8],
+			);
+		}
+		return $audit_site_list;
 	}
 
 	protected function eval_ignore_list( $site, $ignore ) {
@@ -239,11 +302,11 @@ class Site_List extends Command {
 		}
 	}
 
-	protected function count_sites( $site_list, $term ) {
+	protected function count_sites( $site_list, $term, $column ) {
 		$sites = array_filter(
 			$site_list,
-			function( $site ) use ( $term ) {
-				return $term === $site[3];
+			function( $site ) use ( $term, $column ) {
+				return $term === $site[ $column ];
 			}
 		);
 		return count( $sites );
