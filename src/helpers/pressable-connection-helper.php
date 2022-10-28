@@ -14,12 +14,12 @@ final class Pressable_Connection_Helper {
 	/**
 	 * The SSH URL.
 	 */
-	private const SSH_HOST = 'ssh.atomicsites.net';
+	public const SSH_HOST = 'ssh.atomicsites.net';
 
 	/**
 	 * The SFTP URL.
 	 */
-	private const SFTP_HOST = 'sftp.pressable.com';
+	public const SFTP_HOST = 'sftp.pressable.com';
 
 	// endregion
 

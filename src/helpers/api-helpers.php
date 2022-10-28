@@ -211,38 +211,6 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	/**
-	 * Gets the SFTP username for a site owner or a specific email address.
-	 *
-	 * @param int         $site_id The site ID.
-	 * @param string|bool $email   The email address to get the SFTP username for. (Defaults to site owner — normally concierge@wordpress.com)
-	 * @return string The SFTP username. Returns false if the username could not be retrieved.
-	 */
-	public function get_sftp_user( $site_id, $email = false ) {
-		$route = "sites/$site_id/ftp";
-
-		$response = $this->call_pressable_api( $route, 'GET' );
-
-		if ( empty( $response ) || 'Success' !== $response->message ) {
-			return false;
-		}
-
-		$account_list = $response->data;
-		$account_index = false;
-
-		if ( false === $email ) {
-			$account_index = array_search( true, array_column( $account_list, 'owner' ), true );
-		} else {
-			$account_index = array_search( $email, array_column( $account_list, 'email' ) );
-		}
-
-		if ( false === $account_index ) {
-			return false;
-		}
-
-		return $account_list[ $account_index ]->username;
-	}
-
 	public function log_to_slack( $message ) {
 		if ( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
 			echo "Note: log_to_slack() won't work while SLACK_WEBHOOK_URL is undefined in config.json." . PHP_EOL;

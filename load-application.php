@@ -35,6 +35,7 @@ $application->add( new Team51\Command\Pressable_Generate_Token() );
 $application->add( new Team51\Command\Pressable_Grant_Access() );
 $application->add( new Team51\Command\Pressable_Call_Api() );
 $application->add( new Team51\Command\Pressable_Site_Add_Domain() );
+$application->add( new Team51\Command\Pressable_Site_Open_Shell() );
 $application->add( new Team51\Command\Pressable_Site_Rotate_Passwords() );
 $application->add( new Team51\Command\Pressable_Site_Rotate_SFTP_User_Password() );
 $application->add( new Team51\Command\Pressable_Site_Rotate_WP_User_Password() );
@@ -44,7 +45,6 @@ $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
 $application->add( new Team51\Command\Triage_GraphQL() );
 $application->add( new Team51\Command\Dump_Commands() );
-$application->add( new Team51\Command\PressableConnect() );
 
 $application->add( new Team51\Command\Site_List() );
 
