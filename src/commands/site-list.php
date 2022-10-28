@@ -19,21 +19,25 @@ class Site_List extends Command {
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
 		->addArgument( 'export', InputArgument::OPTIONAL, "Optional.\nExports the results to a csv or json file saved in the team51-cli folder as sites.csv or sites.json. \nExample usage:\nsite-list csv-export\nsite-list json-export\n" )
-		->addOption( 'full-audit', null, InputOption::VALUE_OPTIONAL, "Optional.\nProduces a full list of sites, with reasons why they were or were not filtered. \nExample usage:\nsite-list --full-audit\n" )
+		->addOption( 'audit', null, InputOption::VALUE_OPTIONAL, "Optional.\nProduces a full list of sites, with reasons why they were or were not filtered. \nExample usage:\nsite-list --audit='full'\n" )
 		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, "Optional.\nExclude columns from the export option. Possible values: Site Name, Domain, Site ID, and Host. Letter case is not important.\nExample usage:\nsite-list csv-export --exclude='Site name, Host'\nsite-list json-export --exclude='site id,host'\n" );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper;
+		$full_audit = false;
 
-		if ( $input->getOption( 'full-audit' ) ) {
-			$full_audit      = true;
-			$audit_site_list = array();
+		if ( $input->getOption( 'audit' ) ) {
+			switch ( $input->getOption( 'audit' ) ) {
+				case 'full':
+					$full_audit = true;
+					break;
+			}
 		}
 
 		$output->writeln( '<info>Fetching sites...<info>' );
 
-		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack', array() );
+		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack,is_multisite', array() );
 
 		if ( empty( $all_sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
@@ -67,11 +71,14 @@ class Site_List extends Command {
 			'wpengine',
 			'wordpress',
 			'develop',
-			'com/',
-			'org/',
 			'mdrovdahl',
 			'/dev.',
 			'woocommerce.com',
+		);
+
+		$multisite_patterns = array(
+			'com/',
+			'org/',
 		);
 
 		$free_pass = array(
@@ -90,6 +97,7 @@ class Site_List extends Command {
 				$this->eval_is_private( $site ),
 				$this->eval_is_coming_soon( $site ),
 				$this->eval_which_host( $site, $pressable_sites ),
+				$this->eval_is_multisite( $site, $multisite_patterns ),
 				$site->ID,
 			);
 		}
@@ -160,12 +168,12 @@ class Site_List extends Command {
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
 		foreach ( $site_list as $site) {
-			if ( '' === $site[4] && '' === $site[5] ) {
+			if ( '' === $site[4] && '' === $site[5] && '' === $site[7] ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$filtered_site_list[] = array(
 						$site[0],
 						$site[1],
-						$site[7],
+						$site[8],
 						$site[6],
 					);
 				}
@@ -183,6 +191,25 @@ class Site_List extends Command {
 			}
 		}
 		return $filtered_on;
+	}
+
+	protected function eval_is_multisite( $site, $patterns ) {
+		/**
+		 * An alternative to this implementation is to compare $site->URL against
+		 * $site->options->main_network_site, however the API call is slower since we
+		 * can't isolate 'main_network_site' in the call, ie. we get ALL the 'options' fields.
+		 * Either a) users of this command are ok to wait longer, or b) we figure out how to
+		 * isolate this field in the call/query.
+		 * Additionally, the API call with 'options' returns fewer sites. At this moment, 790 vs 794 sites.
+		 */
+		if ( true === $site->is_multisite ) {
+			foreach ( $patterns as $pattern ) {
+				if ( false !== strpos( $site->URL, $pattern ) ) {
+					return 'is_subsite';
+				}
+			}
+		}
+		return '';
 	}
 
 	protected function eval_pass_list( $site, $free_pass ) {
