@@ -174,6 +174,16 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
 // region CONSOLE
 
 /**
+ * Returns true if the tool is being run in contractor-mode.
+ *
+ * @return  bool
+ */
+function is_contractor_console(): bool {
+	return \in_array( '-c', $_SERVER['argv'], true )
+		|| \in_array( '--contractor', $_SERVER['argv'], true );
+}
+
+/**
  * Defines a constant equal to the console's verbosity level, if not already defined.
  *
  * @param   int $verbosity  The verbosity level.
