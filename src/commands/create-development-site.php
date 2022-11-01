@@ -137,8 +137,7 @@ class Create_Development_Site extends Command {
 		}
 
 		if ( is_null( $ssh_connection ) ) {
-			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Aborting!</error>' );
-			exit;
+			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed! Please install it manually!</error>' );
 		}
 
 		run_app_command(
@@ -160,10 +159,9 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
-		$ssh = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
-		if ( ! is_null( $ssh ) ) {
-			$ssh->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
-			$ssh->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
+		if ( ! is_null( $ssh_connection ) ) {
+			$ssh_connection->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
+			$ssh_connection->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
 				if ( false === strpos( $result, 'safety-net' ) ) {
 					$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
 				}
