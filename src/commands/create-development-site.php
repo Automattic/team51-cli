@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Team51\Helper\Pressable_Connection_Helper;
+use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\run_app_command;
 
 class Create_Development_Site extends Command {
@@ -40,6 +41,9 @@ class Create_Development_Site extends Command {
 			'GET',
 			array()
 		);
+
+		// Attempt to get the Concierge user. If the user doesn't exist, we won't be able to use ssh later.
+		$pressable_user = get_pressable_site_sftp_user_by_email( $pressable_site->data->id, 'concierge@wordpress.com' );
 
 		// TODO: This code is duplicated below for the site clone. Should be a function.
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
@@ -130,10 +134,12 @@ class Create_Development_Site extends Command {
 		$ssh_connection = null;
 		$ssh_attempts   = 0;
 
-		while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
-			$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
-			$ssh_attempts++;
-			sleep( 10 );
+		if ( ! is_null( $pressable_user ) ) {
+			while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
+				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
+				$ssh_attempts++;
+				sleep( 10 );
+			}
 		}
 
 		if ( is_null( $ssh_connection ) ) {
