@@ -127,13 +127,19 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
-		$progress_bar = new ProgressBar( $output, 30 );
-		$progress_bar->start();
-		for ( $i = 0; $i < 30; $i++ ) {
-			$progress_bar->advance();
-			sleep( 1 );
+		$ssh_connection = null;
+		$ssh_attempts   = 0;
+
+		while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
+			$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
+			$ssh_attempts++;
+			sleep( 10 );
 		}
-		$progress_bar->finish();
+
+		if ( is_null( $ssh_connection ) ) {
+			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Aborting!</error>' );
+			exit;
+		}
 
 		run_app_command(
 			$this->getApplication(),
