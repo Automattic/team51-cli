@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use function Team51\Helper\get_pressable_site_collaborator_default_roles;
 
 class Pressable_Grant_Access extends Command {
 	protected static $defaultName = 'pressable-grant-access';
@@ -349,12 +350,7 @@ class Pressable_Grant_Access extends Command {
 			);
 
 			// Collaborator's roles.
-			$collab_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
-
-			$is_staging = $site->data->staging || false !== strpos( $site->data->url, '-development' );
-			if ( true === $is_staging ) {
-				$collab_roles[] = 'wp_access';
-			}
+			$collab_roles = get_pressable_site_collaborator_default_roles( $site_id );
 
 			// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
 			// POST /sites/{site_id}/collaborators would be a better fit if it allowed the `roles` parame

@@ -298,18 +298,19 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
  * Adds a collaborator with the given email address to a given site. We reuse the bulk create endpoint because the single
  * create endpoint does not support the `roles` parameter.
  *
- * @param   string  $site_id                The site ID.
- * @param   string  $collaborator_email     The collaborator email.
- * @param   array   $collaborator_roles     The collaborator roles.
- * @param   bool    $skip_object_query      Whether to skip querying the collaborator after creation.
+ * @param   string      $site_id                The site ID.
+ * @param   string      $collaborator_email     The collaborator email.
+ * @param   array|null  $collaborator_roles     The collaborator roles.
+ * @param   bool        $skip_object_query      Whether to skip querying the collaborator after creation.
  *
  * @link    https://my.pressable.com/documentation/api/v1#collaborator-bulk-create
  *
  * @return  object|null
  */
-function create_pressable_site_collaborator( string $collaborator_email, string $site_id, array $collaborator_roles, bool $skip_object_query = false ): ?object {
+function create_pressable_site_collaborator( string $collaborator_email, string $site_id, ?array $collaborator_roles = null, bool $skip_object_query = false ): ?object {
 	// First send the request to create the collaborator.
-	$result = bulk_create_pressable_site_collaborators( $collaborator_email, array( $site_id ), $collaborator_roles );
+	$collaborator_roles = $collaborator_roles ?? get_pressable_site_collaborator_default_roles( $site_id );
+	$result             = bulk_create_pressable_site_collaborators( $collaborator_email, array( $site_id ), $collaborator_roles );
 	if ( true !== $result ) {
 		return null;
 	}
@@ -362,6 +363,27 @@ function bulk_create_pressable_site_collaborators( string $collaborator_email, a
 	}
 
 	return ! \is_null( $result );
+}
+
+/**
+ * Returns the list of default roles for a site collaborator on a given site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @return  string[]
+ */
+function get_pressable_site_collaborator_default_roles( string $site_id ): array {
+	$collaborator_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
+
+	$site = get_pressable_site_by_id( $site_id );
+	if ( ! \is_null( $site ) ) {
+		$is_staging = $site->staging || false !== \strpos( $site->url, '-development' );
+		if ( true === $is_staging ) {
+			$collaborator_roles[] = 'wp_access';
+		}
+	}
+
+	return $collaborator_roles;
 }
 
 /**
