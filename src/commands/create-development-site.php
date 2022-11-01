@@ -159,15 +159,15 @@ class Create_Development_Site extends Command {
 			$ssh->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
 			$ssh->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
 				if ( false === strpos( $result, 'safety-net' ) ) {
-					$output->writeln( "<error>Failed to install SafetyNet on {$pressable_site->data->id}.</error>" );
+					$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
 				}
-				if ( false === strpos( $result, 'mu-loader.php' ) && false === strpos( $result, 'mu-autoloader.php' ) ) {
-					$output->writeln( "<comment>No mu-plugins loader found. Trying to copy one over...</comment>" );
+				if ( false === strpos( $result, 'load-safety-net.php' ) ) {
+					$output->writeln( "<comment>Copying Safety Net loader to mu-plugins folder...</comment>" );
 
 					$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
-					$result = $sftp->put( '/htdocs/wp-content/mu-plugins/mu-loader.php', file_get_contents(__DIR__ . '/../../scaffold/templates/mu-loader.php' ) );
+					$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents(__DIR__ . '/../../scaffold/load-safety-net.php' ) );
 					if ( ! $result ) {
-						$output->writeln( "<error>Failed to copy mu-loader.php to {$pressable_site->data->id}.</error>" );
+						$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
 					}
 				}
 			} );
