@@ -64,7 +64,7 @@ class Pressable_Site_Open_Shell extends Command {
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to connect to.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' )
-			->addOption( 'shell-type', null, InputOption::VALUE_REQUIRED, 'The type of shell to open. Accepts either "ssh" or "sftp".', 'ssh' );
+			->addOption( 'shell-type', null, InputOption::VALUE_REQUIRED, 'The type of shell to open. Accepts either "ssh" or "sftp". Default "ssh".', 'ssh' );
 	}
 
 	/**
