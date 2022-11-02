@@ -81,4 +81,8 @@ if ( 'trunk' !== $branch[0] ) {
 	}
 }
 
+// Composer update.
+exec( sprintf( "composer install -o --working-dir %s", __DIR__ ) );
+exec( sprintf( "composer dump-autoload -o --working-dir %s", __DIR__ ) );
+
 require __DIR__ . '/load-application.php';
