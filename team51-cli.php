@@ -58,31 +58,31 @@ if ( IS_DEV ) {
 }
 
 // Reset trunk.
-exec( sprintf( 'git -C %s fetch origin', __DIR__ ) );
-exec( sprintf( 'git -C %s reset --hard origin/trunk', __DIR__ ) );
+exec( sprintf( 'git -C %s fetch origin', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+exec( sprintf( 'git -C %s reset --hard origin/trunk', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 
 // Check current branch.
-exec( sprintf( 'git -C %s branch --show-current', __DIR__ ), $branch );
+exec( sprintf( 'git -C %s branch --show-current', __DIR__ ), $branch ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 
 if ( 'trunk' !== $branch[0] ) {
 	if ( IS_DEV ) {
 		debug( '<fg=cyan>Not switching to trunk because in developer mode.</>' );
 	} else {
-		exec( sprintf( "git -C %s stash list | wc -l",  __DIR__ ), $stashes );
-		exec( sprintf( "git -C %s stash",  __DIR__ ) );
-		exec( sprintf( "git -C %s stash list | wc -l",  __DIR__ ), $stashes );
+		exec( sprintf( 'git -C %s stash list | wc -l', __DIR__ ), $stashes ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( sprintf( 'git -C %s stash', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( sprintf( 'git -C %s stash list | wc -l', __DIR__ ), $stashes ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 
 		if ( $stashes[1] > $stashes[0] ) {
 			debug( 'Stashed local changes.' );
 		}
 
 		debug( 'Switching to trunk...' );
-		exec( sprintf( 'git -C %s checkout trunk', __DIR__ ) );
+		exec( sprintf( 'git -C %s checkout trunk', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 	}
 }
 
 // Composer update.
-exec( sprintf( "composer install -o --working-dir %s", __DIR__ ) );
-exec( sprintf( "composer dump-autoload -o --working-dir %s", __DIR__ ) );
+exec( sprintf( 'composer install -o --working-dir %s', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+exec( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 
 require __DIR__ . '/load-application.php';
