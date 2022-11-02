@@ -11,12 +11,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use function Team51\Helper\create_pressable_site_collaborator;
+use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_collaborator_default_roles;
+use function Team51\Helper\get_pressable_sites;
 
 class Pressable_Grant_Access extends Command {
 	protected static $defaultName = 'pressable-grant-access';
-	private $api_helper;
-	private $output;
 
 	/**
 	 * Access to the QuestionHelper
@@ -45,9 +46,6 @@ class Pressable_Grant_Access extends Command {
 	 * @return void
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$this->api_helper = new API_Helper();
-		$this->output     = $output;
-
 		// Handle if searching by domain or using the passed site name.
 		if ( $input->getOption( 'search' ) ) {
 			$this->handle_search_for_site( $input, $output );
@@ -226,7 +224,7 @@ class Pressable_Grant_Access extends Command {
 		$site_name = $this->get_site( $input, $output );
 
 		if ( is_numeric( $site_name ) ) {
-			$site = $this->get_site_by_id( (int) $site_name );
+			$site = get_pressable_site_by_id( (int) $site_name );
 		} else {
 			// Find the site by name. Fail if we can't find it.
 			$site = $this->search_for_site_url( $site_name );
@@ -250,22 +248,6 @@ class Pressable_Grant_Access extends Command {
 	 ************************************/
 
 	/**
-	 * Gets an array of all sites from Pressable
-	 *
-	 * @return \stdClass[]|null
-	 */
-	private function pressable_sites(): ?array {
-		$sites = $this->api_helper->call_pressable_api( 'sites', 'GET', array() );
-
-		// If we have no results, return an empty null.
-		if ( empty( $sites->data ) ) {
-			return null;
-		}
-
-		return $sites->data;
-	}
-
-	/**
 	 * Attempts to find a site by domain.
 	 *
 	 * @param string $site_url
@@ -273,7 +255,7 @@ class Pressable_Grant_Access extends Command {
 	 */
 	private function search_for_site_url( string $site_url ): ?\stdClass {
 		// Get all sites from Pressable.
-		$sites = $this->pressable_sites();
+		$sites = get_pressable_sites();
 
 		// If we have no results.
 		if ( is_null( $sites ) ) {
@@ -292,19 +274,6 @@ class Pressable_Grant_Access extends Command {
 	}
 
 	/**
-	 * Search for a site by ID
-	 */
-	private function get_site_by_id( int $site_id ): ?\stdClass {
-		$site = $this->api_helper->call_pressable_api( "sites/$site_id", 'GET', array() );
-		// If we have no results, return an empty null.
-		if ( empty( $site->data ) ) {
-			return null;
-		}
-
-		return $site->data;
-	}
-
-	/**
 	 * Searches all sites for any which have a name/domain matching the search term.
 	 *
 	 * @param string $search_term
@@ -312,7 +281,7 @@ class Pressable_Grant_Access extends Command {
 	 */
 	private function search_for_matching_sites( string $search_term ): array {
 		// Get all sites from Pressable.
-		$sites = $this->pressable_sites();
+		$sites = get_pressable_sites();
 
 		// If we have no results.
 		if ( is_null( $sites ) ) {
@@ -344,32 +313,12 @@ class Pressable_Grant_Access extends Command {
 		return function( string $email, $site_id ) use ( $input, $output ): void {
 			$output->writeln( '<comment>Granting ' . $email . ' access to site ' . $site_id . '.</comment>' );
 
-			$site = $this->api_helper->call_pressable_api(
-				"sites/{$site_id}",
-				'GET', array()
-			);
-
-			// Collaborator's roles.
-			$collab_roles = get_pressable_site_collaborator_default_roles( $site_id );
-
-			// Note: batch_create is needed because it's the only way to assign sftp_access roles to the new user
-			// POST /sites/{site_id}/collaborators would be a better fit if it allowed the `roles` parame
-			$async_result = $this->api_helper->call_pressable_api(
-				'collaborators/batch_create',
-				'POST',
-				array(
-					'email'   => $email,
-					'siteIds' => array( $site_id ),
-					'roles'   => $collab_roles,
-				)
-			);
-
-			if ( $async_result->errors === null ) {
-				$output->writeln( "<info>\nCollaborator added to the site. Pressable says: {$async_result->message}<info>" );
+			$async_result = create_pressable_site_collaborator( $email, $site_id, null, true );
+			if ( ! \is_null( $async_result ) ) {
+				$output->writeln( "<info>\nCollaborator added to the site.<info>" );
 			} else {
-				$output->writeln( "<error>\nSomething went wrong while running collaborators/batch_create! Message: {$async_result->message}<error>" );
+				$output->writeln( "<error>\nSomething went wrong while running collaborators/batch_create!<error>" );
 			}
-
 		};
 	}
 }
