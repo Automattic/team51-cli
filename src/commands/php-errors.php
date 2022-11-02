@@ -101,7 +101,15 @@ class Pressable_Site_PHP_Errors extends Command {
 		// Retrieve the error log file.
 		$output->writeln( '<comment>Downloading the PHP error log.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
-		$error_log = $sftp_connection->get( '/tmp/php-errors' );
+		$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
+		if ( \is_null( $ssh_connection ) ) {
+			$error_log_path = '/tmp/php-errors';
+			$output->writeln( "<comment>Failed to connect to SSH for {$this->pressable_site->url}. Using the default error log location $error_log_path</comment>" );
+		} else {
+			$error_log_path = $ssh_connection->exec( 'wp eval "echo ini_get(\'error_log\');"' );
+		}
+
+		$error_log = $sftp_connection->get( $error_log_path );
 		if ( empty( $error_log ) ) {
 			if ( false === $error_log ) {
 				$output->writeln( "<error>Failed to download the PHP error log for {$this->pressable_site->url}. Aborting!</error>" );
@@ -233,7 +241,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		// Sort fatal errors by timestamp.
 		\usort(
 			$stats_table,
-			static fn ( $a, $b ) => -1 * \strtotime( $b['timestamp'] ) <=> \strtotime( $a['timestamp'] )
+			static fn ( $a, $b ) => \strtotime( $b['timestamp'] ) <=> \strtotime( $a['timestamp'] )
 		);
 
 		return $stats_table;
