@@ -6,6 +6,7 @@ config.json
 config.example.json
 src/helpers/pressable_token.json
 
+.dev
 .idea
 sites.csv
 sites.json

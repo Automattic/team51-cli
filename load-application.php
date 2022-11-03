@@ -47,6 +47,7 @@ $application->add( new Team51\Command\Site_List() );
 
 foreach ( $application->all() as $command ) {
 	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
+	$command->addOption( '--dev', null, InputOption::VALUE_NONE, 'Run the CLI tool in developer mode.' );
 }
 
 $application->run();
