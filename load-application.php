@@ -6,6 +6,11 @@ if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically 
 	$_SERVER['argv'][] = '-c';
 }
 
+// Remove --skip-update and --dev from $_SERVER['argv'].
+$_SERVER['argv'] = array_filter( $_SERVER['argv'], function( $arg ) {
+	return ! in_array( $arg, array( '--skip-update', '--dev' ), true );
+} );
+
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/src/helpers/config-loader.php';
 
