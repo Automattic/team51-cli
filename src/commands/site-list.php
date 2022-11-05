@@ -96,7 +96,7 @@ class Site_List extends Command {
 				$this->eval_is_private( $site ),
 				$this->eval_is_coming_soon( $site ),
 				$this->eval_which_host( $site, $pressable_sites ),
-				$this->eval_is_multisite( $site, $multisite_patterns ),
+				$this->eval_is_multisite( $site, $multisite_patterns, $pressable_sites ),
 				$site->ID,
 			);
 		}
@@ -113,7 +113,8 @@ class Site_List extends Command {
 
 			$is_private_count     = $this->count_sites( $audited_site_list, 'is_private', 4 );
 			$is_coming_soon_count = $this->count_sites( $audited_site_list, 'is_coming_soon', 5 );
-			$is_multisite_count   = $this->count_sites( $audited_site_list, 'is_subsite', 6 );
+			$is_multisite_count   = $this->count_sites( $audited_site_list, 'is_parent', 6 );
+			$is_subsite_count     = $this->count_sites( $audited_site_list, 'is_subsite', 6 );
 			$pass_count           = $this->count_sites( $audited_site_list, 'PASS', 8 );
 			$fail_count           = $this->count_sites( $audited_site_list, 'FAIL', 8 );
 			$atomic_count         = $this->count_sites( $audited_site_list, 'Atomic', 7 );
@@ -121,9 +122,22 @@ class Site_List extends Command {
 			$other_count          = $this->count_sites( $audited_site_list, 'Other', 7 );
 			$simple_count         = $this->count_sites( $audited_site_list, 'Simple', 7 );
 
+			$output->writeln( "<info>\nMANUAL FILTERS:<info>" );
+			$output->writeln( "<info>The following filters are used to exclude sites from the live site count list.<info>" );
+			$output->writeln( "<info>It works by searching for the term in the site url and if found,\nthe site is excluded unless explicitly overridden.<info>" );
+			$output->writeln( "<info>Term list:<info>" );
+			foreach ( $ignore as $term ) {
+				$output->writeln( "<info>{$term}<info>" );
+			}
+			$output->writeln( "<info>\nThe following sites are allowed to pass the above filtered terms and thus\ncounted as live sites.<info>" );
+			foreach ( $free_pass as $pass ) {
+				$output->writeln( "<info>{$pass}<info>" );
+			}
+			$output->writeln( "<info>\nREPORT SUMMARY:<info>" );
 			$output->writeln( "<info>{$is_private_count} Private sites.<info>" );
 			$output->writeln( "<info>{$is_coming_soon_count} 'Coming Soon' sites.<info>" );
-			$output->writeln( "<info>{$is_multisite_count} Subsite sites.<info>" );
+			$output->writeln( "<info>{$is_multisite_count} Multisite parent sites.<info>" );
+			$output->writeln( "<info>{$is_subsite_count} Multisite Subsites.<info>" );
 			$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
 			$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
 			$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
@@ -197,7 +211,7 @@ class Site_List extends Command {
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
 		foreach ( $site_list as $site) {
-			if ( '' === $site[4] && '' === $site[5] && ( '' === $site[7] || '' !== $site[3] ) ) {
+			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$filtered_site_list[] = array(
 						$site[0],
@@ -220,7 +234,7 @@ class Site_List extends Command {
 			if ( 'full' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
 				continue;
 			}
-			if ( '' === $site[4] && '' === $site[5] && ( '' === $site[7] || '' !== $site[3] ) ) {
+			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$result = 'PASS';
 				} else {
@@ -256,7 +270,7 @@ class Site_List extends Command {
 		return $filtered_on;
 	}
 
-	protected function eval_is_multisite( $site, $patterns ) {
+	protected function eval_is_multisite( $site, $patterns, $pressable_sites ) {
 		/**
 		 * An alternative to this implementation is to compare $site->URL against
 		 * $site->options->main_network_site, however the API call is slower since we
@@ -269,6 +283,8 @@ class Site_List extends Command {
 			foreach ( $patterns as $pattern ) {
 				if ( false !== strpos( $site->URL, $pattern ) ) {
 					return 'is_subsite';
+				} elseif ( 'Simple' !== $this->eval_which_host( $site, $pressable_sites ) ) {
+					return 'is_parent';
 				}
 			}
 		}
