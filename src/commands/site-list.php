@@ -19,7 +19,7 @@ class Site_List extends Command {
 		->setDescription( 'Shows list of public facing sites managed by Team 51.' )
 		->setHelp( 'Use this command to show a list of sites and summary counts managed by Team 51.' )
 		->addArgument( 'export', InputArgument::OPTIONAL, "Optional.\nExports the results to a csv or json file saved in the team51-cli folder as sites.csv or sites.json. \nExample usage:\nsite-list csv-export\nsite-list json-export\n" )
-		->addOption( 'audit', null, InputOption::VALUE_OPTIONAL, "Optional.\nProduces a full list of sites, with reasons why they were or were not filtered. \nExample usage:\nsite-list --audit='full'\n" )
+		->addOption( 'audit', null, InputOption::VALUE_OPTIONAL, "Optional.\nProduces a full list of sites, with reasons why they were or were not filtered.\nCurrently works with the csv-export and --exclude options.\nAudit values include 'full', for including all sites, 'no-staging' to exclude staging sites, as well as\na general column/text based exclusive filter, eg. 'is_private' will include only private sites. \nExample usage:\nsite-list --audit='full'\nsite-list --audit='no-staging' csv-export\nsite-list --audit='is_private' csv-export --exclude='is_multisite'\n" )
 		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, "Optional.\nExclude columns from the export option. Possible values: Site Name, Domain, Site ID, and Host. Letter case is not important.\nExample usage:\nsite-list csv-export --exclude='Site name, Host'\nsite-list json-export --exclude='site id,host'\n" );
 	}
 
@@ -54,7 +54,7 @@ class Site_List extends Command {
 		);
 
 		if ( empty( $pressable_data->data ) ) {
-			$output->writeln( "<error>Failed to retrieve Pressable sites. Aborting!</error>" );
+			$output->writeln( '<error>Failed to retrieve Pressable sites. Aborting!</error>' );
 			exit;
 		}
 
@@ -65,6 +65,7 @@ class Site_List extends Command {
 
 		$ignore = array(
 			'staging',
+			'testing',
 			'jurassic',
 			'wpengine',
 			'wordpress',
@@ -83,12 +84,12 @@ class Site_List extends Command {
 			'wpspecialprojects.wordpress.com',
 			'tumblr.wordpress.com',
 			'tonyconrad.wordpress.com',
-			/*'killscreen.com/previously',*/
+			'killscreen.com/previously',
 		);
 
-		$alt_site_list = array();
+		$full_site_list = array();
 		foreach ( $all_sites as $site ) {
-			$alt_site_list[] = array(
+			$full_site_list[] = array(
 				preg_replace( '/[^a-zA-Z0-9\s&!\/|\'#.()-:]/', '', $site->name ),
 				$site->URL,
 				$this->eval_ignore_list( $site, $ignore ),
@@ -102,7 +103,7 @@ class Site_List extends Command {
 		}
 
 		if ( $audit ) {
-			$audited_site_list = $this->eval_site_list( $alt_site_list, $audit_type );
+			$audited_site_list = $this->eval_site_list( $full_site_list, $audit_type );
 
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
@@ -112,75 +113,81 @@ class Site_List extends Command {
 			$site_table->setRows( $audited_site_list );
 			$site_table->render();
 
-			$is_private_count     = $this->count_sites( $audited_site_list, 'is_private', 4 );
-			$is_coming_soon_count = $this->count_sites( $audited_site_list, 'is_coming_soon', 5 );
-			$is_multisite_count   = $this->count_sites( $audited_site_list, 'is_parent', 6 );
-			$is_subsite_count     = $this->count_sites( $audited_site_list, 'is_subsite', 6 );
-			$pass_count           = $this->count_sites( $audited_site_list, 'PASS', 8 );
-			$fail_count           = $this->count_sites( $audited_site_list, 'FAIL', 8 );
-			$atomic_count         = $this->count_sites( $audited_site_list, 'Atomic', 7 );
-			$pressable_count      = $this->count_sites( $audited_site_list, 'Pressable', 7 );
-			$other_count          = $this->count_sites( $audited_site_list, 'Other', 7 );
-			$simple_count         = $this->count_sites( $audited_site_list, 'Simple', 7 );
-
-			$output->writeln( "<info>\nMANUAL FILTERS:<info>" );
-			$output->writeln( "<info>The following filters are used to exclude sites from the live site count list.<info>" );
-			$output->writeln( "<info>It works by searching for the term in the site url and if found,\nthe site is excluded unless explicitly overridden.<info>" );
-			$output->writeln( "<info>Term list:<info>" );
+			$filters_output = array(
+				array( 'MANUAL FILTERS:', '' ),
+				array( 'The following filters are used to exclude sites from the live site count list.', '' ),
+				array( 'It works by searching for the term in the site url and if found,', '' ),
+				array( 'the site is excluded unless explicitly overridden.', '' ),
+				array( 'Term list:', '' ),
+			);
 			foreach ( $ignore as $term ) {
-				$output->writeln( "<info>{$term}<info>" );
+				$filters_output[] = array( $term, '' );
 			}
-			$output->writeln( "<info>\nThe following sites are allowed to pass the above filtered terms and thus\ncounted as live sites.<info>" );
+			$filters_output[] = array( 'The following sites are allowed to pass the above filtered terms and thus,', '' );
+			$filters_output[] = array( 'counted as live sites:', '' );
 			foreach ( $free_pass as $pass ) {
-				$output->writeln( "<info>{$pass}<info>" );
+				$filters_output[] = array( $pass, '' );
 			}
-			$output->writeln( "<info>\nREPORT SUMMARY:<info>" );
-			$output->writeln( "<info>{$is_private_count} Private sites.<info>" );
-			$output->writeln( "<info>{$is_coming_soon_count} 'Coming Soon' sites.<info>" );
-			$output->writeln( "<info>{$is_multisite_count} Multisite parent sites.<info>" );
-			$output->writeln( "<info>{$is_subsite_count} Multisite Subsites.<info>" );
-			$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
-			$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
-			$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
-			$output->writeln( "<info>{$other_count} sites hosted elsewhere.<info>" );
-			$output->writeln( "<info>{$pass_count} sites passed all filters.<info>" );
-			$output->writeln( "<info>{$fail_count} sites failed at least one filter.<info>" );
 
-			$site_count = count( $audited_site_list );
-			$output->writeln( "<info>{$site_count} sites total.<info>" );
-			exit();
+			$summary_output = array(
+				array( 'REPORT SUMMARY', '' ),
+				array( 'Private sites', $this->count_sites( $audited_site_list, 'is_private', 4 ) ),
+				array( "'Coming Soon' sites", $this->count_sites( $audited_site_list, 'is_coming_soon', 5 ) ),
+				array( 'Multisite parent sites', $this->count_sites( $audited_site_list, 'is_parent', 6 ) ),
+				array( 'Multisite subsites', $this->count_sites( $audited_site_list, 'is_subsite', 6 ) ),
+				array( 'Atomic sites', $this->count_sites( $audited_site_list, 'Atomic', 7 ) ),
+				array( 'Pressable sites', $this->count_sites( $audited_site_list, 'Pressable', 7 ) ),
+				array( 'Simple sites', $this->count_sites( $audited_site_list, 'Simple', 7 ) ),
+				array( 'Other hosts', $this->count_sites( $audited_site_list, 'Other', 7 ) ),
+				array( 'PASSED sites', $this->count_sites( $audited_site_list, 'PASS', 8 ) ),
+				array( 'FAILED sites', $this->count_sites( $audited_site_list, 'FAIL', 8 ) ),
+				array( 'Total sites', count( $audited_site_list ) ),
+				array( 'AUDIT TYPE/FILTER', $audit_type ),
+			);
+			foreach ( $filters_output as $line ) {
+				$output->writeln( "<info>{$line[0]}<info>" );
+			}
+			$output->writeln( "\n" );
+
+			foreach ( $summary_output as $line ) {
+				$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
+			}
+
+			$summary_output  = array_merge( $filters_output, $summary_output );
+			$final_site_list = $audited_site_list;
+		} else {
+			$final_site_list = $this->filter_public_sites( $full_site_list );
+
+			$site_table = new Table( $output );
+			$site_table->setStyle( 'box-double' );
+			$table_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+			$site_table->setHeaders( $table_header );
+
+			$site_table->setRows( $final_site_list );
+			$site_table->render();
+
+			// Maintain for JSON output compatibility.
+			$atomic_count    = $this->count_sites( $final_site_list, 'Atomic', 3 );
+			$pressable_count = $this->count_sites( $final_site_list, 'Pressable', 3 );
+			$other_count     = $this->count_sites( $final_site_list, 'Other', 3 );
+			$simple_count    = $this->count_sites( $final_site_list, 'Simple', 3 );
+
+			$summary_output = array(
+				array( 'REPORT SUMMARY', '' ),
+				array( 'Atomic sites', $this->count_sites( $final_site_list, 'Atomic', 3 ) ),
+				array( 'Pressable sites', $this->count_sites( $final_site_list, 'Pressable', 3 ) ),
+				array( 'Simple sites', $this->count_sites( $final_site_list, 'Other', 3 ) ),
+				array( 'Other hosts', $this->count_sites( $final_site_list, 'Simple', 3 ) ),
+				array( 'Total sites', count( $final_site_list ) ),
+			);
+
+			foreach ( $summary_output as $line ) {
+				$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
+			}
+
+			// Maintain for JSON output compatibility.
+			$filtered_site_count = count( $final_site_list );
 		}
-
-		$final_site_list = $this->filter_public_sites( $alt_site_list );
-
-		$site_table = new Table( $output );
-		$site_table->setStyle( 'box-double' );
-		$table_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
-		$site_table->setHeaders( $table_header );
-
-		$site_table->setRows( $final_site_list );
-		$site_table->render();
-
-		// Maintain for JSON output compatibility.
-		$atomic_count    = $this->count_sites( $final_site_list, 'Atomic', 3 );
-		$pressable_count = $this->count_sites( $final_site_list, 'Pressable', 3 );
-		$other_count     = $this->count_sites( $final_site_list, 'Other', 3 );
-		$simple_count    = $this->count_sites( $final_site_list, 'Simple', 3 );
-
-		$summary_output = array(
-			array( 'Atomic sites', $this->count_sites( $final_site_list, 'Atomic', 3 ) ),
-			array( 'Pressable sites', $this->count_sites( $final_site_list, 'Pressable', 3 ) ),
-			array( 'Simple sites', $this->count_sites( $final_site_list, 'Other', 3 ) ),
-			array( 'Other hosts', $this->count_sites( $final_site_list, 'Simple', 3 ) ),
-			array( 'Total sites', count( $final_site_list ) ),
-		);
-
-		foreach ( $summary_output as $line ) {
-			$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
-		}
- 
-		// Maintain for JSON output compatibility.
-		$filtered_site_count = count( $final_site_list );
 
 		if ( 'csv-export' === $input->getArgument( 'export' ) ) {
 			if ( $input->getOption( 'exclude' ) ) {
@@ -213,14 +220,14 @@ class Site_List extends Command {
 				$server = 'Other';
 			}
 		} else {
-			$server = 'Simple';
+			$server = 'Simple'; // Need a better way to determine if site is simple. eg. 410'd Jurrasic Ninja sites will show as Simple.
 		}
 		return $server;
 	}
 
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
-		foreach ( $site_list as $site) {
+		foreach ( $site_list as $site ) {
 			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$filtered_site_list[] = array(
@@ -409,7 +416,6 @@ class Site_List extends Command {
 		fwrite( $fp, json_encode( $final_site_list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
 		fclose( $fp );
 	}
-
 }
 
 
