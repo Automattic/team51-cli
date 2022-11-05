@@ -106,7 +106,8 @@ class Site_List extends Command {
 
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
-			$site_table->setHeaders( array( 'Site Name', 'Domain', '$ignore', '$free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'Host', 'Result', 'Site ID' ) );
+			$table_header = array( 'Site Name', 'Domain', '$ignore', '$free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'Host', 'Result', 'Site ID' );
+			$site_table->setHeaders( $table_header );
 
 			$site_table->setRows( $audited_site_list );
 			$site_table->render();
@@ -154,23 +155,32 @@ class Site_List extends Command {
 
 		$site_table = new Table( $output );
 		$site_table->setStyle( 'box-double' );
-		$site_table->setHeaders( array( 'Site Name', 'Domain', 'Site ID', 'Host' ) );
+		$table_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+		$site_table->setHeaders( $table_header );
 
 		$site_table->setRows( $final_site_list );
 		$site_table->render();
 
+		// Maintain for JSON output compatibility.
 		$atomic_count    = $this->count_sites( $final_site_list, 'Atomic', 3 );
 		$pressable_count = $this->count_sites( $final_site_list, 'Pressable', 3 );
 		$other_count     = $this->count_sites( $final_site_list, 'Other', 3 );
 		$simple_count    = $this->count_sites( $final_site_list, 'Simple', 3 );
 
-		$output->writeln( "<info>{$atomic_count} Atomic sites.<info>" );
-		$output->writeln( "<info>{$pressable_count} Pressable sites.<info>" );
-		$output->writeln( "<info>{$simple_count} Simple sites.<info>" );
-		$output->writeln( "<info>{$other_count} sites hosted elsewhere.<info>" );
+		$summary_output = array(
+			array( 'Atomic sites', $this->count_sites( $final_site_list, 'Atomic', 3 ) ),
+			array( 'Pressable sites', $this->count_sites( $final_site_list, 'Pressable', 3 ) ),
+			array( 'Simple sites', $this->count_sites( $final_site_list, 'Other', 3 ) ),
+			array( 'Other hosts', $this->count_sites( $final_site_list, 'Simple', 3 ) ),
+			array( 'Total sites', count( $final_site_list ) ),
+		);
 
+		foreach ( $summary_output as $line ) {
+			$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
+		}
+ 
+		// Maintain for JSON output compatibility.
 		$filtered_site_count = count( $final_site_list );
-		$output->writeln( "<info>{$filtered_site_count} sites total.<info>" );
 
 		if ( 'csv-export' === $input->getArgument( 'export' ) ) {
 			if ( $input->getOption( 'exclude' ) ) {
@@ -178,7 +188,7 @@ class Site_List extends Command {
 			} else {
 				$csv_ex_columns = null;
 			}
-			$this->create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $csv_ex_columns );
+			$this->create_csv( $table_header, $final_site_list, $summary_output, $csv_ex_columns );
 			$output->writeln( '<info>Exported to sites.csv in the team51 root folder.<info>' );
 		}
 
@@ -328,8 +338,7 @@ class Site_List extends Command {
 		return count( $sites );
 	}
 
-	protected function create_csv( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $csv_ex_columns ) {
-		$csv_header         = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+	protected function create_csv( $csv_header, $final_site_list, $csv_summary, $csv_ex_columns ) {
 		$csv_header_compare = array_map(
 			function ( $column ) {
 				return strtoupper( preg_replace( '/\s+/', '', $column ) );
@@ -337,13 +346,6 @@ class Site_List extends Command {
 			$csv_header
 		);
 
-		$csv_summary = array(
-			array( 'Atomic sites', $atomic_count ),
-			array( 'Pressable sites', $pressable_count ),
-			array( 'Simple sites', $simple_count ),
-			array( 'Other hosts', $other_count ),
-			array( 'Total sites', $filtered_site_count ),
-		);
 		if ( null !== $csv_ex_columns ) {
 			$exclude_columns = explode( ',', preg_replace( '/\s+/', '', $csv_ex_columns ) );
 			foreach ( $exclude_columns as $column ) {
