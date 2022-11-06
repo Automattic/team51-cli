@@ -248,7 +248,7 @@ class Site_List extends Command {
 			if ( 'no-staging' === $audit_type && false !== strpos( $site[1], 'staging' ) ) {
 				continue;
 			}
-			if ( 'full' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
+			if ( 'full' !== $audit_type && 'no-staging' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
 				continue;
 			}
 			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
