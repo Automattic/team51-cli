@@ -35,7 +35,7 @@ class Site_List extends Command {
 
 		$output->writeln( '<info>Fetching sites...<info>' );
 
-		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack,is_multisite', array() );
+		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?include_domain_only=true&?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack,is_multisite,options', array() );
 
 		if ( empty( $all_sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
@@ -99,6 +99,7 @@ class Site_List extends Command {
 				$this->eval_which_host( $site, $pressable_sites ),
 				$this->eval_is_multisite( $site, $multisite_patterns, $pressable_sites ),
 				$site->ID,
+				$this->eval_is_domain_only( $site ),
 			);
 		}
 
@@ -107,7 +108,7 @@ class Site_List extends Command {
 
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
-			$table_header = array( 'Site Name', 'Domain', '$ignore', '$free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'Host', 'Result', 'Site ID' );
+			$table_header = array( 'Site Name', 'Domain', 'ignore', 'free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'is_domain_only', 'Host', 'Result', 'Site ID' );
 			$site_table->setHeaders( $table_header );
 
 			$site_table->setRows( $audited_site_list );
@@ -135,12 +136,13 @@ class Site_List extends Command {
 				array( "'Coming Soon' sites", $this->count_sites( $audited_site_list, 'is_coming_soon', 5 ) ),
 				array( 'Multisite parent sites', $this->count_sites( $audited_site_list, 'is_parent', 6 ) ),
 				array( 'Multisite subsites', $this->count_sites( $audited_site_list, 'is_subsite', 6 ) ),
-				array( 'Atomic sites', $this->count_sites( $audited_site_list, 'Atomic', 7 ) ),
-				array( 'Pressable sites', $this->count_sites( $audited_site_list, 'Pressable', 7 ) ),
-				array( 'Simple sites', $this->count_sites( $audited_site_list, 'Simple', 7 ) ),
-				array( 'Other hosts', $this->count_sites( $audited_site_list, 'Other', 7 ) ),
-				array( 'PASSED sites', $this->count_sites( $audited_site_list, 'PASS', 8 ) ),
-				array( 'FAILED sites', $this->count_sites( $audited_site_list, 'FAIL', 8 ) ),
+				array( 'Domain only sites', $this->count_sites( $audited_site_list, 'is_domain_only', 7 ) ),
+				array( 'Atomic sites', $this->count_sites( $audited_site_list, 'Atomic', 8 ) ),
+				array( 'Pressable sites', $this->count_sites( $audited_site_list, 'Pressable', 8 ) ),
+				array( 'Simple sites', $this->count_sites( $audited_site_list, 'Simple', 8 ) ),
+				array( 'Other hosts', $this->count_sites( $audited_site_list, 'Other', 8 ) ),
+				array( 'PASSED sites', $this->count_sites( $audited_site_list, 'PASS', 9 ) ),
+				array( 'FAILED sites', $this->count_sites( $audited_site_list, 'FAIL', 9 ) ),
 				array( 'Total sites', count( $audited_site_list ) ),
 				array( 'AUDIT TYPE/FILTER', $audit_type ),
 			);
@@ -228,7 +230,7 @@ class Site_List extends Command {
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
 		foreach ( $site_list as $site ) {
-			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
+			if ( '' === $site[9] && '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$filtered_site_list[] = array(
 						$site[0],
@@ -251,7 +253,7 @@ class Site_List extends Command {
 			if ( 'full' !== $audit_type && 'no-staging' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
 				continue;
 			}
-			if ( '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
+			if ( '' === $site[9] && '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
 				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
 					$result = 'PASS';
 				} else {
@@ -268,6 +270,7 @@ class Site_List extends Command {
 				$site[4],
 				$site[5],
 				$site[7],
+				$site[9],
 				$site[6],
 				$result,
 				$site[8],
@@ -330,6 +333,14 @@ class Site_List extends Command {
 	protected function eval_is_coming_soon( $site ) {
 		if ( true === $site->is_coming_soon ) {
 			return 'is_coming_soon';
+		} else {
+			return '';
+		}
+	}
+
+	protected function eval_is_domain_only( $site ) {
+		if ( true === $site->options->is_domain_only ) {
+			return 'is_domain_only';
 		} else {
 			return '';
 		}
