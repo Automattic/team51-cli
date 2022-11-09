@@ -61,7 +61,7 @@ class Pressable_Site_PHP_Errors extends Command {
 			->setHelp( 'Ex: team51 php-errors asia.si.edu --format raw --limit 10' );
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to retrieve the error log from.' )
-			->addOption( 'format', null, InputOption::VALUE_REQUIRED, 'The format to output the logs in. Accepts either "table" or "raw".' )
+			->addOption( 'format', null, InputOption::VALUE_REQUIRED, 'The alternative format to output the logs in. Accepts either "table" or "raw".' )
 			->addOption( 'limit', null, InputOption::VALUE_REQUIRED, 'The number of distinct PHP fatal errors to return. Default is 3.', 3 );
 	}
 
@@ -89,7 +89,11 @@ class Pressable_Site_PHP_Errors extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<fg=magenta;options=bold>Retrieving the last $this->limit distinct PHP fatal errors for {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
+		if ( 'raw' === $this->format ) {
+			$output->writeln( "<fg=magenta;options=bold>Retrieving the raw PHP errors log for {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
+		} else {
+			$output->writeln( "<fg=magenta;options=bold>Retrieving the last $this->limit distinct PHP fatal errors for {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
+		}
 
 		// Connect to the site via SFTP.
 		$sftp_connection = Pressable_Connection_Helper::get_sftp_connection( $this->pressable_site->id );
@@ -192,7 +196,7 @@ class Pressable_Site_PHP_Errors extends Command {
 			}
 
 			// Extract individual components of the error entry.
-			\preg_match( '/\[(.*)\].*(PHP .*?):(.*)/', $php_error, $matches );
+			\preg_match( '/\[(.*)].*(PHP .*?):(.*)/', $php_error, $matches );
 			$matches = \array_map( 'trim', $matches );
 
 			if ( empty( $matches[1] ) || empty( $matches[2] ) || empty( $matches[3] ) ) {

@@ -98,8 +98,12 @@ class Pressable_Generate_OAuth_Token extends Command {
 	 * @return  string|null
 	 */
 	private function prompt_client_id_input( InputInterface $input, OutputInterface $output ): ?string {
-		$question = new Question( '<question>Enter the Pressable API application client ID:</question> ' );
-		return $this->getHelper( 'question' )->ask( $input, $output, $question );
+		if ( $input->isInteractive() ) {
+			$question  = new Question( '<question>Enter the Pressable API application client ID:</question> ' );
+			$client_id = $this->getHelper( 'question' )->ask( $input, $output, $question );
+		}
+
+		return $client_id ?? null;
 	}
 
 	/**
@@ -111,8 +115,12 @@ class Pressable_Generate_OAuth_Token extends Command {
 	 * @return  string|null
 	 */
 	private function prompt_client_secret_input( InputInterface $input, OutputInterface $output ): ?string {
-		$question = new Question( '<question>Enter the Pressable API application client secret:</question> ' );
-		return $this->getHelper( 'question' )->ask( $input, $output, $question );
+		if ( $input->isInteractive() ) {
+			$question      = new Question( '<question>Enter the Pressable API application client secret:</question> ' );
+			$client_secret = $this->getHelper( 'question' )->ask( $input, $output, $question );
+		}
+
+		return $client_secret ?? null;
 	}
 
 	// endregion

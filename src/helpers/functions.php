@@ -235,7 +235,7 @@ function get_string_input( InputInterface $input, OutputInterface $output, strin
 	$string = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
 
 	// If we don't have a value, prompt for one.
-	if ( empty( $string ) && \is_callable( $no_input_func ) && $input->isInteractive() ) {
+	if ( empty( $string ) && \is_callable( $no_input_func ) ) {
 		$string = $no_input_func( $input, $output );
 	}
 
