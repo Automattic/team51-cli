@@ -21,7 +21,7 @@ if ( is_contractor_mode() ) {
 	$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.tpl.json';
 }
 
-$result = \shell_exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
+$result = \exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
 if ( empty( $result ) ) {
 	echo "\033[31mThere was an error generating the config file.\033[0m If the line above contains 'command not found', you likely need to upgrade to 1Password 8 and install the accompanying CLI tool." . PHP_EOL;
 	echo "\033[36mPlease refer to the README for instructions on doing that and for the solutions to other common errors.\033[0m" . PHP_EOL;
