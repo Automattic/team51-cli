@@ -374,13 +374,8 @@ function bulk_create_pressable_site_collaborators( string $collaborator_email, a
  */
 function get_pressable_site_collaborator_default_roles( string $site_id ): array {
 	$collaborator_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
-
-	$site = get_pressable_site_by_id( $site_id );
-	if ( ! \is_null( $site ) ) {
-		$is_staging = $site->staging || false !== \strpos( $site->url, '-development' );
-		if ( true === $is_staging ) {
-			$collaborator_roles[] = 'wp_access';
-		}
+	if ( true === is_pressable_staging_site( $site_id ) ) {
+		$collaborator_roles[] = 'wp_access';
 	}
 
 	return $collaborator_roles;

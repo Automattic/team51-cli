@@ -3,30 +3,28 @@
 namespace Team51\Command;
 
 use stdClass;
-use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use function Team51\Helper\create_pressable_site_collaborator;
 use function Team51\Helper\get_pressable_site_by_id;
-use function Team51\Helper\get_pressable_site_collaborator_default_roles;
 use function Team51\Helper\get_pressable_sites;
 
-class Pressable_Grant_Access extends Command {
-	protected static $defaultName = 'pressable-grant-access';
+/**
+ * CLI command for creating a new collaborator on a Pressable site.
+ */
+class Pressable_Site_Create_Collaborator extends Command {
+	// region FIELDS AND CONSTANTS
 
 	/**
-	 * Access to the QuestionHelper
-	 *
-	 * @return \Symfony\Component\Console\Helper\QuestionHelper
+	 * {@inheritdoc}
 	 */
-	private function get_question_helper(): QuestionHelper {
-		return $this->getHelper( 'question' );
-	}
+	protected static $defaultName = 'pressable-grant-access'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
+	// endregion
 
 	/** @inheritDoc */
 	protected function configure() {
@@ -75,7 +73,7 @@ class Pressable_Grant_Access extends Command {
 
 		// If we don't have an email, prompt the user.
 		if ( empty( $email ) ) {
-			$email = $this->get_question_helper()->ask( $input, $output, $this->ask_for_email_address() );
+			$email = $this->getHelper( 'question' )->ask( $input, $output, $this->ask_for_email_address() );
 		}
 
 		// If we still don't have en email fail.
@@ -120,7 +118,7 @@ class Pressable_Grant_Access extends Command {
 
 		// If we don't have a site name, prompt the user.
 		if ( empty( $site_name ) ) {
-			$site_name = $this->get_question_helper()->ask( $input, $output, $this->ask_site_name() );
+			$site_name = $this->getHelper( 'question' )->ask( $input, $output, $this->ask_site_name() );
 		}
 
 		// If we still don't have a site name fail.
@@ -201,7 +199,7 @@ class Pressable_Grant_Access extends Command {
 		// Iterate through all sites and prompt.
 		foreach ( $sites as $site ) {
 			// Check if we should grant access to this site.
-			if ( $this->get_question_helper()->ask( $input, $output, $this->ask_to_grant_access_for_site( $site->url ) ) ) {
+			if ( $this->getHelper( 'question' )->ask( $input, $output, $this->ask_to_grant_access_for_site( $site->url ) ) ) {
 				$output->writeln( sprintf( '<info>Attempting to grant access to: %s for: %s</info>', $site->url, $email ) );
 				$grant_access( $email, $site->id );
 			} else {
