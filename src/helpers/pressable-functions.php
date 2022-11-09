@@ -429,7 +429,7 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
 }
 
 /**
- * Returns whether a given Pressable site should be considered a development site.
+ * Returns whether a given Pressable site should be considered a staging site.
  *
  * Previously, the 'create-development-site' command did not set the staging flag. The check for the '-development' substring
  * is not 100% accurate, but it's the best we can do. For example, it will fail if the 'create-development-site' was called
@@ -439,14 +439,14 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
  *
  * @return  bool|null
  */
-function is_pressable_development_site( string $site_id ): ?bool {
+function is_pressable_staging_site( string $site_id ): ?bool {
 	$site = get_pressable_site_by_id( $site_id );
 	if ( \is_null( $site ) ) {
 		return null;
 	}
 
-	return $site->staging
-		|| ( false !== \strpos( $site->url, '-development' ) );
+	return $site->staging // The staging flag is set.
+		|| ( false !== \strpos( $site->url, '-development' ) ); // Legacy check.
 }
 
 /**
@@ -457,7 +457,7 @@ function is_pressable_development_site( string $site_id ): ?bool {
  * @return  bool|null
  */
 function is_pressable_production_site( string $site_id ): ?bool {
-	$is_development = is_pressable_development_site( $site_id );
+	$is_development = is_pressable_staging_site( $site_id );
 	return \is_null( $is_development ) ? null : ! $is_development;
 }
 
