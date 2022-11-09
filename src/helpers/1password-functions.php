@@ -13,7 +13,7 @@ namespace Team51\Helper;
  */
 function list_1password_accounts( array $global_flags = array() ): ?array {
 	$command = _build_1password_command_string( 'op account list', array(), array(), $global_flags );
-	return decode_json_content( \exec( "$command --format json" ) );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
 }
 
 /**
@@ -30,7 +30,7 @@ function list_1password_items( array $flags = array(), array $global_flags = arr
 	$flags   = \array_intersect_key( $flags, \array_flip( array( 'categories', 'tags', 'vault', 'favorite', 'include-archive' ) ) );
 	$command = _build_1password_command_string( 'op item list', $flags, array( 'categories', 'tags', 'vault' ), $global_flags );
 
-	return decode_json_content( \exec( "$command --format json" ) );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
 }
 
 /**
@@ -80,7 +80,7 @@ function create_1password_item( array $fields, array $flags, array $global_flags
 		$command .= " '$field=$value'";
 	}
 
-	return decode_json_content( \exec( "$command --format json" ) );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
 }
 
 /**
@@ -98,7 +98,7 @@ function get_1password_item( string $item_id, array $flags = array(), array $glo
 	$flags   = \array_intersect_key( $flags, \array_flip( array( 'fields', 'include-archive', 'otp', 'share-link', 'vault' ) ) );
 	$command = _build_1password_command_string( "op item get $item_id", $flags, array( 'fields', 'vault' ), $global_flags );
 
-	return decode_json_content( \exec( "$command --format json" ) );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
 }
 
 /**
@@ -125,7 +125,7 @@ function update_1password_item( string $item_id, array $fields, array $flags = a
 		$command .= " '$field=$new_value'";
 	}
 
-	return decode_json_content( \exec( "$command --format json" ) );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
 }
 
 /**
@@ -143,7 +143,7 @@ function delete_1password_item( string $item_id, array $flags = array(), array $
 	$flags   = \array_intersect_key( $flags, \array_flip( array( 'archive', 'vault' ) ) );
 	$command = _build_1password_command_string( "op item delete $item_id", $flags, array( 'vault' ), $global_flags );
 
-	\exec( $command );
+	\shell_exec( $command );
 }
 
 /**
