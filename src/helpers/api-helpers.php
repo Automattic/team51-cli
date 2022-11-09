@@ -8,6 +8,9 @@ use function Amp\Promise\wait;
 use function Amp\Promise\all;
 use function Amp\call;
 
+/**
+ * @deprecated
+ */
 class API_Helper {
 
 	private const PRESABLE_TOKEN_FILE         = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_token.json';
