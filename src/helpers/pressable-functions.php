@@ -2,10 +2,13 @@
 
 namespace Team51\Helper;
 
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\ExceptionInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Team51\Command\Pressable_Site_Run_WP_CLI_Command;
 
 // region API
 
@@ -475,6 +478,26 @@ function convert_pressable_site( string $site_id ): ?object {
 }
 
 /**
+ * Get a list of domains for the specified site. If there are no domains, an empty array is returned.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#sites-domains
+ *
+ * @return  object[]|null
+ */
+function get_pressable_site_domains( string $site_id ): ?array {
+	$domains = Pressable_API_Helper::call_api( "sites/$site_id/domains" );
+
+	// The endpoint will return NULL for the data field if no custom domains are added, so we must handle that case explicitly.
+	if ( \is_null( $domains ) || empty( $domains->message ) || ( empty( $domains->data ) && 'Success' !== $domains->message ) ) {
+		return null;
+	}
+
+	return $domains->data ?? array();
+}
+
+/**
  * Adds a new given domain to a given Pressable site.
  *
  * @param   string  $site_id    The site ID.
@@ -510,6 +533,35 @@ function set_pressable_site_primary_domain( string $site_id, string $domain_id )
 	}
 
 	return $result->data;
+}
+
+// endregion
+
+// region WRAPPERS
+
+/**
+ * Runs a given WP-CLI command on a given Pressable site and returns the exit code.
+ *
+ * @param   Application         $application        The application instance.
+ * @param   string              $site_id_or_url     The Pressable site ID or URL to run the command on.
+ * @param   string              $wp_cli_command     The WP-CLI command to execute.
+ * @param   OutputInterface     $output             The output to use for the command.
+ * @param   bool                $interactive        Whether to run the command in interactive mode.
+ *
+ * @return int  The command exit code.
+ * @throws ExceptionInterface   If the command does not exist or if the input is invalid.
+ */
+function run_pressable_site_wp_cli_command( Application $application, string $site_id_or_url, string $wp_cli_command, OutputInterface $output, bool $interactive = false ): int {
+	return run_app_command(
+		$application,
+		Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+		array(
+			'site'           => $site_id_or_url,
+			'wp-cli-command' => $wp_cli_command,
+		),
+		$output,
+		$interactive
+	);
 }
 
 // endregion

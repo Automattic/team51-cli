@@ -241,7 +241,7 @@ function get_string_input( InputInterface $input, OutputInterface $output, strin
 
 	// If we still don't have a value, abort.
 	if ( empty( $string ) ) {
-		$output->writeln( "<error>No value was provided for $name input. Aborting!</error>" );
+		$output->writeln( "<error>No value was provided for the '$name' input. Aborting!</error>" );
 		exit( 1 );
 	}
 

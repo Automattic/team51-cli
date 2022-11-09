@@ -11,6 +11,7 @@ use Symfony\Component\Console\Question\Question;
 use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\get_string_input;
 use function Team51\Helper\maybe_define_console_verbosity;
 
 /**
@@ -69,7 +70,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 		$input->setArgument( 'site', $this->pressable_site->id );
 
 		// Retrieve the given command.
-		$this->wp_command = $input->getArgument( 'wp-cli-command' ) ?? $this->prompt_command_input( $input, $output );
+		$this->wp_command = get_string_input( $input, $output, 'wp-cli-command', fn() => $this->prompt_command_input( $input, $output ) );
 		if ( empty( $this->wp_command ) ) { // Also checks for empty string not just null.
 			$output->writeln( '<error>WP-CLI command not provided.</error>' );
 			exit( 1 ); // Exit if the WP-CLI command does not exist.

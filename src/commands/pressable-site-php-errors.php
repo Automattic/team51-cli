@@ -81,7 +81,7 @@ class Pressable_Site_PHP_Errors extends Command {
 			exit( 1 ); // Exit if the site does not exist.
 		}
 
-		// Store the ID of the site in the input.
+		// Store the ID of the site in the argument field.
 		$input->setArgument( 'site', $this->pressable_site->id );
 	}
 
