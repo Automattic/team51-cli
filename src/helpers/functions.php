@@ -61,7 +61,7 @@ function parse_http_headers( array $http_response_header ): array {
 			$headers[ \trim( $header[0] ) ] = \trim( $header[1] );
 		} else {
 			$headers[] = \trim( $header[0] );
-			if ( \preg_match( '#HTTP/[0-9\.]+\s+([0-9]+)#', $header[0], $out ) ) {
+			if ( \preg_match( '#HTTP/[0-9.]+\s+([0-9]+)#', $header[0], $out ) ) {
 				$headers['http_code'] = (int) $out[1];
 			}
 		}
