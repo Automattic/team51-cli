@@ -1,5 +1,9 @@
 <?php
 
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\InputOption;
+use function Team51\Helper\is_quiet_mode;
+
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
 	$argv[]            = '-c';
@@ -9,13 +13,9 @@ if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/src/helpers/config-loader.php';
 
-// Respect -q and --quiet.
-if ( ! in_array( '-q', $argv, true ) && ! in_array( '--quiet', $argv, true ) ) {
+if ( ! is_quiet_mode() ) {
 	echo ASCII_WELCOME_ART . PHP_EOL;
 }
-
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\InputOption;
 
 $application = new Application();
 
@@ -45,7 +45,6 @@ $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
 $application->add( new Team51\Command\Triage_GraphQL() );
 $application->add( new Team51\Command\Dump_Commands() );
-
 $application->add( new Team51\Command\Site_List() );
 
 foreach ( $application->all() as $command ) {

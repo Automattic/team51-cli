@@ -17,7 +17,7 @@ if ( \file_exists( $config_file ) ) {
 }
 
 $template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
-if ( is_contractor_console() ) {
+if ( is_contractor_mode() ) {
 	$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.tpl.json';
 }
 
@@ -35,7 +35,7 @@ if ( empty( $config ) ) {
 }
 
 // Maybe parse contractor config file.
-if ( is_contractor_console() ) {
+if ( is_contractor_mode() ) {
 	$contractor_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.json';
 	if ( \file_exists( $contractor_config_file ) ) {
 		$contractor_config = decode_json_content( \file_get_contents( $contractor_config_file ), true ) ?: array();

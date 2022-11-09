@@ -174,13 +174,23 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
 // region CONSOLE
 
 /**
- * Returns true if the tool is being run in contractor-mode.
+ * Returns true if the tool is being run in contractor mode.
  *
  * @return  bool
  */
-function is_contractor_console(): bool {
+function is_contractor_mode(): bool {
 	return \in_array( '-c', $_SERVER['argv'], true )
 		|| \in_array( '--contractor', $_SERVER['argv'], true );
+}
+
+/**
+ * Returns true if the tool is being run in quiet mode.
+ *
+ * @return  bool
+ */
+function is_quiet_mode(): bool {
+	return \in_array( '-q', $_SERVER['argv'], true )
+        || \in_array( '--quiet', $_SERVER['argv'], true );
 }
 
 /**
