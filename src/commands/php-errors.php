@@ -158,8 +158,8 @@ class Pressable_Site_PHP_Errors extends Command {
 	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */

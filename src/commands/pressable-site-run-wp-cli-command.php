@@ -123,8 +123,8 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */
@@ -142,8 +142,8 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 	/**
 	 * Prompts the user for a WP-CLI command if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */

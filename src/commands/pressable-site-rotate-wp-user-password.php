@@ -199,8 +199,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	/**
 	 * Prompts the user for an email or returns the default if not in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string
 	 */
@@ -223,8 +223,8 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */
@@ -319,7 +319,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	/**
 	 * Updates the 1Password entry for the WP user and site.
 	 *
-	 * @param   OutputInterface     $output             The output interface.
+	 * @param   OutputInterface     $output             The output object.
 	 * @param   object              $pressable_site     The Pressable site.
 	 * @param   string              $password           The password to set.
 	 * @param   string|null         $username           The username of the WP user, if known.
