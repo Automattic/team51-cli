@@ -79,12 +79,13 @@ function parse_http_headers( array $http_response_header ): array {
  *
  * @param   string  $json           The JSON object to decode.
  * @param   bool    $associative    Whether to return an associative array or an object. Default object.
+ * @param   int     $flags          The JSON decoding flags. Default 0.
  *
  * @return  object|array|null
  */
-function decode_json_content( string $json, bool $associative = false ) {
+function decode_json_content( string $json, bool $associative = false, int $flags = 0 ) {
 	try {
-		return \json_decode( $json, $associative, 512, JSON_THROW_ON_ERROR );
+		return \json_decode( $json, $associative, 512, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Decoding Exception: {$exception->getMessage()}" );
 		return null;
@@ -95,12 +96,13 @@ function decode_json_content( string $json, bool $associative = false ) {
  * Encodes some given data into a JSON object.
  *
  * @param   mixed   $data   The data to encode.
+ * @param   int     $flags  The JSON encoding flags. Default 0.
  *
  * @return  string|null
  */
-function encode_json_content( $data ): ?string {
+function encode_json_content( $data, int $flags = 0 ): ?string {
 	try {
-		return \json_encode( $data, JSON_THROW_ON_ERROR );
+		return \json_encode( $data, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Encoding Exception: {$exception->getMessage()}" );
 		return null;
@@ -220,11 +222,38 @@ function console_writeln( string $message, int $verbosity = 0 ): void {
 }
 
 /**
+ * Grabs a value from the console input.
+ *
+ * @param   InputInterface  $input          The input instance.
+ * @param   OutputInterface $output         The output instance.
+ * @param   string          $name           The name of the value to grab.
+ * @param   callable|null   $no_input_func  The function to call if no input is given.
+ *
+ * @return  string
+ */
+function get_string_input( InputInterface $input, OutputInterface $output, string $name, ?callable $no_input_func = null ): string {
+	$string = $input->hasOption( $name ) ? $input->getOption( $name ) : $input->getArgument( $name );
+
+	// If we don't have a value, prompt for one.
+	if ( empty( $string ) && \is_callable( $no_input_func ) && $input->isInteractive() ) {
+		$string = $no_input_func( $input, $output );
+	}
+
+	// If we still don't have a value, abort.
+	if ( empty( $string ) ) {
+		$output->writeln( "<error>No value was provided for $name input. Aborting!</error>" );
+		exit( 1 );
+	}
+
+	return $string;
+}
+
+/**
  * Grabs a value from the console input and validates it against a list of allowed values.
  *
  * @param   InputInterface  $input      The input instance.
  * @param   OutputInterface $output     The output instance.
- * @param   string          $name       The name of the option.
+ * @param   string          $name       The name of the value to grab.
  * @param   array           $valid      The valid values for the option.
  * @param   mixed|null      $default    The default value for the option.
  *
