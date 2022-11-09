@@ -70,29 +70,7 @@ function get_wpcom_site_user_by_email( string $site_id_or_url, string $email ): 
  * @return  bool|null
  */
 function set_wpcom_site_user_wp_password( string $site_id_or_url, string $user_id, string $new_password ): ?bool {
-	$site_id = $site_id_or_url;
-	if ( ! \is_numeric( $site_id ) ) {
-		$wpcom_site = get_wpcom_site( $site_id );
-		if ( \is_null( $wpcom_site ) ) {
-			return null;
-		}
-
-		$site_id = $wpcom_site->ID;
-	}
-
-	$result = WPCOM_API_Helper::call_api(
-		"jetpack-blogs/$site_id/rest-api",
-		'POST',
-		array(
-			'path' => "/wp/v2/users/$user_id",
-			'json' => true,
-			'body' => encode_json_content(
-				array(
-					'password' => $new_password,
-				)
-			),
-		)
-	);
+	$result = WPCOM_API_Helper::call_site_api( $site_id_or_url, "/wp/v2/users/$user_id", array( 'password' => $new_password ) );
 	if ( empty( $result ) ) {
 		return false;
 	}
