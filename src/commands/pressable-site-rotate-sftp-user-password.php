@@ -199,10 +199,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			}
 
 			$output->writeln( '<fg=green;options=bold>SFTP user password rotated.</>' );
-			$output->writeln(
-				"<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
-				true === $pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
-			);
+			$output->writeln( "<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>" );
 		}
 
 		return 0;

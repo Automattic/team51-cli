@@ -214,7 +214,7 @@ final class Pressable_Site_Add_Domain extends Command {
 						$op_login_entry->id,
 						array(
 							'title' => $this->pressable_site->displayName,
-							'url'   => "https://$new_domain->domainName",
+							'url'   => "https://$new_domain->domainName/wp-admin",
 						)
 					);
 					if ( \is_null( $result ) ) {

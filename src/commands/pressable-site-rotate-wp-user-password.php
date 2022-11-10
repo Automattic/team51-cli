@@ -12,7 +12,9 @@ use Symfony\Component\Console\Question\Question;
 use function Team51\Helper\create_1password_item;
 use function Team51\Helper\get_1password_item;
 use function Team51\Helper\get_enum_input;
+use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_related_pressable_sites;
+use function Team51\Helper\get_wpcom_site_users;
 use function Team51\Helper\is_1password_item_url_match;
 use function Team51\Helper\is_case_insensitive_match;
 use function Team51\Helper\maybe_define_console_verbosity;
@@ -98,10 +100,6 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
 		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'related' ) );
 
-		// Retrieve the WP user email.
-		$this->wp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-		$input->setOption( 'user', $this->wp_user_email ); // Store the email of the user in the input.
-
 		// If processing a given site, retrieve it from the input.
 		$pressable_site = null;
 		if ( 'all' !== $this->multiple ) {
@@ -113,6 +111,10 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			// Store the ID of the site in the argument field.
 			$input->setArgument( 'site', $pressable_site->id );
 		}
+
+		// Retrieve the WP user email.
+		$this->wp_user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+		$input->setOption( 'user', $this->wp_user_email ); // Store the email of the user in the input.
 
 		// Compile the lists of Pressable sites to process.
 		switch ( $this->multiple ) {
@@ -197,30 +199,6 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	// region HELPERS
 
 	/**
-	 * Prompts the user for an email or returns the default if not in interactive mode.
-	 *
-	 * @param   InputInterface      $input      The input object.
-	 * @param   OutputInterface     $output     The output object.
-	 *
-	 * @return  string
-	 */
-	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
-		if ( ! $input->isInteractive() ) {
-			$email = 'concierge@wordpress.com';
-		} else {
-			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
-			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
-				$email = 'concierge@wordpress.com';
-			} else {
-				$question = new Question( '<question>Enter the user email to rotate the WP password for:</question> ' );
-				$email    = $this->getHelper( 'question' )->ask( $input, $output, $question );
-			}
-		}
-
-		return $email;
-	}
-
-	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
 	 * @param   InputInterface      $input      The input object.
@@ -237,6 +215,35 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		return $site ?? null;
+	}
+
+	/**
+	 * Prompts the user for an email or returns the default if not in interactive mode.
+	 *
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
+	 *
+	 * @return  string
+	 */
+	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
+		if ( ! $input->isInteractive() ) {
+			$email = 'concierge@wordpress.com';
+		} else {
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
+			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+				$email = 'concierge@wordpress.com';
+			} else {
+				$question = new Question( '<question>Enter the user email to rotate the WP password for:</question> ' );
+				if ( 'all' !== $this->multiple ) { // Autocompletion is only available when a singular site is provided which is connected to WPCOM via Jetpack.
+					$pressable_site = get_pressable_site_by_id( $input->getArgument( 'site' ) );
+					$question->setAutocompleterValues( \array_map( static fn( object $wp_user ) => $wp_user->email, get_wpcom_site_users( $pressable_site->url ) ?? array() ) );
+				}
+
+				$email = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			}
+		}
+
+		return $email;
 	}
 
 	/**
@@ -291,8 +298,14 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 					$result       = ! \is_null( $new_password );
 				}
 			} else {
+				// There is a trade-off here: if the user is a collaborator, we can't tell if they are a WP user or not.
+				// If we reset a collaborator's WP password, and they don't have a WP account, one will be created for them
+				// regardless of whether they have the 'wp_access' Pressable role or not. So I think it's safer to only reset
+				// the password for those which we know are WP users at the risk of not resetting the password for those which
+				// have an account, although they don't have the 'wp_access' role. This way we don't risk accidentally creating
+				// admins that shouldn't be there.
 				$pressable_collaborator = get_pressable_site_collaborator_by_email( $pressable_site->id, $this->wp_user_email );
-				if ( ! \is_null( $pressable_collaborator ) ) {
+				if ( ! \is_null( $pressable_collaborator ) && \in_array( 'wp_access', $pressable_collaborator->roles, true ) ) {
 					$output->writeln( "<info>Resetting the WP user password for Pressable collaborator $pressable_collaborator->wpUsername (ID $pressable_collaborator->id, email $pressable_collaborator->email) via the Pressable API.</info>", OutputInterface::VERBOSITY_VERBOSE );
 
 					$username = $pressable_collaborator->wpUsername; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
@@ -352,7 +365,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				\array_filter(
 					array(
 						'title'    => $pressable_site->displayName, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-						'url'      => "https://$pressable_site->url",
+						'url'      => "https://$pressable_site->url/wp-admin",
 						'category' => 'login',
 						'tags'     => 'team51-cli',
 						// Store in the shared vault if the user is the concierge, otherwise default to the private vault.
@@ -378,7 +391,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 				),
 				array(
 					'title' => $pressable_site->displayName, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-					'url'   => "https://$pressable_site->url",
+					'url'   => "https://$pressable_site->url/wp-admin",
 				),
 				array(),
 				$this->dry_run
