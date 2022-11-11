@@ -13,10 +13,6 @@ if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/src/helpers/config-loader.php';
 
-if ( ! is_quiet_mode() ) {
-	echo ASCII_WELCOME_ART . PHP_EOL;
-}
-
 $application = new Application();
 
 $application->add( new Team51\Command\Create_Production_Site() );
