@@ -22,6 +22,7 @@ class Create_Development_Site extends Command {
 		->addOption( 'site-id', null, InputOption::VALUE_REQUIRED, "The site ID of the production Pressable site you'd like to clone." )
 		->addOption( 'temporary-clone', null, InputOption::VALUE_NONE, 'Creates a temporary clone of the production site for short-term development work. The site created is meant to be deleted after use.' )
 		->addOption( 'label', null, InputOption::VALUE_REQUIRED, 'Used to name the Pressable instance. If not specified, time() will be used.' )
+		->addOption( 'skip-safety-net', null, InputOption::VALUE_NONE, 'Skips adding the Safety Net plugin to the development clone.' )
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
 
@@ -131,7 +132,7 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
-		$output->writeln( '<comment>Establishing SSH connection.</comment>' ); 
+		$output->writeln( '<comment>Waiting for SSH to provision on the new site.</comment>' ); 
 		$ssh_connection = null;
 		$ssh_attempts   = 0;
 		$progress_bar   = new ProgressBar( $output );
@@ -147,9 +148,9 @@ class Create_Development_Site extends Command {
 		}
 		$progress_bar->finish();
 		$output->writeln( '' );
-		
+
 		if ( is_null( $ssh_connection ) ) {
-			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed! Please install it manually!</error>' );
+			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed.</error>' );
 		}
 
 		run_app_command(
@@ -161,32 +162,37 @@ class Create_Development_Site extends Command {
 			),
 			$output
 		);
-		run_app_command(
-			$this->getApplication(),
-			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
-			array(
-				'site'           => $pressable_site->data->id,
-				'wp-cli-command' => 'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
-			),
-			$output
-		);
 
-		if ( ! is_null( $ssh_connection ) ) {
-			$ssh_connection->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
-			$ssh_connection->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
-				if ( false === strpos( $result, 'safety-net' ) ) {
-					$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
-				}
-				if ( false === strpos( $result, 'load-safety-net.php' ) ) {
-					$output->writeln( "<comment>Copying Safety Net loader to mu-plugins folder...</comment>" );
+		if ( ! empty( $input->getOption( 'skip-safety-net' ) ) ) {
+			$output->writeln( '<comment>Skipping Safety Net installation.</comment>' );
+		} else {
+			run_app_command(
+				$this->getApplication(),
+				Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+				array(
+					'site'           => $pressable_site->data->id,
+					'wp-cli-command' => 'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
+				),
+				$output
+			);
 
-					$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
-					$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents(__DIR__ . '/../../scaffold/load-safety-net.php' ) );
-					if ( ! $result ) {
-						$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
+			if ( ! is_null( $ssh_connection ) ) {
+				$ssh_connection->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
+				$ssh_connection->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
+					if ( false === strpos( $result, 'safety-net' ) ) {
+						$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
 					}
-				}
-			} );
+					if ( false === strpos( $result, 'load-safety-net.php' ) ) {
+						$output->writeln( "<comment>Copying Safety Net loader to mu-plugins folder...</comment>" );
+
+						$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
+						$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents(__DIR__ . '/../../scaffold/load-safety-net.php' ) );
+						if ( ! $result ) {
+							$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
+						}
+					}
+				} );
+			}
 		}
 
 		$server_config = array(
