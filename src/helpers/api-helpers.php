@@ -4,11 +4,13 @@ namespace Team51\Helper;
 
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
-use phpseclib3\Net\SFTP;
 use function Amp\Promise\wait;
 use function Amp\Promise\all;
 use function Amp\call;
 
+/**
+ * @deprecated
+ */
 class API_Helper {
 
 	private const PRESABLE_TOKEN_FILE         = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_token.json';
@@ -212,77 +214,6 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function pressable_sftp_connect( $site_id ) {
-
-		$ftp_config = $this->get_pressable_sftp_connection_data( $site_id );
-
-		if ( empty( $ftp_config ) ) {
-			// Bot collaborator does not exist, add him and grab SFTP data.
-			$this->writeln( 'Bot collaborator SFTP credentials do not exist.' );
-
-			$this->writeln( "Adding bot collaborator to site $site_id." );
-
-			$add_collaborator_request = $this->add_bot_collaborator_to_site( $site_id );
-
-			if ( ! empty( $add_collaborator_request['error'] ) ) {
-				$this->writeln( sprintf( '<error>%s</error>', $add_collaborator_request['error'] ) );
-				exit;
-			}
-
-			$this->writeln( 'Getting bot collaborator SFTP credentials after adding user.' );
-
-			$ftp_config = $this->get_pressable_sftp_connection_data_after_adding( $site_id );
-		}
-
-		if ( ! empty( $ftp_config['error'] ) ) {
-			return (object) $ftp_config;
-		}
-
-		$this->writeln( "Opening SFTP connection to site $site_id." );
-
-		// Time to connect to the server.
-		$sftp_connection = new SFTP( $ftp_config['sftp_hostname'] );
-
-		if ( ! $sftp_connection->login( $ftp_config['sftp_username'], $ftp_config['sftp_password'] ) ) {
-			$this->writeln( '<error>Failed to connect to the server via SFTP. Aborting!</error>' );
-			exit;
-		}
-
-		return $sftp_connection;
-	}
-
-	/**
-	 * Gets the SFTP username for a site owner or a specific email address.
-	 *
-	 * @param int         $site_id The site ID.
-	 * @param string|bool $email   The email address to get the SFTP username for. (Defaults to site owner — normally concierge@wordpress.com)
-	 * @return string The SFTP username. Returns false if the username could not be retrieved.
-	 */
-	public function get_sftp_user( $site_id, $email = false ) {
-		$route = "sites/$site_id/ftp";
-
-		$response = $this->call_pressable_api( $route, 'GET' );
-
-		if ( empty( $response ) || 'Success' !== $response->message ) {
-			return false;
-		}
-		
-		$account_list = $response->data;
-		$account_index = false;
-
-		if ( false === $email ) {
-			$account_index = array_search( true, array_column( $account_list, 'owner' ), true );
-		} else {
-			$account_index = array_search( $email, array_column( $account_list, 'email' ) );
-		}
-
-		if ( false === $account_index ) {
-			return false;
-		}
-
-		return $account_list[ $account_index ]->username;
-	}
-
 	public function log_to_slack( $message ) {
 		if ( ! defined( 'SLACK_WEBHOOK_URL' ) || empty( SLACK_WEBHOOK_URL ) ) {
 			echo "Note: log_to_slack() won't work while SLACK_WEBHOOK_URL is undefined in config.json." . PHP_EOL;
@@ -383,7 +314,7 @@ class API_Helper {
 
 		foreach ( $endpoints as $endpoint ) {
 			$promises[ $endpoint ] = call(
-				static function () use ( $method, $client, $endpoint ) {
+				static function () use ( $data, $method, $client, $endpoint ) {
 					$request = new Request( $endpoint, $method );
 					$request->setInactivityTimeout( 60000 );
 					$request->setTransferTimeout( 60000 );
@@ -498,102 +429,5 @@ class API_Helper {
 		file_put_contents( self::PRESABLE_TOKEN_FILE, json_encode( $data ) );
 
 		return true;
-	}
-
-	/**
-	 * Add bot collaborator to site
-	 * Using batch_create, so we can set sftp_access role
-	 * @param $pressable_site_id
-	 *
-	 * @return array
-	 */
-	private function add_bot_collaborator_to_site( $pressable_site_id ) {
-
-		$response = array();
-
-		$add_collaborator_request = $this->call_pressable_api(
-			'collaborators/batch_create',
-			'POST',
-			array(
-				'siteIds' => array(
-					$pressable_site_id,
-				),
-				'email'   => PRESSABLE_BOT_COLLABORATOR_EMAIL,
-				'roles'   => 'sftp_access',
-			)
-		);
-
-		if ( ! is_null( $add_collaborator_request->errors ) ) {
-			$response['error'] = 'Error creating temporary bot collaborator. Aborting!';
-		}
-
-		return $response;
-	}
-
-	/**
-	 * Get bot collaborator SFTP connection data for a site.
-	 * If account is not found and $create is true, a new account is created.
-	 * @param $pressable_site_id
-	 *
-	 * @return array
-	 */
-	private function get_pressable_sftp_connection_data( $pressable_site_id, $create = false ) {
-		$ftp_data = $this->call_pressable_api( "sites/{$pressable_site_id}/ftp", 'GET', array() );
-
-		$ftp_config = array();
-
-		if ( empty( $ftp_data->data ) ) {
-			$ftp_config['error'] = 'Failed to retrieve FTP users. Aborting!';
-			return $ftp_config;
-		}
-
-		foreach ( $ftp_data->data as $ftp_user ) {
-			if ( PRESSABLE_BOT_COLLABORATOR_EMAIL === $ftp_user->email ) { // We found the bot collaborator we created, grab the info.
-				$ftp_config['sftp_username'] = $ftp_user->username;
-				$ftp_config['sftp_hostname'] = $ftp_user->sftpDomain;
-
-				$password_reset = $this->call_pressable_api( "sites/{$pressable_site_id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-				if ( ! empty( $password_reset->data ) ) {
-					$ftp_config['sftp_password'] = $password_reset->data;
-				} else {
-					$ftp_config['error'] = 'Failed to retrieve password for temporary bot collaborator. Aborting!';
-				}
-				break;
-			}
-		}
-
-		return $ftp_config;
-	}
-
-	/**
-	 * Try to get sftp data after adding the user.
-	 * Adding of the user takes some time, so we need to check a few times.
-	 * @param $pressable_site_id
-	 *
-	 * @return array
-	 */
-	private function get_pressable_sftp_connection_data_after_adding( $pressable_site_id ) {
-		$ftp_config = array();
-
-		$tries = 0;
-		$delay = 1;
-		while ( empty( $ftp_config ) && $tries <= 3 ) {
-
-			$ftp_config = $this->get_pressable_sftp_connection_data( $pressable_site_id );
-
-			sleep( $delay );
-			$tries++;
-			$delay = $delay * 2;
-		}
-
-		if ( empty( $ftp_config ) ) {
-			$ftp_config['error'] = 'Trouble finding temporary bot collaborator after adding.';
-		}
-
-		return $ftp_config;
-	}
-
-	private function writeln( $message ) {
-		echo "$message\n";
 	}
 }
