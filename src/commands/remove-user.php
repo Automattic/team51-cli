@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
+use Team51\Helper\WPCOM_API_Helper;
 
 class Remove_User extends Command {
 	protected static $defaultName = 'remove-user';
@@ -142,7 +143,6 @@ class Remove_User extends Command {
 	 * Given an email, return the list of sites owned by that user.
 	 */
 	private function get_wpcom_users( $email ) {
-		$wp_bearer_token = WPCOM_API_ACCOUNT_TOKEN;
 		$exclude_sites   = array(
 			'https://woocommerce.com',
 		);
@@ -172,30 +172,30 @@ class Remove_User extends Command {
 		$this->output->writeln( "<comment>Searching for '$email' across " . count( $filtered_sites ) . ' WordPress.com & Jetpack sites...</comment>' );
 
 		$site_users_endpoints = array_map(
-			function( $site ) use ( $email ) {
-				return "https://public-api.wordpress.com/rest/v1.1/sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
+			static function( $site ) use ( $email ) {
+				return "sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
 			},
 			$filtered_sites
 		);
 
 		// concurrent call for all endpoints.
-		$sites_users = $this->api_helper->call_wpcom_api_concurrent( $site_users_endpoints );
+		$sites_users = WPCOM_API_Helper::call_api_concurrent( $site_users_endpoints );
 
 		// clean up data by removing entries were user was not found.
 		$sites_users = array_filter(
 			$sites_users,
-			function( $user ) {
+			static function( $user ) {
 				return ( isset( $user ) && ! isset( $user->error ) && $user->found > 0 );
 			}
 		);
 
 		$data = array();
 		foreach ( $filtered_sites as $site ) {
-			foreach ( $site_users_endpoints as $endpoint ) {
-				if ( str_contains( $endpoint, $site->ID ) && isset( $sites_users[ $endpoint ] ) ) {
+			foreach ( $site_users_endpoints as $index => $endpoint ) {
+				if ( isset( $sites_users[ $index ] ) && str_contains( $endpoint, $site->ID ) ) {
 					$data[] = (object) array(
-						'userId'   => $sites_users[ $endpoint ]->users[0]->ID,
-						'email'    => $sites_users[ $endpoint ]->users[0]->email,
+						'userId'   => $sites_users[ $index ]->users[0]->ID,
+						'email'    => $sites_users[ $index ]->users[0]->email,
 						'siteId'   => $site->ID,
 						'siteName' => $site->URL,
 					);
