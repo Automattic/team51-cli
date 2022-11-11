@@ -12,6 +12,7 @@ use Symfony\Component\Console\Question\Question;
 use function Team51\Helper\get_enum_input;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_related_pressable_sites;
+use function Team51\Helper\get_wpcom_site_users;
 use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\get_email_input;
 use function Team51\Helper\get_pressable_site_from_input;
@@ -80,10 +81,6 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
 		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'related' ) );
 
-		// Retrieve the user email which is always required.
-		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
-		$input->setOption( 'user', $this->user_email ); // Store the email of the user in the input.
-
 		// Retrieve the given site if applicable.
 		if ( 'all' !== $this->multiple ) {
 			$pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
@@ -94,6 +91,10 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 			// Store the ID of the site in the argument field.
 			$input->setArgument( 'site', $pressable_site->id );
 		}
+
+		// Retrieve the user email which is always required.
+		$this->user_email = get_email_input( $input, $output, fn() => $this->prompt_user_input( $input, $output ), 'user' );
+		$input->setOption( 'user', $this->user_email ); // Store the email of the user in the input.
 	}
 
 	/**
@@ -177,34 +178,10 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 	// region HELPERS
 
 	/**
-	 * Prompts the user for an email or returns the default if not in interactive mode.
-	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
-	 *
-	 * @return  string
-	 */
-	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
-		if ( ! $input->isInteractive() ) {
-			$email = 'concierge@wordpress.com';
-		} else {
-			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
-			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
-				$email = 'concierge@wordpress.com';
-			} else {
-				$question = new Question( '<question>Enter the user email to rotate the passwords for:</question> ' );
-				$email    = $this->getHelper( 'question' )->ask( $input, $output, $question );
-			}
-		}
-
-		return $email;
-	}
-
-	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */
@@ -217,6 +194,35 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 		}
 
 		return $site ?? null;
+	}
+
+	/**
+	 * Prompts the user for an email or returns the default if not in interactive mode.
+	 *
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
+	 *
+	 * @return  string
+	 */
+	private function prompt_user_input( InputInterface $input, OutputInterface $output ): string {
+		if ( ! $input->isInteractive() ) {
+			$email = 'concierge@wordpress.com';
+		} else {
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
+			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+				$email = 'concierge@wordpress.com';
+			} else {
+				$question = new Question( '<question>Enter the user email to rotate the passwords for:</question> ' );
+				if ( 'all' !== $this->multiple ) { // Autocompletion is only available when a singular site is provided which is connected to WPCOM via Jetpack.
+					$pressable_site = get_pressable_site_by_id( $input->getArgument( 'site' ) );
+					$question->setAutocompleterValues( \array_map( static fn( object $wp_user ) => $wp_user->email, get_wpcom_site_users( $pressable_site->url ) ?? array() ) );
+				}
+
+				$email = $this->getHelper( 'question' )->ask( $input, $output, $question );
+			}
+		}
+
+		return $email;
 	}
 
 	// endregion

@@ -2,10 +2,13 @@
 
 namespace Team51\Helper;
 
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\ExceptionInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Team51\Command\Pressable_Site_Run_WP_CLI_Command;
 
 // region API
 
@@ -298,18 +301,19 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
  * Adds a collaborator with the given email address to a given site. We reuse the bulk create endpoint because the single
  * create endpoint does not support the `roles` parameter.
  *
- * @param   string  $site_id                The site ID.
- * @param   string  $collaborator_email     The collaborator email.
- * @param   array   $collaborator_roles     The collaborator roles.
- * @param   bool    $skip_object_query      Whether to skip querying the collaborator after creation.
+ * @param   string      $site_id                The site ID.
+ * @param   string      $collaborator_email     The collaborator email.
+ * @param   array|null  $collaborator_roles     The collaborator roles.
+ * @param   bool        $skip_object_query      Whether to skip querying the collaborator after creation.
  *
  * @link    https://my.pressable.com/documentation/api/v1#collaborator-bulk-create
  *
  * @return  object|null
  */
-function create_pressable_site_collaborator( string $collaborator_email, string $site_id, array $collaborator_roles, bool $skip_object_query = false ): ?object {
+function create_pressable_site_collaborator( string $collaborator_email, string $site_id, ?array $collaborator_roles = null, bool $skip_object_query = false ): ?object {
 	// First send the request to create the collaborator.
-	$result = bulk_create_pressable_site_collaborators( $collaborator_email, array( $site_id ), $collaborator_roles );
+	$collaborator_roles = $collaborator_roles ?? get_pressable_site_collaborator_default_roles( $site_id );
+	$result             = bulk_create_pressable_site_collaborators( $collaborator_email, array( $site_id ), $collaborator_roles );
 	if ( true !== $result ) {
 		return null;
 	}
@@ -365,6 +369,22 @@ function bulk_create_pressable_site_collaborators( string $collaborator_email, a
 }
 
 /**
+ * Returns the list of default roles for a site collaborator on a given site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @return  string[]
+ */
+function get_pressable_site_collaborator_default_roles( string $site_id ): array {
+	$collaborator_roles = array( 'clone_site', 'sftp_access', 'download_backups', 'reset_collaborator_password', 'manage_performance', 'php_my_admin_access' );
+	if ( true === is_pressable_staging_site( $site_id ) ) {
+		$collaborator_roles[] = 'wp_access';
+	}
+
+	return $collaborator_roles;
+}
+
+/**
  * If one of your collaborators is unable to log into the site’s WordPress dashboard because of a forgotten, or unknown, password,
  * this can be used to set their WP Admin password to a randomly generated value.
  *
@@ -407,7 +427,7 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
 }
 
 /**
- * Returns whether a given Pressable site should be considered a development site.
+ * Returns whether a given Pressable site should be considered a staging site.
  *
  * Previously, the 'create-development-site' command did not set the staging flag. The check for the '-development' substring
  * is not 100% accurate, but it's the best we can do. For example, it will fail if the 'create-development-site' was called
@@ -417,14 +437,14 @@ function reset_pressable_site_owner_wp_password( string $site_id ): ?string {
  *
  * @return  bool|null
  */
-function is_pressable_development_site( string $site_id ): ?bool {
+function is_pressable_staging_site( string $site_id ): ?bool {
 	$site = get_pressable_site_by_id( $site_id );
 	if ( \is_null( $site ) ) {
 		return null;
 	}
 
-	return $site->staging
-		|| ( false !== \strpos( $site->url, '-development' ) );
+	return $site->staging // The staging flag is set.
+		|| ( false !== \strpos( $site->url, '-development' ) ); // Legacy check.
 }
 
 /**
@@ -435,7 +455,7 @@ function is_pressable_development_site( string $site_id ): ?bool {
  * @return  bool|null
  */
 function is_pressable_production_site( string $site_id ): ?bool {
-	$is_development = is_pressable_development_site( $site_id );
+	$is_development = is_pressable_staging_site( $site_id );
 	return \is_null( $is_development ) ? null : ! $is_development;
 }
 
@@ -455,6 +475,26 @@ function convert_pressable_site( string $site_id ): ?object {
 	}
 
 	return $result->data;
+}
+
+/**
+ * Get a list of domains for the specified site. If there are no domains, an empty array is returned.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#sites-domains
+ *
+ * @return  object[]|null
+ */
+function get_pressable_site_domains( string $site_id ): ?array {
+	$domains = Pressable_API_Helper::call_api( "sites/$site_id/domains" );
+
+	// The endpoint will return NULL for the data field if no custom domains are added, so we must handle that case explicitly.
+	if ( \is_null( $domains ) || empty( $domains->message ) || ( empty( $domains->data ) && 'Success' !== $domains->message ) ) {
+		return null;
+	}
+
+	return $domains->data ?? array();
 }
 
 /**
@@ -493,6 +533,35 @@ function set_pressable_site_primary_domain( string $site_id, string $domain_id )
 	}
 
 	return $result->data;
+}
+
+// endregion
+
+// region WRAPPERS
+
+/**
+ * Runs a given WP-CLI command on a given Pressable site and returns the exit code.
+ *
+ * @param   Application         $application        The application instance.
+ * @param   string              $site_id_or_url     The Pressable site ID or URL to run the command on.
+ * @param   string              $wp_cli_command     The WP-CLI command to execute.
+ * @param   OutputInterface     $output             The output to use for the command.
+ * @param   bool                $interactive        Whether to run the command in interactive mode.
+ *
+ * @return int  The command exit code.
+ * @throws ExceptionInterface   If the command does not exist or if the input is invalid.
+ */
+function run_pressable_site_wp_cli_command( Application $application, string $site_id_or_url, string $wp_cli_command, OutputInterface $output, bool $interactive = false ): int {
+	return run_app_command(
+		$application,
+		Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+		array(
+			'site'           => $site_id_or_url,
+			'wp-cli-command' => $wp_cli_command,
+		),
+		$output,
+		$interactive
+	);
 }
 
 // endregion

@@ -199,10 +199,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			}
 
 			$output->writeln( '<fg=green;options=bold>SFTP user password rotated.</>' );
-			$output->writeln(
-				"<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>",
-				true === $pressable_sftp_user->owner ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_NORMAL
-			);
+			$output->writeln( "<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>" );
 		}
 
 		return 0;
@@ -215,8 +212,8 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	/**
 	 * Prompts the user for a site if in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string|null
 	 */
@@ -234,8 +231,8 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 	/**
 	 * Prompts the user for an email or returns the default if not in interactive mode.
 	 *
-	 * @param   InputInterface      $input      The input interface.
-	 * @param   OutputInterface     $output     The output interface.
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
 	 *
 	 * @return  string
 	 */

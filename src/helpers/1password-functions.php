@@ -3,6 +3,20 @@
 namespace Team51\Helper;
 
 /**
+ * List 1Password accounts.
+ *
+ * @param   array   $global_flags   The global flags to pass to the command.
+ *
+ * @link    https://developer.1password.com/docs/cli/reference/management-commands/account#account-list
+ *
+ * @return  array|null
+ */
+function list_1password_accounts( array $global_flags = array() ): ?array {
+	$command = _build_1password_command_string( 'op account list', array(), array(), $global_flags );
+	return decode_json_content( \shell_exec( "$command --format json" ) );
+}
+
+/**
  * Lists 1Password items.
  *
  * @param   array   $flags          The flags to filter the results by.
