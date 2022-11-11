@@ -2,178 +2,65 @@
 
 namespace Team51\Helper;
 
-$config = json_decode( file_get_contents( TEAM51_CLI_ROOT_DIR . '/config.json' ) );
-$warning_config_keys = array();
-
-if( empty( $config ) ) {
-	echo "Config file couldn't be read. Please make sure it is properly formatted. Aborting!\n";
-	die();
-}
-
-if( ! empty( $config->DEPLOY_HQ_API_KEY ) ) {
-	define( 'DEPLOY_HQ_API_KEY', $config->DEPLOY_HQ_API_KEY );
-} else {
-	$warning_config_keys[] = "DEPLOY_HQ_API_KEY";
-}
-
-if( ! empty( $config->DEPLOY_HQ_USERNAME ) ) {
-	define( 'DEPLOY_HQ_USERNAME', $config->DEPLOY_HQ_USERNAME );
-} else {
-	$warning_config_keys[] = "DEPLOY_HQ_USERNAME";
-}
-
-if( ! empty( $config->DEPLOY_HQ_API_ENDPOINT ) ) {
-	define( 'DEPLOY_HQ_API_ENDPOINT', $config->DEPLOY_HQ_API_ENDPOINT );
-} else {
-	$warning_config_keys[] = "DEPLOY_HQ_API_ENDPOINT";
-}
-
-if( ! empty( $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE ) ) {
-	define( 'DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE', $config->DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE );
-} else {
-	$warning_config_keys[] = "DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE";
-}
-
-if( ! empty( $config->GITHUB_API_OWNER ) ) {
-	define( 'GITHUB_API_OWNER', $config->GITHUB_API_OWNER );
-} else {
-	$warning_config_keys[] = "GITHUB_API_OWNER";
-}
-
-if( ! empty( $config->GITHUB_API_ENDPOINT ) ) {
-	define( 'GITHUB_API_ENDPOINT', $config->GITHUB_API_ENDPOINT );
-} else {
-	$warning_config_keys[] = "GITHUB_API_ENDPOINT";
-}
-
-if ( ! empty( $config->GITHUB_DEVQUEUE_TRIAGE_COLUMN ) ) {
-	define( 'GITHUB_DEVQUEUE_TRIAGE_COLUMN', $config->GITHUB_DEVQUEUE_TRIAGE_COLUMN );
-} else {
-	$warning_config_keys[] = "GITHUB_DEVQUEUE_TRIAGE_COLUMN";
-}
-
-if( ! empty( $config->GITHUB_API_TOKEN ) ) {
-	define( 'GITHUB_API_TOKEN', $config->GITHUB_API_TOKEN );
-} else {
-	$warning_config_keys[] = "GITHUB_API_TOKEN";
-}
-
-if( ! empty( $config->PRESSABLE_SFTP_HOSTNAME ) ) {
-	define( 'PRESSABLE_SFTP_HOSTNAME', $config->PRESSABLE_SFTP_HOSTNAME );
-} else {
-	$warning_config_keys[] = "PRESSABLE_SFTP_HOSTNAME";
-}
-if( ! empty( $config->PRESSABLE_SFTP_USERNAME ) ) {
-	define( 'PRESSABLE_SFTP_USERNAME', $config->PRESSABLE_SFTP_USERNAME );
-} else {
-	$warning_config_keys[] = "PRESSABLE_SFTP_USERNAME";
-}
-
-if( ! empty( $config->PRESSABLE_SFTP_PASSWORD ) ) {
-	define( 'PRESSABLE_SFTP_PASSWORD', $config->PRESSABLE_SFTP_PASSWORD );
-} else {
-	$warning_config_keys[] = "PRESSABLE_SFTP_PASSWORD";
-}
-
-if( ! empty( $config->PRESSABLE_API_ENDPOINT ) ) {
-	define( 'PRESSABLE_API_ENDPOINT', $config->PRESSABLE_API_ENDPOINT );
-} else {
-	$warning_config_keys[] = "PRESSABLE_API_ENDPOINT";
-}
-
-if( ! empty( $config->PRESSABLE_API_TOKEN_ENDPOINT ) ) {
-	define( 'PRESSABLE_API_TOKEN_ENDPOINT', $config->PRESSABLE_API_TOKEN_ENDPOINT );
-} else {
-	$warning_config_keys[] = "PRESSABLE_API_TOKEN_ENDPOINT";
-}
-
-if( ! empty( $config->PRESSABLE_API_APP_CLIENT_ID ) ) {
-	define( 'PRESSABLE_API_APP_CLIENT_ID', $config->PRESSABLE_API_APP_CLIENT_ID );
-} else {
-	$warning_config_keys[] = "PRESSABLE_API_APP_CLIENT_ID";
-}
-
-if( ! empty( $config->PRESSABLE_API_APP_CLIENT_SECRET ) ) {
-	define( 'PRESSABLE_API_APP_CLIENT_SECRET', $config->PRESSABLE_API_APP_CLIENT_SECRET );
-} else {
-	$warning_config_keys[] = "PRESSABLE_API_APP_CLIENT_SECRET";
-}
-
-if( empty( $config->PRESSABLE_ACCOUNT_EMAIL ) && empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
-	$warning_config_keys[] = "PRESSABLE_ACCOUNT_EMAIL";
-	$warning_config_keys[] = "PRESSABLE_API_REFRESH_TOKEN";
-} else {
-	if ( ! empty( $config->PRESSABLE_ACCOUNT_EMAIL ) ) {
-		define( 'PRESSABLE_ACCOUNT_EMAIL', $config->PRESSABLE_ACCOUNT_EMAIL );
-	}
-	if ( ! empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
-		define( 'PRESSABLE_API_REFRESH_TOKEN', $config->PRESSABLE_API_REFRESH_TOKEN );
+// Remove any legacy config files from the hard drive.
+$legacy_config_files = array( 'config.json', 'config.example.json' );
+foreach ( $legacy_config_files as $legacy_config_file ) {
+	if ( \file_exists( TEAM51_CLI_ROOT_DIR . "/$legacy_config_file" ) ) {
+		\unlink( TEAM51_CLI_ROOT_DIR . "/$legacy_config_file" );
 	}
 }
 
-if( empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) && empty( $config->PRESSABLE_API_REFRESH_TOKEN ) ) {
-	$warning_config_keys[] = "PRESSABLE_ACCOUNT_PASSWORD";
-	$warning_config_keys[] = "PRESSABLE_API_REFRESH_TOKEN";
-} else {
-	if ( ! empty( $config->PRESSABLE_ACCOUNT_PASSWORD ) ) {
-		define( 'PRESSABLE_ACCOUNT_PASSWORD', $config->PRESSABLE_ACCOUNT_PASSWORD );
+// Generate the config file using the 1Password data.
+$config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.json';
+if ( \file_exists( $config_file ) ) {
+	\unlink( $config_file );
+}
+
+$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
+if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) ) {
+	$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.tpl.json';
+}
+
+$result = \shell_exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
+if ( empty( $result ) ) {
+	echo "\033[31mThere was an error generating the config file.\033[0m If the line above contains 'command not found', you likely need to upgrade to 1Password 8 and install the accompanying CLI tool." . PHP_EOL;
+	echo "\033[36mPlease refer to the README for instructions on doing that and for the solutions to other common errors.\033[0m" . PHP_EOL;
+	exit( 1 );
+}
+
+// Parse the config file.
+$config = json_decode( \file_get_contents( $config_file ), true );
+if ( empty( $config ) ) {
+	exit( 'Config file could not be read or it is empty. Please make sure it is properly formatted. Aborting!' . PHP_EOL );
+}
+
+// Maybe parse contractor config file.
+if ( \in_array( '-c', $argv, true ) || \in_array( '--contractor', $argv, true ) ) {
+	$contractor_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config__contractors.json';
+	if ( \file_exists( $contractor_config_file ) ) {
+		$contractor_config = json_decode( \file_get_contents( $contractor_config_file ), true ) ?: array();
+		$config            = \array_merge_recursive( $config, $contractor_config );
 	}
 }
 
-if( ! empty( $config->WPCOM_API_ENDPOINT ) ) {
-	define( 'WPCOM_API_ENDPOINT', $config->WPCOM_API_ENDPOINT );
-} else {
-	$warning_config_keys[] = "WPCOM_API_ENDPOINT";
+// Parse overwrite config file.
+$overwrite_config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.overwrite.json';
+if ( \file_exists( $overwrite_config_file ) ) {
+	$overwrite_config = json_decode( \file_get_contents( $overwrite_config_file ), true ) ?: array();
+	$config           = \array_replace_recursive( $config, $overwrite_config );
 }
 
-if( ! empty( $config->WPCOM_API_ACCOUNT_TOKEN ) ) {
-	define( 'WPCOM_API_ACCOUNT_TOKEN', $config->WPCOM_API_ACCOUNT_TOKEN );
-} else {
-	$warning_config_keys[] = "WPCOM_API_ACCOUNT_TOKEN";
+// Register secrets as constants.
+foreach ( $config as $section => $secrets ) {
+	foreach ( $secrets as $name => $secret ) {
+		$constant_name = \strtoupper( $name );
+		if ( 'general' !== $section ) {
+			$constant_name = \strtoupper( $section ) . '_' . $constant_name;
+		}
+
+		\define( $constant_name, $secret );
+	}
 }
 
-if( ! empty( $config->FRONT_API_ENDPOINT ) ) {
-	define( 'FRONT_API_ENDPOINT', $config->FRONT_API_ENDPOINT );
-} else {
-	$warning_config_keys[] = "FRONT_API_ENDPOINT";
-}
-
-if( ! empty( $config->FRONT_API_TOKEN ) ) {
-	define( 'FRONT_API_TOKEN', $config->FRONT_API_TOKEN );
-} else {
-	$warning_config_keys[] = "FRONT_API_TOKEN";
-}
-
-if( ! empty( $config->SLACK_WEBHOOK_URL ) ) {
-	define( 'SLACK_WEBHOOK_URL', $config->SLACK_WEBHOOK_URL );
-} else {
-	$warning_config_keys[] = "SLACK_WEBHOOK_URL";
-}
-
-if( ! empty( $config->GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY ) ) {
-	define( 'GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY', $config->GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY );
-} else {
-	$warning_config_keys[] = "GITHUB_TEAM_TO_ADD_TO_NEW_REPOSITORY";
-}
-
-if( ! empty( $config->ASCII_WELCOME_ART ) ) {
-	define( 'ASCII_WELCOME_ART', $config->ASCII_WELCOME_ART );
-} else {
-	$warning_config_keys[] = "ASCII_WELCOME_ART";
-}
-
-if( ! empty( $config->GITHUB_DEFAULT_ISSUES_REPOSITORY ) ) {
-	define( 'GITHUB_DEFAULT_ISSUES_REPOSITORY', $config->GITHUB_DEFAULT_ISSUES_REPOSITORY );
-} else {
-	$warning_config_keys[] = "GITHUB_DEFAULT_ISSUES_REPOSITORY";
-}
-
-if( ! empty( $config->PRESSABLE_BOT_COLLABORATOR_EMAIL ) ) {
-	define( 'PRESSABLE_BOT_COLLABORATOR_EMAIL', $config->PRESSABLE_BOT_COLLABORATOR_EMAIL );
-} else {
-	$warning_config_keys[] = "PRESSABLE_BOT_COLLABORATOR_EMAIL";
-}
-
-if ( ! empty( $warning_config_keys ) ) {
-	echo "WARNING: The following values were not found in config.json, some commands might not work as expected: " . implode( ", ", $warning_config_keys );
-}
+// Remove the config file (we don't need it anymore).
+\unlink( $config_file );

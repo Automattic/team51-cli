@@ -23,6 +23,9 @@ plugins/*
 !plugins/EXAMPLE_PLUGIN_NAME
 
 mu-plugins/*
+!mu-plugins/mu-loader.php
+!mu-plugins/colophon
+!mu-plugins/wc-usage-tracking-auto-opt-in
 
 themes/*
 !themes/EXAMPLE_THEME_NAME

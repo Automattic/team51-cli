@@ -25,10 +25,10 @@ class Create_Production_Site extends Command {
 		$this
 		->setDescription( 'Creates a new production site (on Pressable).' )
 		->setHelp( 'This command allows you to create a new production site.' )
-		->addOption( 'site-name', null, InputOption::VALUE_REQUIRED, 'This is root name that will be given to the site. Think of it as really the project name. No need to specifiy "prod" or "development" in the naming here. The script will take care of that for you -- no spaces, hyphens, non-alphanumeric characters, or capitalized letters.' )
+		->addOption( 'site-name', null, InputOption::VALUE_REQUIRED, 'This is root name that will be given to the site. Think of it as really the project name. No need to specify "prod" or "development" in the naming here. The script will take care of that for you -- no spaces, hyphens, non-alphanumeric characters, or capitalized letters.' )
 		->addOption( 'connect-to-repo', null, InputOption::VALUE_REQUIRED, "The repository you'd like to have automatically configured in DeployHQ to work with the new site. This accepts the repository slug.\nOnly GitHub repositories are supported and they must be in the a8cteam51 organization, otherwise the script won't have access." )
 		->addOption( 'zone-id', null, InputOption::VALUE_REQUIRED, "The datacenter zone to be setup on Pressable and DeployHQ. Can be EU or US. By default it's US Central. Additionally, you can use US-East or US-West" )
-		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, "The template that will be used while creating the project on DeployHQ. By default the DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE config param is used." );
+		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, "The template that will be used while creating the project on DeployHQ. By default the DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE config param is used." );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -79,7 +79,7 @@ class Create_Production_Site extends Command {
 		}
 
 //		Assign default DeployHQ Project Template
-		$deployhq_template_id = DEPLOY_HQ_DEFAULT_PROJECT_TEMPLATE;
+		$deployhq_template_id = DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE;
 		if ( ! empty( $input->getOption( 'template-id' ) ) ) {
 			$deployhq_template_id = $input->getOption( 'template-id' );
 		}
@@ -160,20 +160,14 @@ class Create_Production_Site extends Command {
 			foreach ( $ftp_data->data as $ftp_user ) {
 				if ( true === $ftp_user->owner ) { // If concierge@wordpress.com is the owner, grab the info.
 					$server_config['pressable_sftp_username'] = $ftp_user->username;
-					$server_config['pressable_sftp_hostname'] = $ftp_user->sftpDomain;
-
-					$password_reset = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}/ftp/password/{$ftp_user->username}", 'POST', array() );
-					if ( ! empty( $password_reset->data ) ) {
-						$server_config['pressable_sftp_password'] = $password_reset->data;
-					}
 				}
 			}
 		}
 
 		$output->writeln( '<comment>Creating new project in DeployHQ</comment>' );
 		$project_info = $api_helper->call_deploy_hq_api( 'projects', 'POST', array(
-			'name'    => $project_name,
-			'zone_id' => $deployhq_zone_id,
+			'name'        => $project_name,
+			'zone_id'     => $deployhq_zone_id,
 			'template_id' => $deployhq_template_id
 		) );
 
@@ -184,32 +178,19 @@ class Create_Production_Site extends Command {
 			$output->writeln( "<info>Created new project in DeployHQ.</info>\n" );
 		}
 
-		// Make sure we received a public_key when we created the project.
-		$output->writeln( '<comment>Verifying we received a public key when we created the new DeployHQ project.</comment>' );
-		if ( empty( $project_info ) || empty( $project_info->public_key ) ) {
-			$output->writeln( '<error>Failed to retrieve public key from new DeployHQ project. Aborting!</error>' );
-			exit;
-		} else {
-			$output->writeln( "<info>Successfully retrieved public key from new DeployHQ project.</info>\n" );
-		}
+		$output->writeln( "<comment>Adding private key to DeployHQ project.</comment>" );
 
-		$github_api_query = 'repos/' . GITHUB_API_OWNER . '/' . $github_repo . '/keys';
-
-		$output->writeln( "<comment>Adding DeployHQ public key to GitHub repository's deploy keys.</comment>" );
-		$github_deploy_key_request = $api_helper->call_github_api(
-			$github_api_query,
-			array(
-				'title'     => 'DeployHQ',
-				'key'       => $project_info->public_key,
-				'read_only' => false,
+		$project_info = $api_helper->call_deploy_hq_api( 'projects/' . $project_info->permalink, 'PUT', array(
+			'project' => array(
+				'custom_private_key' => DEPLOYHQ_PRIVATE_KEY
 			)
-		);
+		) );
 
-		if ( empty( $github_deploy_key_request ) || empty( $github_deploy_key_request->id ) ) {
-			$output->writeln( '<error>Failed to add DeployHQ public key to GitHub repository. Aborting!</error>' );
+		if ( empty( $project_info ) || empty( $project_info->public_key ) ) {
+			$output->writeln( '<error>Failed to add private key to DeployHQ project. Aborting!</error>' );
 			exit;
 		} else {
-			$output->writeln( "<info>Successfully added DeployHQ public key to GitHub repository.</info>\n" );
+			$output->writeln( "<info>Successfully added private key to DeployHQ project.</info>\n" );
 		}
 
 		$repository_url = "git@github.com:a8cteam51/$github_repo.git";
@@ -247,6 +228,7 @@ class Create_Production_Site extends Command {
 					'server' => array(
 						'name'               => $server_config['name'],
 						'protocol_type'      => 'ssh',
+						'use_ssh_keys'       => true,
 						'server_path'        => $server_config['server_path'],
 						'email_notify_on'    => 'never',
 						'root_path'          => '',
@@ -254,9 +236,8 @@ class Create_Production_Site extends Command {
 						'notification_email' => '',
 						'branch'             => $server_config['branch'],
 						'environment'        => $server_config['environment'],
-						'hostname'           => $server_config['pressable_sftp_hostname'],
+						'hostname'           => 'ssh.atomicsites.net',
 						'username'           => $server_config['pressable_sftp_username'],
-						'password'           => $server_config['pressable_sftp_password'],
 						'port'               => 22,
 					),
 				)

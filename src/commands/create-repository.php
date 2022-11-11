@@ -75,6 +75,17 @@ class Create_Repository extends Command {
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/class-plugin-autoupdate-filter.php" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/plugin-autoupdate-filter/README.md', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/plugins/plugin-autoupdate-filter/README.md" );
 
+			// Adding the mu-loader to all sites so it's already there for the Colophon.
+			if ( $filesystem->exists( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/mu-loader.php' ) ) {
+				$output->writeln( "<comment>Creating scaffold/$slug/mu-plugins directory.</comment>" );
+				$filesystem->mkdir( TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins" );
+
+				$output->writeln( "<comment>Copying scaffold/templates/mu-loader.php to scaffold/$slug/mu-plugins/mu-loader.php.</comment>" );
+				$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/mu-loader.php', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/mu-plugins/mu-loader.php" );
+
+				// We're not adding the Colophon files here, as we want to add them later as a `git submodule`, for more central management and updates.
+			}
+
 			$output->writeln( "<comment>Copying scaffold/templates/gitignore file to scaffold/$slug/.gitignore.</comment>" );
 			$filesystem->copy( TEAM51_CLI_ROOT_DIR . '/scaffold/templates/gitignore', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug/.gitignore" );
 
@@ -172,7 +183,7 @@ class Create_Repository extends Command {
 
 		$output->writeln( '<comment>Adding, committing, and pushing files to GitHub.</comment>' );
 
-		$progress_bar = new ProgressBar( $output, 7 );
+		$progress_bar = new ProgressBar( $output, 8 );
 		$progress_bar->start();
 
 		$this->execute_command( array( 'git', 'init', '--initial-branch', 'trunk', TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" ) );
@@ -185,6 +196,10 @@ class Create_Repository extends Command {
 		$progress_bar->advance();
 
 		$this->execute_command( array( 'git', 'add', '.' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+		$progress_bar->advance();
+
+		$this->execute_command( array( 'git', 'submodule', 'add', 'https://github.com/a8cteam51/colophon', 'mu-plugins/colophon' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
+		$this->execute_command( array( 'git', 'submodule', 'add', 'https://github.com/a8cteam51/wc-usage-tracking-auto-opt-in', 'mu-plugins/wc-usage-tracking-auto-opt-in' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
 		$progress_bar->advance();
 
 		$this->execute_command( array( 'git', 'commit', "-m 'Added project files from scaffold'" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$slug" );
