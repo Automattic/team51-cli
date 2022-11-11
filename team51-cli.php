@@ -7,12 +7,51 @@ namespace Team51\CLI;
  * Output a message to the console.
  *
  * @param string $message
+ * @param bool   $quiet
  * @return void
  */
-function debug( $message = '' ) {
-	if ( ! IS_QUIET ) {
-		echo $message . PHP_EOL; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+function debug( $message = '', $quiet = IS_QUIET ) {
+	if ( ! $quiet ) {
+		echo $message . PHP_EOL;
 	}
+}
+
+/**
+ * Print ASCII welcome art.
+ *
+ * @return void
+*/
+function print_ascii_art() {
+	$ascii_art = file_get_contents( __DIR__ . '/.ascii' );
+	debug( $ascii_art );
+}
+
+/**
+ * Run command.
+ *
+ * @param string $command
+ * @return array
+ */
+function run_command( $command ) {
+	$output      = null;
+	$result_code = null;
+
+	// Execute the command and redirect STDERR to STDOUT.
+	exec( "{$command} 2>&1", $output, $result_code );
+
+	if ( 0 !== $result_code ) {
+		debug( sprintf( 'Error running command: %s', $command ), false );
+
+		// Print the output.
+		foreach ( $output as $line ) {
+			debug( $line, false );
+		}
+	}
+
+	return array(
+		'output'      => $output,
+		'result_code' => $result_code,
+	);
 }
 
 /**
@@ -23,26 +62,26 @@ function debug( $message = '' ) {
 function update() {
 
 	// Check current branch.
-	exec( sprintf( 'git -C %s branch --show-current', __DIR__ ), $branch ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+	$command = run_command( sprintf( 'git -C %s branch --show-current', __DIR__ ) );
 
-	if ( 'trunk' !== $branch[0] ) {
+	if ( 'trunk' !== $command['output'][0] ) {
 		debug( 'Not in `trunk`. Switching...' );
-		exec( sprintf( 'git -C %s stash', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( sprintf( 'git -C %s checkout -f trunk', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		run_command( sprintf( 'git -C %s stash', __DIR__ ) );
+		run_command( sprintf( 'git -C %s checkout -f trunk', __DIR__ ) );
 	}
 
 	// Reset branch.
-	exec( sprintf( 'git -C %s fetch origin', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-	exec( sprintf( 'git -C %s reset --hard origin/trunk', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+	run_command( sprintf( 'git -C %s fetch origin', __DIR__ ) );
+	run_command( sprintf( 'git -C %s reset --hard origin/trunk', __DIR__ ) );
 
-	// Composer update.
-	exec( sprintf( 'composer install -o --working-dir %s', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-	exec( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+	// Update Composer.
+	run_command( sprintf( 'composer install -o --working-dir %s', __DIR__ ) );
+	run_command( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) );
 }
 
 // Initialize environment.
-$is_quiet    = false;
-$is_dev      = false;
+$is_quiet = false;
+$is_dev   = false;
 
 foreach ( $argv as $arg ) {
 	switch ( $arg ) {
@@ -63,6 +102,8 @@ if ( file_exists( __DIR__ . '/.dev' ) ) {
 
 define( 'IS_QUIET', $is_quiet );
 define( 'IS_DEV', $is_dev );
+
+print_ascii_art();
 
 if ( IS_DEV ) {
 	debug( "\033[44mRunning in developer mode. Skipping update check.\033[0m" );
