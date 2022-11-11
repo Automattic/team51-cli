@@ -54,7 +54,6 @@ class Plugin_Search extends Command {
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
 		$output->writeln( "<info>Checking each site for the plugin slug: {$plugin_slug}<info>" );
-		$output->writeln( '<comment>"Patience you must have, my young padawan."</comment>' );
 
 		$progress_bar = new ProgressBar( $output, $site_count );
 		$progress_bar->start();
@@ -66,9 +65,12 @@ class Plugin_Search extends Command {
 			$plugin_list = $this->get_list_of_plugins( $site[0] );
 			if ( ! is_null( $plugin_list ) ) {
 				if ( ! is_null( $plugin_list->data ) ) {
-					foreach ( $plugin_list->data as $plugin ) {
-						if ( $plugin_slug === $plugin->TextDomain ) {
-							$sites_with_plugin[] = array( $site[1], ( $plugin->active ? 'Active' : 'Inactive' ), $plugin->Version );
+					$plugins_array = json_decode( json_encode( $plugin_list->data ), true );
+					foreach ( $plugins_array as $plugin_path => $plugin ) {
+						$folder_name = strstr( $plugin_path, '/', true );
+						$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
+						if ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) {
+							$sites_with_plugin[] = array( $site[1], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
 						}
 					}
 				}
