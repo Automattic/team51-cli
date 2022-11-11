@@ -6,6 +6,7 @@ use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
 use Symfony\Component\Console\Output\OutputInterface;
 use function Amp\call;
+use function Amp\Dns\resolve;
 use function Amp\Promise\all;
 use function Amp\Promise\wait;
 
@@ -74,6 +75,8 @@ final class WPCOM_API_Helper {
 	 * @throws  \Throwable  If an error occurs in a request promise.
 	 */
 	public static function call_api_concurrent( array $endpoints, string $method = 'GET', array $params = array() ): array {
+		wait( resolve( parse_url( self::BASE_URL, PHP_URL_HOST ) ) ); // Prime the DNS cache.
+
 		$http_client = HttpClientBuilder::buildDefault();
 		$promises    = array();
 
