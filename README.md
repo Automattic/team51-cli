@@ -1,20 +1,20 @@
 # Team51 CLI
 
-## What even is this? 
+## What even is this?
 
-Glad you asked. 
+Glad you asked.
 
 This is a small utility written by some fine folks at Automattic.com. It automates and standardizes provisioning new WordPress sites (on Pressable.com), connecting them to code repositories (on GitHub.com) and configuring deploy automation (via DeployHQ.com). It does a few other things, but that's the gist.
 
 ## How do I use this?
 
-You probably don't. 
+You probably don't.
 
 That said, with minimal work and especially if you're already using any of the three service providers we are, you can fork this repo and adapt it to your own needs. Or, perhaps you'll use this tool as inspiration to build something similar which automates a repeatable task you or your team are responsible for.
 
 ## May I contribute to this?
 
-Probably not. 
+Probably not.
 
 This tool is fairly specific to our team's workflow...and we intend to keep it that way vs. abstracting it for anyone and everyone's needs. That said, we're open to hearing from you and feel free to reach us by opening an issue- please include a reference/link to your favorite song as a clue that you've read this =)
 
@@ -47,6 +47,9 @@ Be well, be kind, make things and set them free.
     - If you get an error `no such file or directory: ./install-osx`, try running `cd team51-cli` first.
 1. To verify the tool was installed successfully, you can run `team51` from your Terminal.
 
+### For developers
+The CLI tool automatically updates itself. It does a hard reset to the latest version of the `trunk` branch and it will also try to switch to the `trunk` branch if it's not already on it. To bypass this behavior you can run the tool with the `--dev` flag or add an empty `.dev` file to the root folder.
+
 ### For contractors
 Apart from the steps outlined above, you will also need to perform the following:
 1. Copy the file `/secrets/config__contractors.dist.json` to `/secrets/config__contractors.json` (remove the `.dist` part).
@@ -63,7 +66,7 @@ A copy of that documentation is also available on the [Github Wiki for this repo
 ## Troubleshooting
 
 ### Before anything else
-If you haven't used the CLI in a while, and you're getting a lot of `Deprecated` notices or PHP `Fatal error`, try running `./install-osx` again to make sure all the dependencies are up-to-date. 
+If you haven't used the CLI in a while, and you're getting a lot of `Deprecated` notices or PHP `Fatal error`, try running `./install-osx` again to make sure all the dependencies are up-to-date.
 
 Remember: you need be inside the `team51-cli` directory in order to execute the installation command.
 

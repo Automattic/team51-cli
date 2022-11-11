@@ -70,7 +70,7 @@ class Update_Repository_Secret extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
 		$config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.json';
-		\shell_exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
+		\exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
 
 		$config = json_decode( file_get_contents( $config_file ) );
 		\unlink( $config_file );

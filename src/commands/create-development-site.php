@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use function Team51\Helper\run_app_command;
 
 class Create_Development_Site extends Command {
 	protected static $defaultName = 'create-development-site';
@@ -57,7 +58,7 @@ class Create_Development_Site extends Command {
 		if ( ! empty( $input->getOption( 'temporary-clone' ) ) ) {
 			if ( ! empty( $input->getOption( 'label' ) ) ) {
 				$site_name = str_replace( '-development', '', $site_name );
-				$label  = $input->getOption( 'label' );
+				$label     = $input->getOption( 'label' );
 			} else {
 				$label = time();
 			}
@@ -76,7 +77,7 @@ class Create_Development_Site extends Command {
 		// catching and displaying useful errors here
 		if ( $pressable_site->errors ) {
 			$site_creation_errors = '';
-			foreach( $pressable_site->errors as $error ) {
+			foreach ( $pressable_site->errors as $error ) {
 				$site_creation_errors .= $error;
 			}
 			$output->writeln( "<error>Pressable error while creating new site: $site_creation_errors - Aborting!</error>" );
@@ -115,6 +116,15 @@ class Create_Development_Site extends Command {
 		$progress_bar->finish();
 		$output->writeln( '' );
 		$output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
+
+		$output->writeln( '<comment>Creating 1Password login entry for the concierge user.</comment>' );
+		/* @noinspection PhpUnhandledExceptionInspection */
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Rotate_WP_User_Password::getDefaultName(),
+			array( 'site' => $pressable_site->data->id ),
+			$output
+		);
 
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
@@ -293,16 +303,5 @@ class Create_Development_Site extends Command {
 		);
 
 		exit;
-	}
-
-	// Convert a text string to something ready to be used as a unique, machine-friendly identifier
-	protected function _slugify( $_text ) {
-
-		$_slug = strtolower( $_text ); // convert to lowercase
-		$_slug = preg_replace( '/\s+/', '-', $_slug ); // convert all contiguous whitespace to a single hyphen
-		$_slug = preg_replace( '/[^a-z0-9\-]/', '', $_slug ); // Lowercase alphanumeric characters and dashes are allowed.
-		$_slug = preg_replace( '/-+/', '-', $_slug ); // convert multiple contiguous hyphens to a single hyphen
-
-		return $_slug;
 	}
 }

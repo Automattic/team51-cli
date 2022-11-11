@@ -1,6 +1,7 @@
 {
     "require": {
         "ext-json": "*",
+        "ext-sodium": "*",
         "symfony/console": "^4.3",
         "symfony/filesystem": "^4.3",
         "symfony/process": "^4.3",
@@ -11,6 +12,28 @@
         "roave/security-advisories": "dev-latest"
     },
     "autoload": {
-	    "classmap": ["src/"]
+        "files": [
+            "src/helpers/functions.php",
+            "src/helpers/1password-functions.php",
+            "src/helpers/deployhq-functions.php",
+            "src/helpers/pressable-functions.php",
+            "src/helpers/wpcom-functions.php"
+        ],
+	    "classmap": [
+            "src/"
+        ]
+    },
+    "scripts": {
+        "coding-standards:check": [
+            "@php phpcs --standard=.phpcs.xml -s -v"
+        ],
+        "coding-standards:fix": [
+            "@php phpcbf --standard=.phpcs.xml -v"
+        ]
+    },
+    "config": {
+        "platform": {
+            "php": "7.4"
+        }
     }
 }
