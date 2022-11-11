@@ -131,17 +131,23 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
+		$output->writeln( '<comment>Establishing SSH connection.</comment>' ); 
 		$ssh_connection = null;
 		$ssh_attempts   = 0;
+		$progress_bar   = new ProgressBar( $output );
+		$progress_bar->start();
 
 		if ( ! is_null( $pressable_user ) ) {
 			while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
 				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
 				$ssh_attempts++;
+				$progress_bar->advance();
 				sleep( 10 );
 			}
 		}
-
+		$progress_bar->finish();
+		$output->writeln( '' );
+		
 		if ( is_null( $ssh_connection ) ) {
 			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed! Please install it manually!</error>' );
 		}
