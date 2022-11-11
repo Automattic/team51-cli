@@ -12,7 +12,7 @@ namespace Team51\CLI;
  */
 function debug( $message = '', $quiet = IS_QUIET ) {
 	if ( ! $quiet ) {
-		echo $message . PHP_EOL; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $message . PHP_EOL;
 	}
 }
 
@@ -22,7 +22,7 @@ function debug( $message = '', $quiet = IS_QUIET ) {
  * @return void
 */
 function print_ascii_art() {
-	$ascii_art = file_get_contents( __DIR__ . '/.ascii' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	$ascii_art = file_get_contents( __DIR__ . '/.ascii' );
 	debug( $ascii_art );
 }
 
@@ -37,7 +37,7 @@ function run_command( $command ) {
 	$result_code = null;
 
 	// Execute the command and redirect STDERR to STDOUT.
-	exec( "{$command} 2>&1", $output, $result_code ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+	exec( "{$command} 2>&1", $output, $result_code );
 
 	if ( 0 !== $result_code ) {
 		debug( sprintf( 'Error running command: %s', $command ), false );
