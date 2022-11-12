@@ -70,7 +70,7 @@ class Plugin_Search extends Command {
 						$folder_name = strstr( $plugin_path, '/', true );
 						$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
 						if ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) {
-							$sites_with_plugin[] = array( $site[1], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
+							$sites_with_plugin[] = array( $site[1], $plugin['Name'], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
 						}
 					}
 				}
@@ -83,7 +83,7 @@ class Plugin_Search extends Command {
 
 		$site_table = new Table( $output );
 		$site_table->setStyle( 'box-double' );
-		$site_table->setHeaders( array( 'Site URL', 'Plugin Status', 'Plugin Version' ) );
+		$site_table->setHeaders( array( 'Site URL', 'Plugin Name', 'Plugin Status', 'Plugin Version' ) );
 		$site_table->setRows( $sites_with_plugin );
 		$site_table->render();
 
