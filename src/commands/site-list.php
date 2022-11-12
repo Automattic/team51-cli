@@ -216,7 +216,7 @@ class Site_List extends Command {
 		if ( true === $site->is_wpcom_atomic ) {
 			$server = 'Atomic';
 		} elseif ( true === $site->jetpack ) {
-			if ( in_array( parse_url( $site->URL, PHP_URL_HOST ), $pressable_sites ) ) {
+			if ( in_array( parse_url( $site->URL, PHP_URL_HOST ), $pressable_sites, true ) ) {
 				$server = 'Pressable';
 			} else {
 				$server = 'Other';
