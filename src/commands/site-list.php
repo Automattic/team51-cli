@@ -90,16 +90,16 @@ class Site_List extends Command {
 		$full_site_list = array();
 		foreach ( $all_sites as $site ) {
 			$full_site_list[] = array(
-				preg_replace( '/[^a-zA-Z0-9\s&!\/|\'#.()-:]/', '', $site->name ),
-				$site->URL,
-				$this->eval_ignore_list( $site, $ignore ),
-				$this->eval_pass_list( $site, $free_pass ),
-				$this->eval_is_private( $site ),
-				$this->eval_is_coming_soon( $site ),
-				$this->eval_which_host( $site, $pressable_sites ),
-				$this->eval_is_multisite( $site, $multisite_patterns, $pressable_sites ),
-				$site->ID,
-				$this->eval_is_domain_only( $site ),
+				'Site Name'      => preg_replace( '/[^a-zA-Z0-9\s&!\/|\'#.()-:]/', '', $site->name ),
+				'Domain'         => $site->URL,
+				'ignore'         => $this->eval_ignore_list( $site, $ignore ),
+				'free_pass'      => $this->eval_pass_list( $site, $free_pass ),
+				'is_private'     => $this->eval_is_private( $site ),
+				'is_coming_soon' => $this->eval_is_coming_soon( $site ),
+				'Host'           => $this->eval_which_host( $site, $pressable_sites ),
+				'is_multisite'   => $this->eval_is_multisite( $site, $multisite_patterns, $pressable_sites ),
+				'Site ID'        => $site->ID,
+				'is_domain_only' => $this->eval_is_domain_only( $site ),
 			);
 		}
 
@@ -230,13 +230,13 @@ class Site_List extends Command {
 	protected function filter_public_sites( $site_list ) {
 		$filtered_site_list = array();
 		foreach ( $site_list as $site ) {
-			if ( '' === $site[9] && '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
-				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
+			if ( '' === $site['is_domain_only'] && '' === $site['is_private'] && '' === $site['is_coming_soon'] && ( 'is_subsite' !== $site['is_multisite'] || '' !== $site['free_pass'] ) ) {
+				if ( '' === $site['ignore'] || ( '' !== $site['ignore'] && '' !== $site['free_pass'] ) ) {
 					$filtered_site_list[] = array(
-						$site[0],
-						$site[1],
-						$site[8],
-						$site[6],
+						$site['Site Name'],
+						$site['Domain'],
+						$site['Site ID'],
+						$site['Host'],
 					);
 				}
 			}
@@ -253,8 +253,8 @@ class Site_List extends Command {
 			if ( 'full' !== $audit_type && 'no-staging' !== $audit_type && ! in_array( $audit_type, $site, true ) ) {
 				continue;
 			}
-			if ( '' === $site[9] && '' === $site[4] && '' === $site[5] && ( 'is_subsite' !== $site[7] || '' !== $site[3] ) ) {
-				if ( '' === $site[2] || ( '' !== $site[2] && '' !== $site[3] ) ) {
+			if ( '' === $site['is_domain_only'] && '' === $site['is_private'] && '' === $site['is_coming_soon'] && ( 'is_subsite' !== $site['is_multisite'] || '' !== $site['free_pass'] ) ) {
+				if ( '' === $site['ignore'] || ( '' !== $site['ignore'] && '' !== $site['free_pass'] ) ) {
 					$result = 'PASS';
 				} else {
 					$result = 'FAIL';
@@ -263,17 +263,17 @@ class Site_List extends Command {
 				$result = 'FAIL';
 			}
 			$audit_site_list[] = array(
-				$site[0],
-				$site[1],
-				$site[2],
-				$site[3],
-				$site[4],
-				$site[5],
-				$site[7],
-				$site[9],
-				$site[6],
+				$site['Site Name'],
+				$site['Domain'],
+				$site['ignore'],
+				$site['free_pass'],
+				$site['is_private'],
+				$site['is_coming_soon'],
+				$site['is_multisite'],
+				$site['is_domain_only'],
+				$site['Host'],
 				$result,
-				$site[8],
+				$site['Site ID'],
 			);
 		}
 		return $audit_site_list;
