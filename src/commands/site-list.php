@@ -280,14 +280,13 @@ class Site_List extends Command {
 	}
 
 	protected function eval_ignore_list( $site, $ignore ) {
-		$filtered_on = '';
+		$filtered_on = array();
 		foreach ( $ignore as $word ) {
 			if ( false !== strpos( $site->URL, $word ) ) {
-				$filtered_on = $word;
-				break;
+				$filtered_on[] = $word;
 			}
 		}
-		return $filtered_on;
+		return implode( ',', $filtered_on );
 	}
 
 	protected function eval_is_multisite( $site, $patterns, $pressable_sites ) {
