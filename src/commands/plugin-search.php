@@ -5,6 +5,7 @@ namespace Team51\Command;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
@@ -27,13 +28,14 @@ class Plugin_Search extends Command {
 
 	protected function configure() {
 		$this
-		->setDescription( "Searches Team 51 sites for a specified plugin." )
-		->setHelp( "Use this command to show a list of sites where a particular plugin is installed. This command requires a Jetpack site connected to the a8cteam51 account." )
-		->addArgument( 'plugin-slug', InputArgument::REQUIRED, "The slug of the plugin to search for." );
+		->setDescription( "Search all Team 51 sites for a specific plugin." )
+		->setHelp( "This command will output a list of sites where a particular plugin is installed. A Jetpack site connected to the a8cteam51 account.\nThe search can be made for an exact match plugin slug, or\na general text search. Letter case is ignored in both search types.\nExample usage:\nplugin-search woocommerce\nplugin-search woo --partial='true'\n" )
+		->addArgument( 'plugin-slug', InputArgument::REQUIRED, "The slug of the plugin to search for. This is an exact match against the plugin installation folder name,\nthe main plugin file name without the .php extension, and the Text Domain.\n" )
+		->addOption( 'partial', null, InputOption::VALUE_OPTIONAL, "Optional.\nUse for general text/partial match search. Using this option will also search the plugin Name field." );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$plugin_slug = $input->getArgument( 'plugin-slug' );
+		$plugin_slug = strtolower( $input->getArgument( 'plugin-slug' ) );
 
 		$api_helper = new API_Helper;
 
@@ -69,8 +71,14 @@ class Plugin_Search extends Command {
 					foreach ( $plugins_array as $plugin_path => $plugin ) {
 						$folder_name = strstr( $plugin_path, '/', true );
 						$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
-						if ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) {
-							$sites_with_plugin[] = array( $site[1], $plugin['Name'], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
+						if ( $input->getOption( 'partial' ) ) {
+							if ( false !== strpos( $plugin['TextDomain'], $plugin_slug ) || false !== strpos( $folder_name, $plugin_slug ) || false !== strpos( $file_name, $plugin_slug ) || false !== strpos( strtolower( $plugin['Name'] ), $plugin_slug ) ) {
+								$sites_with_plugin[] = array( $site[1], $plugin['Name'], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
+							}
+						} else {
+							if ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) {
+								$sites_with_plugin[] = array( $site[1], $plugin['Name'], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
+							}
 						}
 					}
 				}
