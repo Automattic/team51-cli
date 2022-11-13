@@ -108,51 +108,53 @@ class Site_List extends Command {
 
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
-			$table_header = array( 'Site Name', 'Domain', 'ignore', 'free_pass', 'is_private', 'is_coming_soon', 'is_multisite', 'is_domain_only', 'Host', 'Result', 'Site ID' );
+			$table_header = array_keys( $audited_site_list[0] );
 			$site_table->setHeaders( $table_header );
 
 			$site_table->setRows( $audited_site_list );
 			$site_table->render();
 
 			$filters_output = array(
-				array( 'MANUAL FILTERS:', '' ),
-				array( 'The following filters are used to exclude sites from the live site count list.', '' ),
-				array( 'It works by searching for the term in the site url and if found,', '' ),
-				array( 'the site is excluded unless explicitly overridden.', '' ),
-				array( 'Term list:', '' ),
+				'MANUAL FILTERS:' => '',
+				'The following filters are used to exclude sites from the live site count list.' => '',
+				'It works by searching for the term in the site url and if found,' => '',
+				'the site is excluded unless explicitly overridden.' => '',
+				'Term list:'      => '',
 			);
+
 			foreach ( $ignore as $term ) {
-				$filters_output[] = array( $term, '' );
+				$filters_output[ $term ] = '';
 			}
-			$filters_output[] = array( 'The following sites are allowed to pass the above filtered terms and thus,', '' );
-			$filters_output[] = array( 'counted as live sites:', '' );
+
+			$filters_output['The following sites are allowed to pass the above filtered terms and'] = '';
+			$filters_output['counted as live sites:'] = '';
 			foreach ( $free_pass as $pass ) {
-				$filters_output[] = array( $pass, '' );
+				$filters_output[ $pass ] = '';
 			}
 
 			$summary_output = array(
-				array( 'REPORT SUMMARY', '' ),
-				array( 'Private sites', $this->count_sites( $audited_site_list, 'is_private', 4 ) ),
-				array( "'Coming Soon' sites", $this->count_sites( $audited_site_list, 'is_coming_soon', 5 ) ),
-				array( 'Multisite parent sites', $this->count_sites( $audited_site_list, 'is_parent', 6 ) ),
-				array( 'Multisite subsites', $this->count_sites( $audited_site_list, 'is_subsite', 6 ) ),
-				array( 'Domain only sites', $this->count_sites( $audited_site_list, 'is_domain_only', 7 ) ),
-				array( 'Atomic sites', $this->count_sites( $audited_site_list, 'Atomic', 8 ) ),
-				array( 'Pressable sites', $this->count_sites( $audited_site_list, 'Pressable', 8 ) ),
-				array( 'Simple sites', $this->count_sites( $audited_site_list, 'Simple', 8 ) ),
-				array( 'Other hosts', $this->count_sites( $audited_site_list, 'Other', 8 ) ),
-				array( 'PASSED sites', $this->count_sites( $audited_site_list, 'PASS', 9 ) ),
-				array( 'FAILED sites', $this->count_sites( $audited_site_list, 'FAIL', 9 ) ),
-				array( 'Total sites', count( $audited_site_list ) ),
-				array( 'AUDIT TYPE/FILTER', $audit_type ),
+				'REPORT SUMMARY'         => '',
+				'Private sites'          => $this->count_sites( $audited_site_list, 'is_private', 'is_private' ),
+				"'Coming Soon' sites"    => $this->count_sites( $audited_site_list, 'is_coming_soon', 'is_coming_soon' ),
+				'Multisite parent sites' => $this->count_sites( $audited_site_list, 'is_parent', 'is_multisite' ),
+				'Multisite subsites'     => $this->count_sites( $audited_site_list, 'is_subsite', 'is_multisite' ),
+				'Domain only sites'      => $this->count_sites( $audited_site_list, 'is_domain_only', 'is_domain_only' ),
+				'Atomic sites'           => $this->count_sites( $audited_site_list, 'Atomic', 'Host' ),
+				'Pressable sites'        => $this->count_sites( $audited_site_list, 'Pressable', 'Host' ),
+				'Simple sites'           => $this->count_sites( $audited_site_list, 'Simple', 'Host' ),
+				'Other hosts'            => $this->count_sites( $audited_site_list, 'Other', 'Host' ),
+				'PASSED sites'           => $this->count_sites( $audited_site_list, 'PASS', 'Result' ),
+				'FAILED sites'           => $this->count_sites( $audited_site_list, 'FAIL', 'Result' ),
+				'Total sites'            => count( $audited_site_list ),
+				'AUDIT TYPE/FILTER'      => $audit_type,
 			);
-			foreach ( $filters_output as $line ) {
-				$output->writeln( "<info>{$line[0]}<info>" );
+			foreach ( $filters_output as $key => $value ) {
+				$output->writeln( "<info>{$key}<info>" );
 			}
 			$output->writeln( "\n" );
 
-			foreach ( $summary_output as $line ) {
-				$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
+			foreach ( $summary_output as $key => $value ) {
+				$output->writeln( "<info>{$key}: {$value}<info>" );
 			}
 
 			$summary_output  = array_merge( $filters_output, $summary_output );
@@ -162,33 +164,31 @@ class Site_List extends Command {
 
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
-			$table_header = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
+			$table_header = array_keys( $final_site_list[0] );
 			$site_table->setHeaders( $table_header );
 
 			$site_table->setRows( $final_site_list );
 			$site_table->render();
 
 			// Maintain for JSON output compatibility.
-			$atomic_count    = $this->count_sites( $final_site_list, 'Atomic', 3 );
-			$pressable_count = $this->count_sites( $final_site_list, 'Pressable', 3 );
-			$other_count     = $this->count_sites( $final_site_list, 'Other', 3 );
-			$simple_count    = $this->count_sites( $final_site_list, 'Simple', 3 );
+			$atomic_count        = $this->count_sites( $final_site_list, 'Atomic', 'Host' );
+			$pressable_count     = $this->count_sites( $final_site_list, 'Pressable', 'Host' );
+			$other_count         = $this->count_sites( $final_site_list, 'Other', 'Host' );
+			$simple_count        = $this->count_sites( $final_site_list, 'Simple', 'Host' );
+			$filtered_site_count = count( $final_site_list );
 
 			$summary_output = array(
-				array( 'REPORT SUMMARY', '' ),
-				array( 'Atomic sites', $this->count_sites( $final_site_list, 'Atomic', 3 ) ),
-				array( 'Pressable sites', $this->count_sites( $final_site_list, 'Pressable', 3 ) ),
-				array( 'Simple sites', $this->count_sites( $final_site_list, 'Other', 3 ) ),
-				array( 'Other hosts', $this->count_sites( $final_site_list, 'Simple', 3 ) ),
-				array( 'Total sites', count( $final_site_list ) ),
+				'REPORT SUMMARY'  => '',
+				'Atomic sites'    => $this->count_sites( $final_site_list, 'Atomic', 'Host' ),
+				'Pressable sites' => $this->count_sites( $final_site_list, 'Pressable', 'Host' ),
+				'Simple sites'    => $this->count_sites( $final_site_list, 'Other', 'Host' ),
+				'Other hosts'     => $this->count_sites( $final_site_list, 'Simple', 'Host' ),
+				'Total sites'     => count( $final_site_list ),
 			);
 
-			foreach ( $summary_output as $line ) {
-				$output->writeln( "<info>{$line[0]}: {$line[1]}<info>" );
+			foreach ( $summary_output as $key => $value ) {
+				$output->writeln( "<info>{$key}: {$value}<info>" );
 			}
-
-			// Maintain for JSON output compatibility.
-			$filtered_site_count = count( $final_site_list );
 		}
 
 		if ( 'csv-export' === $input->getArgument( 'export' ) ) {
@@ -233,10 +233,10 @@ class Site_List extends Command {
 			if ( '' === $site['is_domain_only'] && '' === $site['is_private'] && '' === $site['is_coming_soon'] && ( 'is_subsite' !== $site['is_multisite'] || '' !== $site['free_pass'] ) ) {
 				if ( '' === $site['ignore'] || ( '' !== $site['ignore'] && '' !== $site['free_pass'] ) ) {
 					$filtered_site_list[] = array(
-						$site['Site Name'],
-						$site['Domain'],
-						$site['Site ID'],
-						$site['Host'],
+						'Site Name' => $site['Site Name'],
+						'Domain'    => $site['Domain'],
+						'Site ID'   => $site['Site ID'],
+						'Host'      => $site['Host'],
 					);
 				}
 			}
@@ -263,17 +263,17 @@ class Site_List extends Command {
 				$result = 'FAIL';
 			}
 			$audit_site_list[] = array(
-				$site['Site Name'],
-				$site['Domain'],
-				$site['ignore'],
-				$site['free_pass'],
-				$site['is_private'],
-				$site['is_coming_soon'],
-				$site['is_multisite'],
-				$site['is_domain_only'],
-				$site['Host'],
-				$result,
-				$site['Site ID'],
+				'Site Name'      => $site['Site Name'],
+				'Domain'         => $site['Domain'],
+				'ignore'         => $site['ignore'],
+				'free_pass'      => $site['free_pass'],
+				'is_private'     => $site['is_private'],
+				'is_coming_soon' => $site['is_coming_soon'],
+				'is_multisite'   => $site['is_multisite'],
+				'is_domain_only' => $site['is_domain_only'],
+				'Host'           => $site['Host'],
+				'Result'         => $result,
+				'Site ID'        => $site['Site ID'],
 			);
 		}
 		return $audit_site_list;
@@ -375,8 +375,8 @@ class Site_List extends Command {
 			}
 		}
 		array_unshift( $final_site_list, $csv_header );
-		foreach ( $csv_summary as $item ) {
-			$final_site_list[] = $item;
+		foreach ( $csv_summary as $key => $item ) {
+			$final_site_list[] = array( $key, $item );
 		}
 
 		$fp = fopen( 'sites.csv', 'w' );
@@ -415,7 +415,7 @@ class Site_List extends Command {
 				if ( in_array( $json_header_compare[ $column_index ], $exclude_columns, true ) ) {
 					continue;
 				}
-				$site_list[ $json_header[ $column_index ] ] = $site[ $column_index ];
+				$site_list[ $json_header[ $column_index ] ] = $site[ $json_header[ $column_index ] ];
 			}
 			$final_site_list[] = $site_list;
 		}
