@@ -292,11 +292,8 @@ class Site_List extends Command {
 	protected function eval_is_multisite( $site, $patterns, $pressable_sites ) {
 		/**
 		 * An alternative to this implementation is to compare $site->URL against
-		 * $site->options->main_network_site, however the API call is slower since we
-		 * can't isolate 'main_network_site' in the call, ie. we get ALL the 'options' fields.
-		 * Either a) users of this command are ok to wait longer, or b) we figure out how to
-		 * isolate this field in the call/query.
-		 * Additionally, the API call with 'options' returns fewer sites. At this moment, 790 vs 794 sites.
+		 * $site->options->main_network_site, however all simple sites are returned
+		 * as multisites. More investigation required.
 		 */
 		if ( true === $site->is_multisite ) {
 			foreach ( $patterns as $pattern ) {
@@ -388,6 +385,8 @@ class Site_List extends Command {
 
 	protected function create_json( $site_list_array, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns ) {
 		// To-do: After stripping columns, re-index, then build as an associative array.
+		// The above is no longer required as the passed array is now and associative array.
+		// Improved logic/handling required in L411 to L419, and perhaps others.
 		// Reformat summary as a proper pair.
 		$json_header         = array( 'Site Name', 'Domain', 'Site ID', 'Host' );
 		$json_header_compare = array_map(
