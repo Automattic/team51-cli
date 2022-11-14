@@ -73,10 +73,6 @@ function update() {
 	// Reset branch.
 	run_command( sprintf( 'git -C %s fetch origin', __DIR__ ) );
 	run_command( sprintf( 'git -C %s reset --hard origin/trunk', __DIR__ ) );
-
-	// Update Composer.
-	run_command( sprintf( 'composer install -o --working-dir %s', __DIR__ ) );
-	run_command( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) );
 }
 
 // Initialize environment.
@@ -103,6 +99,7 @@ if ( file_exists( __DIR__ . '/.dev' ) ) {
 define( 'IS_QUIET', $is_quiet );
 define( 'IS_DEV', $is_dev );
 
+// Print ASCII art.
 print_ascii_art();
 
 if ( IS_DEV ) {
@@ -111,5 +108,9 @@ if ( IS_DEV ) {
 	debug( "\033[33mChecking for updates..\033[0m" );
 	update();
 }
+
+// Update Composer.
+run_command( sprintf( 'composer install -o --working-dir %s', __DIR__ ) );
+run_command( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) );
 
 require __DIR__ . '/load-application.php';
