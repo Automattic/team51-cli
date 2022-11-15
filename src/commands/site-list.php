@@ -106,6 +106,11 @@ class Site_List extends Command {
 		if ( $audit ) {
 			$audited_site_list = $this->eval_site_list( $full_site_list, $audit_type );
 
+			if ( empty( $audit_site_list ) ) {
+				$output->writeln( "<error>Failed to find any sites using the search parameter {$audit_type}.<error>" );
+				exit;
+			}
+
 			$site_table = new Table( $output );
 			$site_table->setStyle( 'box-double' );
 			$table_header = array_keys( $audited_site_list[0] );
