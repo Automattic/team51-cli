@@ -2,9 +2,9 @@
     "require": {
         "ext-json": "*",
         "ext-sodium": "*",
-        "symfony/console": "^v5.4",
-        "symfony/filesystem": "^v5.4",
-        "symfony/process": "^v5.4",
+        "symfony/console": "^v6.1",
+        "symfony/filesystem": "^v6.1",
+        "symfony/process": "^v6.1",
         "phpseclib/phpseclib": "^3.0",
         "amphp/http-client": "^4.6"
     },
@@ -33,7 +33,7 @@
     },
     "config": {
         "platform": {
-            "php": "7.4"
+            "php": "8.1"
         }
     }
 }
