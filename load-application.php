@@ -2,12 +2,11 @@
 
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
-use function Team51\Helper\is_quiet_mode;
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
-	$argv[]            = '-c';
-	$_SERVER['argv'][] = '-c';
+	$argv[]            = '--contractor';
+	$_SERVER['argv'][] = '--contractor';
 }
 
 require __DIR__ . '/vendor/autoload.php';
@@ -45,7 +44,7 @@ $application->add( new Team51\Command\Dump_Commands() );
 $application->add( new Team51\Command\Site_List() );
 
 foreach ( $application->all() as $command ) {
-	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
+	$command->addOption( '--contractor', null, InputOption::VALUE_NONE, 'Use the contractor config file.' );
 	$command->addOption( '--dev', null, InputOption::VALUE_NONE, 'Run the CLI tool in developer mode.' );
 }
 

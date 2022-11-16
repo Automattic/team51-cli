@@ -55,7 +55,7 @@ Apart from the steps outlined above, you will also need to perform the following
 1. Copy the file `/secrets/config__contractors.dist.json` to `/secrets/config__contractors.json` (remove the `.dist` part).
 1. Populate the fields with the Pressable API credentials received from Team51.
 
-When running any command, you will need to append the flag `--contractor` (or `-c`) to the command. It should be possible to skip this step if you add `export TEAM51_CONTRACTOR=1` to the end of your `.zshrc` or `.bashrc` file.
+When running any command, you will need to append the flag `--contractor` to the command. It should be possible to skip this step if you add `export TEAM51_CONTRACTOR=1` to the end of your `.zshrc` or `.bashrc` file.
 
 ## Usage
 This CLI tool is self-documenting. You can view a list of available commands with `team51 list`.

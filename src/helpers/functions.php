@@ -181,8 +181,7 @@ function generate_random_password( int $length = 24, bool $special_chars = true 
  * @return  bool
  */
 function is_contractor_mode(): bool {
-	return \in_array( '-c', $_SERVER['argv'], true )
-		|| \in_array( '--contractor', $_SERVER['argv'], true );
+	return \in_array( '--contractor', $_SERVER['argv'], true );
 }
 
 /**
