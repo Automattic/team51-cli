@@ -2,10 +2,10 @@
     "require": {
         "ext-json": "*",
         "ext-sodium": "*",
-        "symfony/console": "^4.3",
-        "symfony/filesystem": "^4.3",
-        "symfony/process": "^4.3",
-        "phpseclib/phpseclib": "^3.0.7",
+        "symfony/console": "^v5.4",
+        "symfony/filesystem": "^v5.4",
+        "symfony/process": "^v5.4",
+        "phpseclib/phpseclib": "^3.0",
         "amphp/http-client": "^4.6"
     },
     "require-dev": {
