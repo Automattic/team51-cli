@@ -49,6 +49,13 @@ class Pressable_Site_PHP_Errors extends Command {
 	 */
 	protected ?int $limit = null;
 
+	/**
+	 * The number of lines in the log to retrieve.
+	 *
+	 * @var int|null
+	 */
+	protected ?int $lines = null;
+
 	// endregion
 
 	// region INHERITED METHODS
@@ -62,7 +69,8 @@ class Pressable_Site_PHP_Errors extends Command {
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to retrieve the error log from.' )
 			->addOption( 'format', null, InputOption::VALUE_REQUIRED, 'The alternative format to output the logs in. Accepts either "table" or "raw".' )
-			->addOption( 'limit', null, InputOption::VALUE_REQUIRED, 'The number of distinct PHP fatal errors to return. Default is 3.', 3 );
+			->addOption( 'limit', null, InputOption::VALUE_REQUIRED, 'The number of distinct PHP fatal errors to return. Default is 3.', 3 )
+			->addOption( 'lines', null, InputOption::VALUE_REQUIRED, 'The number of PHP error lines to retrieve. Default is 100k.', 100000 );
 	}
 
 	/**
@@ -74,6 +82,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		// Retrieve and validate the modifier options.
 		$this->format = get_enum_input( $input, $output, 'format', array( 'raw', 'table' ) );
 		$this->limit  = max( 1, (int) $input->getOption( 'limit' ) );
+		$this->lines  = max( 1, (int) $input->getOption( 'lines' ) );
 
 		// Retrieve and validate the site.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
@@ -95,25 +104,27 @@ class Pressable_Site_PHP_Errors extends Command {
 			$output->writeln( "<fg=magenta;options=bold>Retrieving the last $this->limit distinct PHP fatal errors for {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
 		}
 
-		// Connect to the site via SFTP.
-		$sftp_connection = Pressable_Connection_Helper::get_sftp_connection( $this->pressable_site->id );
-		if ( \is_null( $sftp_connection ) ) {
-			$output->writeln( "<error>Failed to connect to SFTP for {$this->pressable_site->url}. Aborting!</error>" );
+		$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
+		if ( \is_null( $ssh_connection ) ) {
+			$output->writeln( "<error>Failed to connect via SSH for {$this->pressable_site->url}. Aborting!</error>" );
 			return 1;
 		}
 
-		// Retrieve the error log file.
-		$output->writeln( '<comment>Downloading the PHP error log.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+		$output->writeln( '<comment>Finding the PHP error log location.</comment>', OutputInterface::VERBOSITY_VERBOSE );
 
-		$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
-		if ( \is_null( $ssh_connection ) ) {
-			$error_log_path = '/tmp/php-errors';
-			$output->writeln( "<comment>Failed to connect to SSH for {$this->pressable_site->url}. Using the default error log location $error_log_path</comment>" );
-		} else {
-			$error_log_path = $ssh_connection->exec( 'wp eval "echo ini_get(\'error_log\');"' );
+		// The default Pressable PHP error log location is /tmp/php-errors but this can be changed by plugins or even WP Core itself when debugging is active.
+		$error_log_path = $ssh_connection->exec( 'wp eval "echo ini_get(\'error_log\');"' );
+		if ( empty( $error_log_path ) ) {
+			$output->writeln( "<error>Failed to find the PHP error log location for {$this->pressable_site->url}. Aborting!</error>" );
+			return 1;
 		}
 
-		$error_log = $sftp_connection->get( $error_log_path );
+		$output->writeln( "<info>Found the PHP error log location: $error_log_path</info>", OutputInterface::VERBOSITY_DEBUG );
+
+		// Retrieve the error log file.
+		$output->writeln( "<comment>Downloading the last $this->lines lines of the PHP error log.</comment>", OutputInterface::VERBOSITY_VERBOSE );
+
+		$error_log = $ssh_connection->exec( "tail -n $this->lines $error_log_path" );
 		if ( empty( $error_log ) ) {
 			if ( false === $error_log ) {
 				$output->writeln( "<error>Failed to download the PHP error log for {$this->pressable_site->url}. Aborting!</error>" );
