@@ -82,7 +82,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		// Retrieve and validate the modifier options.
 		$this->format = get_enum_input( $input, $output, 'format', array( 'raw', 'table' ) );
 		$this->limit  = max( 1, (int) $input->getOption( 'limit' ) );
-		$this->lines  = max( 1, (int) $input->getOption( 'lines' ) );
+		$this->lines  = max( $this->limit, (int) $input->getOption( 'lines' ) );
 
 		// Retrieve and validate the site.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
