@@ -106,7 +106,7 @@ class Site_List extends Command {
 		if ( $audit ) {
 			$audited_site_list = $this->eval_site_list( $full_site_list, $audit_type );
 
-			if ( empty( $audit_site_list ) ) {
+			if ( empty( $audited_site_list ) ) {
 				$output->writeln( "<error>Failed to find any sites using the search parameter {$audit_type}.<error>" );
 				exit;
 			}
@@ -186,8 +186,8 @@ class Site_List extends Command {
 				'REPORT SUMMARY'  => '',
 				'Atomic sites'    => $this->count_sites( $final_site_list, 'Atomic', 'Host' ),
 				'Pressable sites' => $this->count_sites( $final_site_list, 'Pressable', 'Host' ),
-				'Simple sites'    => $this->count_sites( $final_site_list, 'Other', 'Host' ),
-				'Other hosts'     => $this->count_sites( $final_site_list, 'Simple', 'Host' ),
+				'Simple sites'    => $this->count_sites( $final_site_list, 'Simple', 'Host' ),
+				'Other hosts'     => $this->count_sites( $final_site_list, 'Other', 'Host' ),
 				'Total sites'     => count( $final_site_list ),
 			);
 
