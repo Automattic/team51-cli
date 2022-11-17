@@ -40,6 +40,7 @@ final class Pressable_Connection_Helper {
 
 		$connection = new SFTP( self::SFTP_HOST );
 		if ( ! $connection->login( $login_data['username'], $login_data['password'] ) ) {
+			$connection->isConnected() && $connection->disconnect();
 			return null;
 		}
 
@@ -61,6 +62,16 @@ final class Pressable_Connection_Helper {
 
 		$connection = new SSH2( self::SSH_HOST );
 		if ( ! $connection->login( $login_data['username'], $login_data['password'] ) ) {
+			$connection->isConnected() && $connection->disconnect();
+			return null;
+		}
+
+		// Shortly after a new site is created, the server does not support SSH commands yet, but it will still accept
+		// and authenticate the connection. We need to wait a bit before we can actually run commands. So the following
+		// lines are a short hack to check if the server is indeed ready.
+		$response = $connection->exec( 'ls -la' );
+		if ( "This service allows sftp connections only.\n" === $response || 0 !== $connection->getExitStatus() ) {
+			$connection->isConnected() && $connection->disconnect();
 			return null;
 		}
 

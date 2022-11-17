@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Team51\Helper\Pressable_Connection_Helper;
+use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\run_app_command;
 
 class Create_Development_Site extends Command {
@@ -20,6 +22,7 @@ class Create_Development_Site extends Command {
 		->addOption( 'site-id', null, InputOption::VALUE_REQUIRED, "The site ID of the production Pressable site you'd like to clone." )
 		->addOption( 'temporary-clone', null, InputOption::VALUE_NONE, 'Creates a temporary clone of the production site for short-term development work. The site created is meant to be deleted after use.' )
 		->addOption( 'label', null, InputOption::VALUE_REQUIRED, 'Used to name the Pressable instance. If not specified, time() will be used.' )
+		->addOption( 'skip-safety-net', null, InputOption::VALUE_NONE, 'Skips adding the Safety Net plugin to the development clone.' )
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
 
@@ -39,6 +42,9 @@ class Create_Development_Site extends Command {
 			'GET',
 			array()
 		);
+
+		// Attempt to get the Concierge user. If the user doesn't exist, we won't be able to use ssh later.
+		$pressable_user = get_pressable_site_sftp_user_by_email( $pressable_site->data->id, 'concierge@wordpress.com' );
 
 		// TODO: This code is duplicated below for the site clone. Should be a function.
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
@@ -125,6 +131,69 @@ class Create_Development_Site extends Command {
 			array( 'site' => $pressable_site->data->id ),
 			$output
 		);
+
+		$output->writeln( '<comment>Waiting for SSH to provision on the new site.</comment>' ); 
+		$ssh_connection = null;
+		$ssh_attempts   = 0;
+		$progress_bar   = new ProgressBar( $output );
+		$progress_bar->start();
+
+		if ( ! is_null( $pressable_user ) ) {
+			while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
+				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
+				$ssh_attempts++;
+				$progress_bar->advance();
+				sleep( 10 );
+			}
+		}
+		$progress_bar->finish();
+		$output->writeln( '' );
+
+		if ( is_null( $ssh_connection ) ) {
+			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed.</error>' );
+		}
+
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+			array(
+				'site'           => $pressable_site->data->id,
+				'wp-cli-command' => 'config set WP_ENVIRONMENT_TYPE staging --type=constant',
+			),
+			$output
+		);
+
+		if ( ! empty( $input->getOption( 'skip-safety-net' ) ) ) {
+			$output->writeln( '<comment>Skipping Safety Net installation.</comment>' );
+		} else {
+			run_app_command(
+				$this->getApplication(),
+				Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+				array(
+					'site'           => $pressable_site->data->id,
+					'wp-cli-command' => 'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
+				),
+				$output
+			);
+
+			if ( ! is_null( $ssh_connection ) ) {
+				$ssh_connection->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
+				$ssh_connection->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
+					if ( false === strpos( $result, 'safety-net' ) ) {
+						$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
+					}
+					if ( false === strpos( $result, 'load-safety-net.php' ) ) {
+						$output->writeln( "<comment>Copying Safety Net loader to mu-plugins folder...</comment>" );
+
+						$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
+						$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents(__DIR__ . '/../../scaffold/load-safety-net.php' ) );
+						if ( ! $result ) {
+							$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
+						}
+					}
+				} );
+			}
+		}
 
 		$server_config = array(
 			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
