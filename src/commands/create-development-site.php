@@ -13,6 +13,7 @@ use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\run_app_command;
+use function Team51\Helper\run_pressable_site_wp_cli_command;
 
 class Create_Development_Site extends Command {
 	protected static $defaultName = 'create-development-site';
@@ -117,26 +118,20 @@ class Create_Development_Site extends Command {
 			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed.</error>' );
 		}
 
-		run_app_command(
+		run_pressable_site_wp_cli_command(
 			$this->getApplication(),
-			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
-			array(
-				'site'           => $pressable_site->data->id,
-				'wp-cli-command' => 'config set WP_ENVIRONMENT_TYPE staging --type=constant',
-			),
+			$pressable_site->data->id,
+			'config set WP_ENVIRONMENT_TYPE staging --type=constant',
 			$output
 		);
 
 		if ( ! empty( $input->getOption( 'skip-safety-net' ) ) ) {
 			$output->writeln( '<comment>Skipping Safety Net installation.</comment>' );
 		} else {
-			run_app_command(
+			run_pressable_site_wp_cli_command(
 				$this->getApplication(),
-				Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
-				array(
-					'site'           => $pressable_site->data->id,
-					'wp-cli-command' => 'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
-				),
+				$pressable_site->data->id,
+				'plugin install https://github.com/a8cteam51/safety-net/releases/latest/download/safety-net.zip',
 				$output
 			);
 

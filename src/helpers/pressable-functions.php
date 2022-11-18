@@ -549,9 +549,10 @@ function set_pressable_site_primary_domain( string $site_id, string $domain_id )
  * @param   bool                $interactive        Whether to run the command in interactive mode.
  *
  * @return int  The command exit code.
- * @throws ExceptionInterface   If the command does not exist or if the input is invalid.
+ * @noinspection PhpDocMissingThrowsInspection
  */
 function run_pressable_site_wp_cli_command( Application $application, string $site_id_or_url, string $wp_cli_command, OutputInterface $output, bool $interactive = false ): int {
+	/* @noinspection PhpUnhandledExceptionInspection */
 	return run_app_command(
 		$application,
 		Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
