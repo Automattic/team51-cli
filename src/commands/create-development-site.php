@@ -364,7 +364,7 @@ class Create_Development_Site extends Command {
 			}
 
 			$progress_bar->advance();
-			sleep( 1 );
+			sleep( 'deploying' === $state ? 1 : 10 );
 		} while ( $state === $pressable_site->state );
 
 		$progress_bar->finish();
@@ -388,7 +388,7 @@ class Create_Development_Site extends Command {
 			$progress_bar = new ProgressBar( $output );
 			$progress_bar->start();
 
-			for ( $try = 0, $delay = 10; $try <= 12; $try++ ) {
+			for ( $try = 0, $delay = 5; $try <= 24; $try++ ) {
 				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $site_id );
 				if ( ! \is_null( $ssh_connection ) ) {
 					break;
