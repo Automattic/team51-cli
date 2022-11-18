@@ -2,6 +2,7 @@
 
 namespace Team51\Command;
 
+use phpseclib3\Net\SSH2;
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -9,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Team51\Helper\Pressable_Connection_Helper;
+use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\run_app_command;
 
@@ -42,9 +44,6 @@ class Create_Development_Site extends Command {
 			'GET',
 			array()
 		);
-
-		// Attempt to get the Concierge user. If the user doesn't exist, we won't be able to use ssh later.
-		$pressable_user = get_pressable_site_sftp_user_by_email( $pressable_site->data->id, 'concierge@wordpress.com' );
 
 		// TODO: This code is duplicated below for the site clone. Should be a function.
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
@@ -94,34 +93,15 @@ class Create_Development_Site extends Command {
 		if ( empty( $pressable_site->data ) || empty( $pressable_site->data->id ) ) {
 			$output->writeln( '<error>Failed to create new Pressable site. Aborting!</error>' );
 			exit;
-		} else {
-			$output->writeln( '<info>Created new Pressable site.</info>' );
 		}
 
-		$output->writeln( '<comment>Waiting for Pressable site to deploy.</comment>' );
-		$progress_bar = new ProgressBar( $output );
-		$progress_bar->start();
-		do {
-			$pressable_site_check = $api_helper->call_pressable_api( "sites/{$pressable_site->data->id}", 'GET', array() );
+		$output->writeln( '<info>Created new Pressable site.</info>' );
 
-			if ( empty( $pressable_site_check->data ) || empty( $pressable_site_check->data->id ) ) {
-				$output->writeln( '<error>Something has gone wrong while checking on the Pressable site. Aborting!</error>' );
-				exit;
-			}
-
-			if ( ! empty( $pressable_site_check->data->state ) ) {
-				$pressable_site_state = $pressable_site_check->data->state;
-			} else {
-				$pressable_site_state = 'deployed';
-			}
-
-			$progress_bar->advance();
-			sleep( 1 );
-		} while ( 'deploying' === $pressable_site_state );
-
-		$progress_bar->finish();
-		$output->writeln( '' );
+		$this->wait_on_site_state( $pressable_site->data->id, 'deploying', $output );
 		$output->writeln( "<info>The Pressable site has been deployed!</info>\n" );
+
+		$this->wait_on_site_state( $pressable_site->data->id, 'cloning', $output );
+		$output->writeln( "<info>The Pressable site has been cloned!</info>\n" );
 
 		$output->writeln( '<comment>Creating 1Password login entry for the concierge user.</comment>' );
 		/* @noinspection PhpUnhandledExceptionInspection */
@@ -132,23 +112,7 @@ class Create_Development_Site extends Command {
 			$output
 		);
 
-		$output->writeln( '<comment>Waiting for SSH to provision on the new site.</comment>' ); 
-		$ssh_connection = null;
-		$ssh_attempts   = 0;
-		$progress_bar   = new ProgressBar( $output );
-		$progress_bar->start();
-
-		if ( ! is_null( $pressable_user ) ) {
-			while ( is_null( $ssh_connection ) && $ssh_attempts < 12 ) {
-				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $pressable_site->data->id );
-				$ssh_attempts++;
-				$progress_bar->advance();
-				sleep( 10 );
-			}
-		}
-		$progress_bar->finish();
-		$output->writeln( '' );
-
+		$ssh_connection = $this->wait_on_site_ssh( $pressable_site->data->id, $output );
 		if ( is_null( $ssh_connection ) ) {
 			$output->writeln( '<error>Failed to connect to the Pressable site via SSH. Safety Net not installed.</error>' );
 		}
@@ -305,6 +269,7 @@ class Create_Development_Site extends Command {
 
 		$output->writeln( "<comment>Creating new DeployHQ {$server_config['environment']} server for project $project_name.</comment>" );
 
+		$progress_bar = new ProgressBar( $output );
 		$progress_bar->start();
 		while ( empty( $server_info ) || empty( $server_info->host_key ) ) {
 			$server_info = $api_helper->call_deploy_hq_api(
@@ -373,4 +338,72 @@ class Create_Development_Site extends Command {
 
 		exit;
 	}
+
+	// region HELPERS
+
+	/**
+	 * Periodically checks the status of a Pressable site until it's no longer in the given state.
+	 *
+	 * @param   string              $site_id    The site ID.
+	 * @param   string              $state      The state to wait on. Can be 'deploying' or 'cloning'.
+	 * @param   OutputInterface     $output     The output object.
+	 *
+	 * @return  void
+	 */
+	private function wait_on_site_state( string $site_id, string $state, OutputInterface $output ): void {
+		$output->writeln( "<comment>Waiting for Pressable site to exit $state state.</comment>" );
+
+		$progress_bar = new ProgressBar( $output );
+		$progress_bar->start();
+
+		do {
+			$pressable_site = get_pressable_site_by_id( $site_id );
+			if ( empty( $pressable_site ) ) {
+				$output->writeln( '<error>Something has gone wrong while checking on the Pressable site. Aborting!</error>' );
+				exit( 1 );
+			}
+
+			$progress_bar->advance();
+			sleep( 1 );
+		} while ( $state === $pressable_site->state );
+
+		$progress_bar->finish();
+		$output->writeln( '' ); // Empty line for UX purposes.
+	}
+
+	/**
+	 * Periodically checks the status of the SSH connection to a Pressable site until it's ready.
+	 *
+	 * @param   string              $site_id    The site ID.
+	 * @param   OutputInterface     $output     The output object.
+	 *
+	 * @return  SSH2|null
+	 */
+	private function wait_on_site_ssh( string $site_id, OutputInterface $output ): ?SSH2 {
+		$output->writeln( '<comment>Waiting for Pressable site to be ready for SSH.</comment>' );
+
+		$ssh_connection = null;
+
+		if ( ! empty( get_pressable_site_sftp_user_by_email( $site_id, 'concierge@wordpress.com' ) ) ) {
+			$progress_bar = new ProgressBar( $output );
+			$progress_bar->start();
+
+			for ( $try = 0, $delay = 10; $try <= 12; $try++ ) {
+				$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $site_id );
+				if ( ! \is_null( $ssh_connection ) ) {
+					break;
+				}
+
+				$progress_bar->advance();
+				sleep( $delay );
+			}
+
+			$progress_bar->finish();
+			$output->writeln( '' ); // Empty line for UX purposes.
+		}
+
+		return $ssh_connection;
+	}
+
+	// endregion
 }
