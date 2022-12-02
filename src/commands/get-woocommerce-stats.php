@@ -43,7 +43,7 @@ class Get_WooCommerce_Stats extends Command {
 
         $api_helper = new API_Helper;
 
-        $output->writeln( '<info>Fetching sites with WooCommerce installed...<info>' );
+        $output->writeln( '<info>Fetching production sites connected to a8cteam51...<info>' );
 
         $sites = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/', array() );
 
@@ -54,7 +54,11 @@ class Get_WooCommerce_Stats extends Command {
 
 		$site_list = array();
 		foreach ( $sites->blogs->blogs as $site ) {
-			$site_list[] = array( $site->userblog_id, $site->domain );
+            if ( strpos( $site->domain, 'mystagingwebsite.com' ) !== false || strpos( $site->domain, 'go-vip.co') == !false ) {
+                //skip
+            } else {
+                $site_list[] = array( $site->userblog_id, $site->domain );
+            }
 		}
 		$site_count = count( $site_list );
 
@@ -75,18 +79,22 @@ class Get_WooCommerce_Stats extends Command {
 					foreach ( $plugins_array as $plugin_path => $plugin ) {
 						$folder_name = strstr( $plugin_path, '/', true );
                         $file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
-                        if ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) {
-                            $sites_with_plugin[] = array( $site[1], $plugin['Name'], ( $plugin['active'] ? 'Active' : 'Inactive' ), $plugin['Version'] );
+                        if ( ($plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name) && $plugin['active'] == 'Active' ) {
+                            $sites_with_woocommerce[] = array( $site[1], $site[0], );
                         }
                     }
 				}
-			} else {
-				$sites_not_checked[] = array( $site[1], $site[0] );
 			}
 		}
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
-        $output->writeln( var_dump($sites_with_plugin) );
+        $output->writeln( var_dump($sites_with_woocommerce) );
+
+        foreach ( $sites_with_woocommerce as $site ) {
+            $output->writeln( "<info>Fetching stats for {$site[0]}<info>" );
+            $stats = $this->get_woocommerce_stats( $site[1] );
+            $output->writeln( var_dump($stats) );
+        }
         
     }
 
@@ -97,5 +105,13 @@ class Get_WooCommerce_Stats extends Command {
 		}
 		return $plugin_list;
 	}
+
+    private function get_woocommerce_stats( $site_id ) {
+        $woocommerce_stats = $this->api_helper->call_wpcom_api( '/wpcom/v2/sites/' . $site_id . '/stats/orders?unit=year&date=2022&quantity=1', array() );
+        if ( ! empty( $woocommerce_stats->error ) ) {
+            $woocommerce_stats = null;
+        }
+        return $woocommerce_stats;
+    }
 
 }
