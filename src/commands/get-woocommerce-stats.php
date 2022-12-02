@@ -88,14 +88,25 @@ class Get_WooCommerce_Stats extends Command {
 		}
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
-        $output->writeln( var_dump($sites_with_woocommerce) );
+        //$output->writeln( var_dump($sites_with_woocommerce) );
 
+        $team51_woocommerce_stats = array();
         foreach ( $sites_with_woocommerce as $site ) {
             $output->writeln( "<info>Fetching stats for {$site[0]}<info>" );
             $stats = $this->get_woocommerce_stats( $site[1] );
-            $output->writeln( var_dump($stats) );
+            //$output->writeln( var_dump($stats) );
+           //LEFT OFF HERE - checking if stats are not zero. If not, add to array
+           // if ( $stats->total_gross_sales && )
+            $team51_woocommerce_stats[] = array( $site[0], $site[1], $stats->total_gross_sales, $stats->total_net_sales, $stats->total_orders, $stats->total_products );
         }
+
+        $stats_table = new Table( $output );
+		$stats_table->setStyle( 'box-double' );
+		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Orders', 'Total Products' ) );
+		$stats_table->setRows( $team51_woocommerce_stats );
+		$stats_table->render();
         
+        $output->writeln( '<info>All done! :)<info>' );
     }
 
     private function get_list_of_plugins( $site_id ) {
