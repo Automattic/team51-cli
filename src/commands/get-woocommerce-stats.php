@@ -1,9 +1,5 @@
 <?php
 
-/*
-Next to do: Add options for exporting, add options for changing time parameters
-*/
-
 namespace Team51\Command;
 
 use Team51\Helper\API_Helper;
@@ -119,25 +115,14 @@ class Get_WooCommerce_Stats extends Command {
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
 
-		// Test data to speed up testing, can be removed later
-		$test_sites        = array(
-			array( 'littlesun.org', 181711379 ),
-			array( 'kimalexisnewton.com', 187648392 ),
-			array( 'killscreen.com', 127308561 ),
-			array( 'www.earlymedical.com', 207971088 ),
-			array( 'www.bfi.org', 196443909 ),
-			array( 'www.brodo.com', 194175604 ),
-			array( 'atypi.org', 194431378 ),
-		);
+		// Get WooCommerce stats for each site
 		$woocommerce_count = count( $sites_with_woocommerce );
 		$output->writeln( '<info>Fetching WooCommerce stats for Team51 production sites...<info>' );
 		$progress_bar = new ProgressBar( $output, $woocommerce_count );
 		$progress_bar->start();
 
-		// Get WooCommerce stats for each site
 		$team51_woocommerce_stats = array();
 		foreach ( $sites_with_woocommerce as $site ) {
-			//foreach ( $test_sites as $site ) { //Testing
 			$progress_bar->advance();
 			$stats = $this->get_woocommerce_stats( $site[1], $unit, $date );
 
