@@ -1,10 +1,7 @@
 <?php
 
 /*
-1. Get list of sites with WooCommerce installed
-2. Ping the endpoint for each site and save the output
-3. Loop through the output and calculate the overall stats
-4. Output the cumulative stats and top 15 grossing sites?
+Next to do: Add options for exporting, add options for changing time parameters
 */
 
 namespace Team51\Command;
@@ -45,6 +42,7 @@ class Get_WooCommerce_Stats extends Command {
 
         $output->writeln( '<info>Fetching production sites connected to a8cteam51...<info>' );
 
+        // Fetching sites connected to a8cteam51
         $sites = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/', array() );
 
 		if ( empty( $sites ) ) {
@@ -52,6 +50,7 @@ class Get_WooCommerce_Stats extends Command {
 			exit;
 		}
 
+        // Filter out non-production sites
 		$site_list = array();
 		foreach ( $sites->blogs->blogs as $site ) {
             if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) !== false || strpos( $site->siteurl, 'go-vip.co') == !false || strpos( $site->siteurl, 'wpcomstaging.com') == !false ) {
@@ -68,8 +67,7 @@ class Get_WooCommerce_Stats extends Command {
 		$progress_bar = new ProgressBar( $output, $site_count );
 		$progress_bar->start();
 
-		$sites_with_plugin = array();
-		$sites_not_checked = array();
+        // Checking each site for the plugin slug: woocommerce, and only saving the sites that have it active
 		foreach ( $site_list as $site ) {
 			$progress_bar->advance();
 			$plugin_list = $this->get_list_of_plugins( $site[0] );
@@ -88,8 +86,8 @@ class Get_WooCommerce_Stats extends Command {
 		}
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
-        //$output->writeln( var_dump($sites_with_woocommerce) );
         
+        // Test data to speed up testing, can be removed later
         $test_sites = array(
             array( 'littlesun.org'       , 181711379),
             array( 'kimalexisnewton.com' , 187648392),
@@ -100,16 +98,19 @@ class Get_WooCommerce_Stats extends Command {
             array( 'atypi.org'           , 194431378),
         );
 
+        // Get WooCommerce stats for each site
         $team51_woocommerce_stats = array();
         foreach ( $sites_with_woocommerce as $site ) {
         //foreach ( $test_sites as $site ) {
             $output->writeln( "<info>Fetching stats for {$site[0]}<info>" );
             $stats = $this->get_woocommerce_stats( $site[1] );
+
             //Checking if stats are not zero. If not, add to array
             if ( isset($stats->total_gross_sales) && $stats->total_gross_sales > 0 && $stats->total_orders > 0 ) {
                 array_push( $team51_woocommerce_stats, array( $site[0], $site[1], $stats->total_gross_sales, $stats->total_net_sales, $stats->total_orders, $stats->total_products ) );
             }
         }
+
         //Sort the array by total gross sales
         usort( $team51_woocommerce_stats, function( $a, $b ) {
             return $b[2] - $a[2];
@@ -129,24 +130,26 @@ class Get_WooCommerce_Stats extends Command {
         //round the sum
         $sum_total_gross_sales = number_format($sum_total_gross_sales, 2);
 
+        // Output the stats in a table
         $stats_table = new Table( $output );
-		$stats_table->setStyle( 'box-double' );
-		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
-		$stats_table->setRows( $formatted_team51_woocommerce_stats );
-		$stats_table->render();
+        $stats_table->setStyle( 'box-double' );
+        $stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
+        $stats_table->setRows( $formatted_team51_woocommerce_stats );
+        $stats_table->render();
 
         $output->writeln( "<info>Total Gross Sales across Team51 sites: $" . $sum_total_gross_sales . "<info>" );
         
         $output->writeln( '<info>All done! :)<info>' );
     }
 
+    // Helper functions, getting list of plugins and getting woocommerce stats
     private function get_list_of_plugins( $site_id ) {
-		$plugin_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/plugins', array() );
-		if ( ! empty( $plugin_list->error ) ) {
-			$plugin_list = null;
-		}
-		return $plugin_list;
-	}
+        $plugin_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/plugins', array() );
+        if ( ! empty( $plugin_list->error ) ) {
+            $plugin_list = null;
+        }
+        return $plugin_list;
+    }
 
     private function get_woocommerce_stats( $site_id ) {
         $woocommerce_stats = $this->api_helper->call_wpcom_api( '/wpcom/v2/sites/' . $site_id . '/stats/orders?unit=year&date=2022&quantity=1', array() );
