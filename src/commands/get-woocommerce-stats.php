@@ -54,10 +54,10 @@ class Get_WooCommerce_Stats extends Command {
 
 		$site_list = array();
 		foreach ( $sites->blogs->blogs as $site ) {
-            if ( strpos( $site->domain, 'mystagingwebsite.com' ) !== false || strpos( $site->domain, 'go-vip.co') == !false ) {
+            if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) !== false || strpos( $site->siteurl, 'go-vip.co') == !false || strpos( $site->siteurl, 'wpcomstaging.com') == !false ) {
                 //skip
             } else {
-                $site_list[] = array( $site->userblog_id, $site->domain );
+                $site_list[] = array( $site->userblog_id, $site->siteurl );
             }
 		}
 		$site_count = count( $site_list );
@@ -89,22 +89,53 @@ class Get_WooCommerce_Stats extends Command {
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
         //$output->writeln( var_dump($sites_with_woocommerce) );
+        
+        $test_sites = array(
+            array( 'littlesun.org'       , 181711379),
+            array( 'kimalexisnewton.com' , 187648392),
+            array( 'killscreen.com'      , 127308561),
+            array( 'www.earlymedical.com', 207971088),
+            array( 'www.bfi.org'         , 196443909),
+            array( 'www.brodo.com'       , 194175604),
+            array( 'atypi.org'           , 194431378),
+        );
 
         $team51_woocommerce_stats = array();
         foreach ( $sites_with_woocommerce as $site ) {
+        //foreach ( $test_sites as $site ) {
             $output->writeln( "<info>Fetching stats for {$site[0]}<info>" );
             $stats = $this->get_woocommerce_stats( $site[1] );
-            //$output->writeln( var_dump($stats) );
-           //LEFT OFF HERE - checking if stats are not zero. If not, add to array
-           // if ( $stats->total_gross_sales && )
-            $team51_woocommerce_stats[] = array( $site[0], $site[1], $stats->total_gross_sales, $stats->total_net_sales, $stats->total_orders, $stats->total_products );
+            //Checking if stats are not zero. If not, add to array
+            if ( isset($stats->total_gross_sales) && $stats->total_gross_sales > 0 && $stats->total_orders > 0 ) {
+                array_push( $team51_woocommerce_stats, array( $site[0], $site[1], $stats->total_gross_sales, $stats->total_net_sales, $stats->total_orders, $stats->total_products ) );
+            }
         }
+        //Sort the array by total gross sales
+        usort( $team51_woocommerce_stats, function( $a, $b ) {
+            return $b[2] - $a[2];
+        });
+
+        // Format sales as money
+        $formatted_team51_woocommerce_stats = array();
+        foreach ( $team51_woocommerce_stats as $site ) {
+            array_push($formatted_team51_woocommerce_stats, array( $site[0], $site[1], '$' . number_format($site[2], 2), '$' . number_format($site[3], 2), $site[4], $site[5] ));
+        }
+
+        //Sum the total gross sales
+        $sum_total_gross_sales = array_reduce($team51_woocommerce_stats, function($carry, $site) {
+            return $carry + $site[2];
+        }, 0);
+
+        //round the sum
+        $sum_total_gross_sales = number_format($sum_total_gross_sales, 2);
 
         $stats_table = new Table( $output );
 		$stats_table->setStyle( 'box-double' );
-		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Orders', 'Total Products' ) );
-		$stats_table->setRows( $team51_woocommerce_stats );
+		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
+		$stats_table->setRows( $formatted_team51_woocommerce_stats );
 		$stats_table->render();
+
+        $output->writeln( "<info>Total Gross Sales across Team51 sites: $" . $sum_total_gross_sales . "<info>" );
         
         $output->writeln( '<info>All done! :)<info>' );
     }
