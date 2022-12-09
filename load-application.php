@@ -43,6 +43,7 @@ $application->add( new Team51\Command\Jetpack_Sites_With() );
 $application->add( new Team51\Command\Triage_GraphQL() );
 $application->add( new Team51\Command\Dump_Commands() );
 $application->add( new Team51\Command\Site_List() );
+$application->add( new Team51\Command\Get_Site_Stats() );
 
 foreach ( $application->all() as $command ) {
 	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
