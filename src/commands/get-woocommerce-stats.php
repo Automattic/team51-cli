@@ -48,6 +48,12 @@ class Get_WooCommerce_Stats extends Command {
 				null,
 				InputOption::VALUE_REQUIRED,
 				'Options: YYYY-MM-DD, YYYY-W##, YYYY-MM, YYYY.'
+			)
+			->addOption(
+				'check-production-sites',
+				null,
+				InputOption::VALUE_NONE,
+				'Checks production sites instead of the Jetpack Profile for the sites. Takes much longer to run.'
 			);
 	}
 
@@ -83,40 +89,61 @@ class Get_WooCommerce_Stats extends Command {
 		// Filter out non-production sites
 		$site_list = array();
 		foreach ( $sites->blogs->blogs as $site ) {
-			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false ) {
+			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false && strpos( $site->siteurl, 'jurassic.ninja' ) === false ) {
 				$site_list[] = array( $site->userblog_id, $site->siteurl );
 			}
 		}
 		$site_count = count( $site_list );
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
-		$output->writeln( '<info>Checking each site for the plugin slug: woocommerce<info>' );
+		$output->writeln( '<info>Checking each site for WooCommerce...<info>' );
 
-		$progress_bar = new ProgressBar( $output, $site_count );
-		$progress_bar->start();
+		if ( $input->getOption( 'check-production-sites' ) ) {
+			$output->writeln( '<info>Checking production sites for WooCommerce...<info>' );
+			$progress_bar = new ProgressBar( $output, $site_count );
+			$progress_bar->start();
+			// Checking each site for the plugin slug: woocommerce, and only saving the sites that have it active
+			foreach ( $site_list as $site ) {
+				$progress_bar->advance();
+				$plugin_list = $this->get_list_of_plugins( $site[0] );
+				if ( ! is_null( $plugin_list ) ) {
+					if ( ! is_null( $plugin_list->data ) ) {
+						$plugins_array = json_decode( json_encode( $plugin_list->data ), true );
+						foreach ( $plugins_array as $plugin_path => $plugin ) {
+							$folder_name = strstr( $plugin_path, '/', true );
+							$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
+							if ( ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) && $plugin['active'] == 'Active' ) {
+								$sites_with_woocommerce[] = array( $site[1], $site[0] );
+							}
+						}
+					}
+				}
+			}
+			$progress_bar->finish();
+			$output->writeln( '<info>  Yay!</info>' );
 
-		// Checking each site for the plugin slug: woocommerce, and only saving the sites that have it active
-		foreach ( $site_list as $site ) {
-			$progress_bar->advance();
-			$plugin_list = $this->get_list_of_plugins( $site[0] );
-			if ( ! is_null( $plugin_list ) ) {
-				if ( ! is_null( $plugin_list->data ) ) {
-					$plugins_array = json_decode( json_encode( $plugin_list->data ), true );
-					foreach ( $plugins_array as $plugin_path => $plugin ) {
-						$folder_name = strstr( $plugin_path, '/', true );
-						$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
-						if ( ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) && $plugin['active'] == 'Active' ) {
+		} else {
+			// Get plugin lists from Jetpack profile data
+			$output->writeln( '<info>Checking Jetpack site profiles for WooCommerce...<info>' );
+			$jetpack_sites_plugins = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites/plugins/', array() );
+
+			foreach ( $site_list as $site ) {
+				//check if the site exists in the jetpack_sites_plugins object
+				if ( isset( $jetpack_sites_plugins->sites->{$site[0]} ) ) {
+					// loop through the plugins and check for WooCommerce
+					foreach ( $jetpack_sites_plugins->sites->{$site[0]} as $site_plugin ) {
+						if ( $site_plugin->slug === $plugin_slug && $site_plugin->active === true ) {
 							$sites_with_woocommerce[] = array( $site[1], $site[0] );
 						}
 					}
 				}
 			}
 		}
-		$progress_bar->finish();
-		$output->writeln( '<info>  Yay!</info>' );
+
+		$woocommerce_count = count( $sites_with_woocommerce );
+		$output->writeln( "<info>{$woocommerce_count} sites have WooCommerce installed and active.<info>" );
 
 		// Get WooCommerce stats for each site
-		$woocommerce_count = count( $sites_with_woocommerce );
 		$output->writeln( '<info>Fetching WooCommerce stats for Team51 production sites...<info>' );
 		$progress_bar = new ProgressBar( $output, $woocommerce_count );
 		$progress_bar->start();
