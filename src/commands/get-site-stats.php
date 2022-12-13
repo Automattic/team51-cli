@@ -32,22 +32,34 @@ class Get_Site_Stats extends Command {
 			->setHelp(
 				"This command will output a summary of stats across all of our sites.\n
 				Example usage:\n
-				get-site-stats --period=year --date=2022\n
-				get-site-stats --period=week --date=2022-W12\n
-				get-site-stats --period=month --date=2021-10\n
-				get-site-stats --period=day --date=2022-02-27"
+				get-site-stats --period=year --date=2022-12-12\n
+				get-site-stats --num=3 --period=week --date=2021-10-25\n
+				get-site-stats --num=6 --period=month --date=2021-02-28\n
+				get-site-stats --period=day --date=2022-02-27\n\n
+				The stats come from: https://developer.wordpress.com/docs/api/1.1/get/sites/%24site/stats/summary/"
+			)
+			->addOption(
+				'num',
+				null,
+				InputOption::VALUE_OPTIONAL,
+				'Number of periods to include in the results Default: 1.',
+				1
 			)
 			->addOption(
 				'period',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Options: day, week, month, year.'
+				'Options: day, week, month, year.\n
+				day: The output will return results over the past [num] days, the last day being the date specified.\n
+				week: The output will return results over the past [num] weeks, the last week being the week containing the date specified.\n
+				month: The output will return results over the past [num] months, the last month being the month containing the date specified.\n
+				year: The output will return results over the past [num] years, the last year being the year containing the date specified.'
 			)
 			->addOption(
 				'date',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Options: YYYY-MM-DD, YYYY-W##, YYYY-MM, YYYY.'
+				'Date format: YYYY-MM-DD.'
 			);
 	}
 
@@ -56,7 +68,7 @@ class Get_Site_Stats extends Command {
 
 		// error if the unir or date options are not set
 		if ( empty( $input->getOption( 'period' ) ) ) {
-			$output->writeln( '<error>Time unit is required for fetching stats. (example: --unit=year)</error>' );
+			$output->writeln( '<error>Time unit is required for fetching stats. (example: --period=year)</error>' );
 			exit;
 		}
 
@@ -67,6 +79,9 @@ class Get_Site_Stats extends Command {
 
 		$period = $input->getOption( 'period' );
 		$date   = $input->getOption( 'date' );
+		$num    = $input->getOption( 'num' );
+
+		$output->writeln( '<info>Checking for stats for Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . '<info>' );
 
 		$output->writeln( '<info>Fetching production sites connected to a8cteam51...<info>' );
 
@@ -97,7 +112,7 @@ class Get_Site_Stats extends Command {
 		$team51_site_stats = array();
 		foreach ( $site_list as $site ) {
 			$progress_bar->advance();
-			$stats = $this->get_site_stats( $site[0], $period, $date );
+			$stats = $this->get_site_stats( $site[0], $period, $date, $num );
 			//var_dump( $stats );
 			//Checking if stats are not null. If not, add to array
 			if ( isset( $stats->views ) ) {
@@ -132,24 +147,32 @@ class Get_Site_Stats extends Command {
 			0
 		);
 
-		$output->writeln( '<info>Site stats for the selected time period: ' . $period . ' ' . $date . '<info>' );
+		$formatted_team51_site_stats = array();
+		foreach ( $team51_site_stats as $site ) {
+			$formatted_team51_site_stats[] = array( $site[0], $site[1], number_format( $site[2], 0 ), number_format( $site[3], 0 ) );
+		}
+
+		$sum_total_views    = number_format( $sum_total_views, 0 );
+		$sum_total_visitors = number_format( $sum_total_visitors, 0 );
+
+		$output->writeln( '<info>Site stats for Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . '<info>' );
 		// Output the stats in a table
 		$stats_table = new Table( $output );
 		$stats_table->setStyle( 'box-double' );
 		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Views', 'Total Visitors' ) );
-		$stats_table->setRows( $team51_site_stats );
+		$stats_table->setRows( $formatted_team51_site_stats );
 		$stats_table->render();
 
-		$output->writeln( '<info>Total views across Team51 sites in ' . $period . ' ' . $date . ': ' . $sum_total_views . '<info>' );
-		$output->writeln( '<info>Total visitors across Team51 sites in ' . $period . ' ' . $date . ': ' . $sum_total_visitors . '<info>' );
+		$output->writeln( '<info>Total views across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_views . '<info>' );
+		$output->writeln( '<info>Total visitors across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_visitors . '<info>' );
 
 		$output->writeln( '<info>All done! :)<info>' );
 	}
 
 	// Helper functions, getting site stats
 
-	private function get_site_stats( $site_id, $period, $date ) {
-		$site_stats = $this->api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_id . '/stats/summary?period=' . $period . '&date=' . $date, array() );
+	private function get_site_stats( $site_id, $period, $date, $num ) {
+		$site_stats = $this->api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_id . '/stats/summary?period=' . $period . '&date=' . $date . '&num=' . $num, array() );
 		if ( ! empty( $site_stats->error ) ) {
 			$site_stats = null;
 		}
