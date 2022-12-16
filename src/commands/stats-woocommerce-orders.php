@@ -30,12 +30,7 @@ class Get_WooCommerce_Stats extends Command {
 		$this
 			->setDescription( 'Get WooCommerce order stats across all Team51 sites.' )
 			->setHelp(
-				"This command will output the top grossing WooCommerce sites we support with dollar amounts and an over amount summed across all of our sites.\n
-				Example usage:\n
-				stats:woocommerce-orders --unit=year --date=2022\n
-				stats:woocommerce-orders --unit=week --date=2022-W12\n
-				stats:woocommerce-orders --unit=month --date=2021-10\n
-				stats:woocommerce-orders --unit=day --date=2022-02-27"
+				"This command will output the top grossing WooCommerce sites we support with dollar amounts and an over amount summed across all of our sites.\nExample usage:\nstats:woocommerce-orders --unit=year --date=2022\nstats:woocommerce-orders --unit=week --date=2022-W12\nstats:woocommerce-orders --unit=month --date=2021-10\nstats:woocommerce-orders --unit=day --date=2022-02-27"
 			)
 			->addOption(
 				'unit',
@@ -47,7 +42,7 @@ class Get_WooCommerce_Stats extends Command {
 				'date',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Options: YYYY-MM-DD, YYYY-W##, YYYY-MM, YYYY.'
+				"Options:\nFor --unit=day: YYYY-MM-DD\nFor --unit=week: YYYY-W##\nFor --unit=month: YYYY-MM\nFor --unit=year: YYYY."
 			)
 			->addOption(
 				'check-production-sites',
@@ -81,7 +76,7 @@ class Get_WooCommerce_Stats extends Command {
 		// Fetching sites connected to a8cteam51
 		$sites = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/', array() );
 
-		if ( empty( $sites ) ) {
+		if ( empty( $sites->blogs->blogs ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
 			exit;
 		}
@@ -90,7 +85,10 @@ class Get_WooCommerce_Stats extends Command {
 		$site_list = array();
 		foreach ( $sites->blogs->blogs as $site ) {
 			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false && strpos( $site->siteurl, 'jurassic.ninja' ) === false ) {
-				$site_list[] = array( $site->userblog_id, $site->siteurl );
+				$site_list[] = array(
+					'blog_id'  => $site->userblog_id,
+					'site_url' => $site->siteurl,
+				);
 			}
 		}
 		$site_count = count( $site_list );
@@ -105,16 +103,17 @@ class Get_WooCommerce_Stats extends Command {
 			// Checking each site for the plugin slug: woocommerce, and only saving the sites that have it active
 			foreach ( $site_list as $site ) {
 				$progress_bar->advance();
-				$plugin_list = $this->get_list_of_plugins( $site[0] );
-				if ( ! is_null( $plugin_list ) ) {
-					if ( ! is_null( $plugin_list->data ) ) {
-						$plugins_array = json_decode( json_encode( $plugin_list->data ), true );
-						foreach ( $plugins_array as $plugin_path => $plugin ) {
-							$folder_name = strstr( $plugin_path, '/', true );
-							$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
-							if ( ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) && $plugin['active'] == 'Active' ) {
-								$sites_with_woocommerce[] = array( $site[1], $site[0] );
-							}
+				$plugin_list = $this->get_list_of_plugins( $site['blog_id'] );
+				if ( ! empty( $plugin_list->data ) ) {
+					$plugins_array = (array) $plugin_list->data;
+					foreach ( $plugins_array as $plugin_path => $plugin ) {
+						$folder_name = strstr( $plugin_path, '/', true );
+						$file_name   = str_replace( array( '/', '.php' ), '', strrchr( $plugin_path, '/' ) );
+						if ( ( $plugin_slug === $plugin['TextDomain'] || $plugin_slug === $folder_name || $plugin_slug === $file_name ) && 'Active' === $plugin['active'] ) {
+							$sites_with_woocommerce[] = array(
+								'site_url' => $site['site_url'],
+								'blog_id'  => $site['blog_id'],
+							);
 						}
 					}
 				}
@@ -129,11 +128,14 @@ class Get_WooCommerce_Stats extends Command {
 
 			foreach ( $site_list as $site ) {
 				//check if the site exists in the jetpack_sites_plugins object
-				if ( isset( $jetpack_sites_plugins->sites->{$site[0]} ) ) {
+				if ( ! empty( $jetpack_sites_plugins->sites->{$site['blog_id']} ) ) {
 					// loop through the plugins and check for WooCommerce
-					foreach ( $jetpack_sites_plugins->sites->{$site[0]} as $site_plugin ) {
-						if ( $site_plugin->slug === $plugin_slug && $site_plugin->active === true ) {
-							$sites_with_woocommerce[] = array( $site[1], $site[0] );
+					foreach ( $jetpack_sites_plugins->sites->{$site['blog_id']} as $site_plugin ) {
+						if ( $site_plugin->slug === $plugin_slug && true === $site_plugin->active ) {
+							$sites_with_woocommerce[] = array(
+								'site_url' => $site['site_url'],
+								'blog_id'  => $site['blog_id'],
+							);
 						}
 					}
 				}
@@ -151,11 +153,21 @@ class Get_WooCommerce_Stats extends Command {
 		$team51_woocommerce_stats = array();
 		foreach ( $sites_with_woocommerce as $site ) {
 			$progress_bar->advance();
-			$stats = $this->get_woocommerce_stats( $site[1], $unit, $date );
+			$stats = $this->get_woocommerce_stats( $site['blog_id'], $unit, $date );
 
 			//Checking if stats are not zero. If not, add to array
 			if ( isset( $stats->total_gross_sales ) && $stats->total_gross_sales > 0 && $stats->total_orders > 0 ) {
-				array_push( $team51_woocommerce_stats, array( $site[0], $site[1], $stats->total_gross_sales, $stats->total_net_sales, $stats->total_orders, $stats->total_products ) );
+				array_push(
+					$team51_woocommerce_stats,
+					array(
+						'site_url'          => $site['site_url'],
+						'blog_id'           => $site['blog_id'],
+						'total_gross_sales' => $stats->total_gross_sales,
+						'total_net_sales'   => $stats->total_net_sales,
+						'total_orders'      => $stats->total_orders,
+						'total_products'    => $stats->total_products,
+					)
+				);
 			}
 		}
 		$progress_bar->finish();
@@ -165,21 +177,31 @@ class Get_WooCommerce_Stats extends Command {
 		usort(
 			$team51_woocommerce_stats,
 			function ( $a, $b ) {
-				return $b[2] - $a[2];
+				return $b['total_gross_sales'] - $a['total_gross_sales'];
 			}
 		);
 
 		// Format sales as money
 		$formatted_team51_woocommerce_stats = array();
 		foreach ( $team51_woocommerce_stats as $site ) {
-			array_push( $formatted_team51_woocommerce_stats, array( $site[0], $site[1], '$' . number_format( $site[2], 2 ), '$' . number_format( $site[3], 2 ), $site[4], $site[5] ) );
+			array_push(
+				$formatted_team51_woocommerce_stats,
+				array(
+					'site_url'          => $site['site_url'],
+					'blog_id'           => $site['blog_id'],
+					'total_gross_sales' => '$' . number_format( $site['total_gross_sales'], 2 ),
+					'total_net_sales'   => '$' . number_format( $site['total_net_sales'], 2 ),
+					'total_orders'      => $site['total_orders'],
+					'total_products'    => $site['total_products'],
+				)
+			);
 		}
 
 		//Sum the total gross sales
 		$sum_total_gross_sales = array_reduce(
 			$team51_woocommerce_stats,
 			function ( $carry, $site ) {
-				return $carry + $site[2];
+				return $carry + $site['total_gross_sales'];
 			},
 			0
 		);
