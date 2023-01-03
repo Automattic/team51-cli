@@ -35,7 +35,7 @@ class Site_List extends Command {
 
 		$output->writeln( '<info>Fetching sites...<info>' );
 
-		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?include_domain_only=true&?fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack,is_multisite,options', array() );
+		$all_sites = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites?include_domain_only=true&fields=ID,name,URL,is_private,is_coming_soon,is_wpcom_atomic,jetpack,is_multisite,options', array() );
 
 		if ( empty( $all_sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
@@ -203,7 +203,7 @@ class Site_List extends Command {
 				$csv_ex_columns = null;
 			}
 			$this->create_csv( $table_header, $final_site_list, $summary_output, $csv_ex_columns );
-			$output->writeln( '<info>Exported to sites.csv in the team51 root folder.<info>' );
+			$output->writeln( '<info>Exported to sites.csv in the current folder.<info>' );
 		}
 
 		if ( 'json-export' === $input->getArgument( 'export' ) ) {
@@ -213,7 +213,7 @@ class Site_List extends Command {
 				$json_ex_columns = null;
 			}
 			$this->create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns );
-			$output->writeln( '<info>Exported to sites.json in the team51 root folder.<info>' );
+			$output->writeln( '<info>Exported to sites.json in the current folder.<info>' );
 		}
 	}
 
