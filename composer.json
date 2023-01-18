@@ -9,7 +9,8 @@
         "amphp/http-client": "^4.6"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest"
+        "roave/security-advisories": "dev-latest",
+        "symfony/test-pack": "^1.0"
     },
     "autoload": {
         "files": [
@@ -21,6 +22,11 @@
         ],
 	    "classmap": [
             "src/"
+        ]
+    },
+    "autoload-dev": {
+        "files": [
+            "tests/includes/t51-test-case.php"
         ]
     },
     "scripts": {
