@@ -76,14 +76,6 @@ final class WPCOM_API_Helper {
 	 * @throws  \Throwable  If an error occurs in a request promise.
 	 */
 	public static function call_api_concurrent( array $endpoints, string $method = 'GET', array $params = array() ): array {
-		console_writeln( 'Calling WordPress.com API concurrently...' );
-
-		$result = wait( resolve( parse_url( self::BASE_URL, PHP_URL_HOST ), Record::A ) ); // Prime the DNS cache.
-		var_dump( $result );
-
-		console_writeln( 'DNS cache primed.' );
-		sleep( 5 );
-
 		$http_client = HttpClientBuilder::buildDefault();
 		$promises    = array();
 
