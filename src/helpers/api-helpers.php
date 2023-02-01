@@ -301,50 +301,6 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	/**
-	 * This function makes async HTTP requests to the WP API,
-	 * and returns unified response for each of the endpoints
-	 * Implemented with AMPHP: https://amphp.org/http-client/concurrent
-	 *
-	 * @param string[] $endpoints a list of endpoints to be invoked. The string must include WPCOM_API_ENDPOINT
-	 */
-	public function call_wpcom_api_concurrent( $endpoints, $data = array(), $method = 'GET' ) {
-		$client   = HttpClientBuilder::buildDefault();
-		$promises = array();
-
-		foreach ( $endpoints as $endpoint ) {
-			$promises[ $endpoint ] = call(
-				static function () use ( $data, $method, $client, $endpoint ) {
-					$request = new Request( $endpoint, $method );
-					$request->setInactivityTimeout( 60000 );
-					$request->setTransferTimeout( 60000 );
-					$request->setHeader( 'Accept', 'application/json' );
-					$request->setHeader( 'Content-Type', 'application/json' );
-					$request->setHeader( 'Authorization', 'Bearer ' . WPCOM_API_ACCOUNT_TOKEN );
-					$request->setHeader( 'User-Agent', 'PHP' );
-
-					if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-						$request->setBody( $data );
-					}
-
-					$response = yield $client->request( $request );
-					$body     = yield $response->getBody()->buffer();
-					return $body;
-				}
-			);
-		}
-
-		$response = wait( all( $promises ) );
-		$response = array_map(
-			function( $res ) {
-				return json_decode( $res );
-			},
-			$response
-		);
-
-		return $response;
-	}
-
 	public function call_github_graphql_api( $query, $associative = false ) {
 		$api_request_url = 'https://api.github.com/graphql';
 
