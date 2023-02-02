@@ -3,6 +3,30 @@
 namespace Team51\Helper;
 
 /**
+ * Gets the list of Jetpack sites connected to the a8cteam51 account.
+ *
+ * @return  object[]|null
+ */
+function get_wpcom_jetpack_sites(): ?array {
+	$sites = WPCOM_API_Helper::call_api( 'rest/v1.1/jetpack-blogs/' );
+	if ( is_null( $sites ) || ! property_exists( $sites, 'success' ) || ! $sites->success ) {
+		return null;
+	}
+
+	return $sites->blogs->blogs;
+}
+
+function get_wpcom_sites(): ?array {
+	$sites = WPCOM_API_Helper::call_api( 'rest/v1.1/me/sites/' );
+	if ( ! is_null( $sites ) && property_exists( $sites, 'error' ) ) {
+		console_writeln( $sites->message );
+		return null;
+	}
+
+	return $sites->sites;
+}
+
+/**
  * Gets the WordPress.com site information by site URL or WordPress.com ID (requires active Jetpack connection for WPORG sites).
  *
  * @param   string  $site_id_or_url     The site URL or WordPress.com site ID.
