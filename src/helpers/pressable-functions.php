@@ -535,6 +535,41 @@ function set_pressable_site_primary_domain( string $site_id, string $domain_id )
 	return $result->data;
 }
 
+/**
+ * Get a list of a site's PHP error logs. The logs are available for the past 7 days.
+ *
+ * @param   string          $site_id        The site ID.
+ * @param   string|null     $status         Filter by log status. Valid values are 'User', 'Warning', 'Deprecated', and 'Fatal error'.
+ *
+ * @link    https://my.pressable.com/documentation/api/v1#get-php-logs
+ *
+ * @return  object[]|null
+ */
+function get_pressable_site_php_logs( string $site_id, ?string $status = null ): ?array {
+	$logs = array();
+
+	do {
+		$page = Pressable_API_Helper::call_api(
+			"sites/$site_id/logs/php",
+			'GET',
+			array_filter(
+				array(
+					'scroll_id' => $page->scroll_id ?? null,
+					'status'    => $status,
+				)
+			)
+		);
+		if ( is_null( $page ) /*|| empty( $page->data )*/ ) {
+			return null;
+		}
+		//$page = $page->data;
+
+		$logs[] = $page->logs;
+	} while ( ! is_null( $page->scroll_id ) );
+
+	return array_merge( ...$logs );
+}
+
 // endregion
 
 // region WRAPPERS
