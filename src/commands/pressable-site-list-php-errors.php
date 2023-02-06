@@ -28,7 +28,7 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'pressable:list-php-errors'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected static $defaultName = 'pressable:list-site-php-errors'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
 	 * The Pressable site to display the errors for.
