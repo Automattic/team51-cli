@@ -278,7 +278,7 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 
 			\preg_match_all( '/.* in (.+)(?: on line |:)(\d+)/', $php_error_message, $php_error_file_and_line, PREG_SET_ORDER );
 			if ( 0 !== \count( $php_error_file_and_line ) ) {
-				// Some error messages contain both formats (e.g. "on line" and ":") so we need to pick the last one.
+				// Some error messages contain both formats ("on line" and ":") so we need to pick the last one.
 				$php_error_file_and_line = \end( $php_error_file_and_line );
 
 				$php_error_file = $php_error_file_and_line[1];
