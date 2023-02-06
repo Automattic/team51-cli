@@ -59,6 +59,13 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 	protected ?string $severity = null;
 
 	/**
+	 * Where to retrieve the PHP errors from.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $source = null;
+
+	/**
 	 * The default path to the PHP error log file.
 	 *
 	 * @var string
@@ -79,7 +86,8 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to display the errors for.' )
 			->addOption( 'limit', null, InputOption::VALUE_REQUIRED, 'The number of distinct PHP fatal errors to return. Default is 5.', 5 )
 			->addOption( 'format', null, InputOption::VALUE_REQUIRED, 'The format to output the logs in. Accepts either "list", "table" or "raw". Default "list".', 'list' )
-			->addOption( 'severity', null, InputOption::VALUE_REQUIRED, 'The error severity to filter by. Valid values are "User", "Warning", "Deprecated", and "Fatal error". Default all.' );
+			->addOption( 'severity', null, InputOption::VALUE_REQUIRED, 'The error severity to filter by. Valid values are "User", "Warning", "Deprecated", and "Fatal error". Default all.' )
+			->addOption( 'source', null, InputOption::VALUE_REQUIRED, 'Where to retrieve the PHP errors from. Accepts either "file", "api", or "auto". Default "auto".', 'auto' );
 	}
 
 	/**
@@ -92,6 +100,7 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 		$this->limit    = max( 1, (int) $input->getOption( 'limit' ) );
 		$this->format   = get_enum_input( $input, $output, 'format', array( 'list', 'table', 'raw' ) );
 		$this->severity = get_enum_input( $input, $output, 'severity', array( 'User', 'Warning', 'Deprecated', 'Fatal error' ) );
+		$this->source   = get_enum_input( $input, $output, 'source', array( 'file', 'api', 'auto' ) );
 
 		// Retrieve and validate the site.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
@@ -108,9 +117,9 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		if ( 'raw' === $this->format ) {
-			$output->writeln( "<fg=magenta;options=bold>Listing the raw PHP errors on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
+			$output->writeln( "<fg=magenta;options=bold>Listing the raw PHP errors on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) from $this->source.</>" );
 		} else {
-			$output->writeln( "<fg=magenta;options=bold>Listing the last $this->limit distinct PHP errors on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}).</>" );
+			$output->writeln( "<fg=magenta;options=bold>Listing the last $this->limit distinct PHP errors on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) from $this->source.</>" );
 		}
 
 		$php_errors = $this->get_php_errors( $output );
@@ -206,10 +215,10 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 		$error_log_path = $this->get_php_error_log_path( $output, $ssh_connection );
 		$output->writeln( "<info>Using the PHP error log location: $error_log_path</info>" );
 
-		if ( self::DEFAULT_PHP_ERROR_LOG_PATH === $error_log_path ) {
+		if ( 'api' === $this->source || ( 'auto' === $this->source && self::DEFAULT_PHP_ERROR_LOG_PATH === $error_log_path ) ) {
 			$output->writeln( '<comment>Retrieving the PHP error log contents via the API.</comment>', OutputInterface::VERBOSITY_VERY_VERBOSE );
 
-			$error_log = get_pressable_site_php_logs( $this->pressable_site->id, $this->severity );
+			$error_log = get_pressable_site_php_logs( $this->pressable_site->id, $this->severity, 2000 );
 			if ( \is_null( $error_log ) ) {
 				$output->writeln( '<error>Failed to retrieve the PHP error log contents via the API. Aborting!</error>', OutputInterface::VERBOSITY_VERBOSE );
 			}
@@ -267,8 +276,11 @@ final class Pressable_Site_List_PHP_Errors extends Command {
 				continue;
 			}
 
-			\preg_match( '/.* in (.+) on line (\d+)/', $php_error_message, $php_error_file_and_line );
-			if ( 3 === \count( $php_error_file_and_line ) ) {
+			\preg_match_all( '/.* in (.+)(?: on line |:)(\d+)/', $php_error_message, $php_error_file_and_line, PREG_SET_ORDER );
+			if ( 0 !== \count( $php_error_file_and_line ) ) {
+				// Some error messages contain both formats (e.g. "on line" and ":") so we need to pick the last one.
+				$php_error_file_and_line = \end( $php_error_file_and_line );
+
 				$php_error_file = $php_error_file_and_line[1];
 				$php_error_line = (int) $php_error_file_and_line[2];
 			} else {

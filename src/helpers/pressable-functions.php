@@ -540,12 +540,13 @@ function set_pressable_site_primary_domain( string $site_id, string $domain_id )
  *
  * @param   string          $site_id        The site ID.
  * @param   string|null     $status         Filter by log status. Valid values are 'User', 'Warning', 'Deprecated', and 'Fatal error'.
+ * @param   int             $max_entries    The maximum number of entries to return. The default is 200 or one page.
  *
  * @link    https://my.pressable.com/documentation/api/v1#get-php-logs
  *
  * @return  object[]|null
  */
-function get_pressable_site_php_logs( string $site_id, ?string $status = null ): ?array {
+function get_pressable_site_php_logs( string $site_id, ?string $status = null, int $max_entries = 200 ): ?array {
 	$logs = array();
 
 	do {
@@ -559,13 +560,13 @@ function get_pressable_site_php_logs( string $site_id, ?string $status = null ):
 				)
 			)
 		);
-		if ( is_null( $page ) /*|| empty( $page->data )*/ ) {
+		if ( is_null( $page ) ) {
 			return null;
 		}
-		//$page = $page->data;
 
-		$logs[] = $page->logs;
-	} while ( ! is_null( $page->scroll_id ) );
+		$max_entries -= 200; // There are 200 entries per page.
+		$logs[]       = $page->logs;
+	} while ( ! is_null( $page->scroll_id ) && $max_entries > 0 );
 
 	return array_merge( ...$logs );
 }
@@ -616,7 +617,7 @@ function run_pressable_site_wp_cli_command( Application $application, string $si
  */
 function output_related_pressable_sites( OutputInterface $output, array $sites, ?array $headers = null, ?callable $row_generator = null ): void {
 	$row_generator = \is_callable( $row_generator ) ? $row_generator
-		: static fn( $node, $level ) => array( $node->id, $node->name, $node->url, $level, $node->clonedFromId ?: '--' ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		: static fn( $node, $level ) => array( $node->id, $node->name, $node->url, $level, $node->clonedFromId ?: '--' ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase, Universal.Operators.DisallowShortTernary.Found
 
 	$table = new Table( $output );
 
