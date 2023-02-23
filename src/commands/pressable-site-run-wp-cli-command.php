@@ -85,7 +85,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
-		$question = new ConfirmationQuestion( "<question>Are you sure you want to run the command `wp $this->wp_command` on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? [Y/n]</question> ", false );
+		$question = new ConfirmationQuestion( "<question>Are you sure you want to run the command `wp $this->wp_command` on {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})? [y/N]</question> ", false );
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit( 2 );
