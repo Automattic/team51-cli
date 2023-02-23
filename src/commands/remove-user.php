@@ -107,7 +107,7 @@ class Remove_User extends Command {
 
 		// Remove?
 		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/n) ' ) );
+			$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/N) ' ) );
 			if ( 'y' !== $confirm_remove ) {
 				exit;
 			}
