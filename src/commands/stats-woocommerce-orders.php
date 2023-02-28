@@ -83,14 +83,33 @@ class Get_WooCommerce_Stats extends Command {
 
 		// Filter out non-production sites
 		$site_list = array();
+
+		$deny_list = array(
+			'mystagingwebsite.com',
+			'go-vip.co',
+			'wpcomstaging.com',
+			'wpengine.com',
+			'jurassic.ninja',
+			'woocommerce.com',
+			'atomicsites.blog',
+		);
+
 		foreach ( $sites->blogs->blogs as $site ) {
-			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false && strpos( $site->siteurl, 'jurassic.ninja' ) === false ) {
+			$matches = false;
+			foreach ( $deny_list as $deny ) {
+				if ( strpos( $site->siteurl, $deny ) !== false ) {
+					$matches = true;
+					break;
+				}
+			}
+			if ( ! $matches ) {
 				$site_list[] = array(
 					'blog_id'  => $site->userblog_id,
 					'site_url' => $site->siteurl,
 				);
 			}
 		}
+
 		$site_count = count( $site_list );
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
