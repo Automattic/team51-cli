@@ -126,6 +126,11 @@ class Get_WooCommerce_Stats extends Command {
 			$output->writeln( '<info>Checking Jetpack site profiles for WooCommerce...<info>' );
 			$jetpack_sites_plugins = $api_helper->call_wpcom_api( 'rest/v1.1/me/sites/plugins/', array() );
 
+			if ( empty( $jetpack_sites_plugins->sites ) ) {
+				$output->writeln( '<error>Fetching plugins from Jetpack site profiles failed.<error>' );
+				exit;
+			}
+
 			foreach ( $site_list as $site ) {
 				//check if the site exists in the jetpack_sites_plugins object
 				if ( ! empty( $jetpack_sites_plugins->sites->{$site['blog_id']} ) ) {
