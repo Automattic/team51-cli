@@ -49,6 +49,12 @@ class Get_WooCommerce_Stats extends Command {
 				null,
 				InputOption::VALUE_NONE,
 				'Checks production sites instead of the Jetpack Profile for the sites. Takes much longer to run.'
+			)
+			->addOption(
+				'csv',
+				null,
+				InputOption::VALUE_NONE,
+				'Export stats to a CSV file.'
 			);
 	}
 
@@ -204,6 +210,21 @@ class Get_WooCommerce_Stats extends Command {
 				return $b['total_gross_sales'] - $a['total_gross_sales'];
 			}
 		);
+
+		// Output CSV if --csv flag is set
+		if ( $input->getOption( 'csv' ) ) {
+			$output->writeln( '<info>Making the CSV...<info>' );
+			$timestamp = date( 'Y-m-d-H-i-s' );
+			$fp        = fopen( 't51-woocommerce-stats-' . $timestamp . '.csv', 'w' );
+			fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
+			foreach ( $team51_woocommerce_stats as $fields ) {
+				fputcsv( $fp, $fields );
+			}
+			fclose( $fp );
+
+			$output->writeln( '<info>Done, CSV saved to your current working directory: t51-woocommerce-stats-' . $timestamp . '.csv<info>' );
+
+		}
 
 		// Format sales as money
 		$formatted_team51_woocommerce_stats = array();
