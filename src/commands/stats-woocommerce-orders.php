@@ -48,7 +48,7 @@ class Get_WooCommerce_Stats extends Command {
 				'check-production-sites',
 				null,
 				InputOption::VALUE_NONE,
-				'Checks production sites instead of the Jetpack Profile for the sites. Takes much longer to run.'
+				"Checks production sites instead of the Jetpack Profile for the sites. Takes much longer to run. You might want to check the production sites if you suspect that the Jetpack cache isn't up to date for your purposes and a newly connected site with lots of sales has WooCommerce installed."
 			)
 			->addOption(
 				'csv',
@@ -118,8 +118,12 @@ class Get_WooCommerce_Stats extends Command {
 
 		$site_count = count( $site_list );
 
+		if ( empty( $site_count ) ) {
+			$output->writeln( '<error>No production sites found.<error>' );
+			exit;
+		}
+
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
-		$output->writeln( '<info>Checking each site for WooCommerce...<info>' );
 
 		if ( $input->getOption( 'check-production-sites' ) ) {
 			$output->writeln( '<info>Checking production sites for WooCommerce...<info>' );
@@ -166,6 +170,7 @@ class Get_WooCommerce_Stats extends Command {
 								'site_url' => $site['site_url'],
 								'blog_id'  => $site['blog_id'],
 							);
+							break;
 						}
 					}
 				}
@@ -211,21 +216,6 @@ class Get_WooCommerce_Stats extends Command {
 			}
 		);
 
-		// Output CSV if --csv flag is set
-		if ( $input->getOption( 'csv' ) ) {
-			$output->writeln( '<info>Making the CSV...<info>' );
-			$timestamp = date( 'Y-m-d-H-i-s' );
-			$fp        = fopen( 't51-woocommerce-stats-' . $timestamp . '.csv', 'w' );
-			fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
-			foreach ( $team51_woocommerce_stats as $fields ) {
-				fputcsv( $fp, $fields );
-			}
-			fclose( $fp );
-
-			$output->writeln( '<info>Done, CSV saved to your current working directory: t51-woocommerce-stats-' . $timestamp . '.csv<info>' );
-
-		}
-
 		// Format sales as money
 		$formatted_team51_woocommerce_stats = array();
 		foreach ( $team51_woocommerce_stats as $site ) {
@@ -263,6 +253,21 @@ class Get_WooCommerce_Stats extends Command {
 		$stats_table->render();
 
 		$output->writeln( '<info>Total Gross Sales across Team51 sites in ' . $unit . ' ' . $date . ': $' . $sum_total_gross_sales . '<info>' );
+
+		// Output CSV if --csv flag is set
+		if ( $input->getOption( 'csv' ) ) {
+			$output->writeln( '<info>Making the CSV...<info>' );
+			$timestamp = date( 'Y-m-d-H-i-s' );
+			$fp        = fopen( 't51-woocommerce-stats-' . $timestamp . '.csv', 'w' );
+			fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Total Gross Sales', 'Total Net Sales', 'Total Orders', 'Total Products' ) );
+			foreach ( $formatted_team51_woocommerce_stats as $fields ) {
+				fputcsv( $fp, $fields );
+			}
+			fclose( $fp );
+
+			$output->writeln( '<info>Done, CSV saved to your current working directory: t51-woocommerce-stats-' . $timestamp . '.csv<info>' );
+
+		}
 
 		$output->writeln( '<info>All done! :)<info>' );
 	}
