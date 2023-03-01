@@ -30,13 +30,7 @@ class Get_Site_Stats extends Command {
 		$this
 			->setDescription( 'Get wpcom traffic across all Team51 sites.' )
 			->setHelp(
-				"This command will output a summary of wpcom traffic stats across all of our sites.\n
-				Example usage:\n
-				stats:wpcom-traffic --period=year --date=2022-12-12\n
-				stats:wpcom-traffic --num=3 --period=week --date=2021-10-25\n
-				stats:wpcom-traffic --num=6 --period=month --date=2021-02-28\n
-				stats:wpcom-traffic --period=day --date=2022-02-27\n\n
-				The stats come from: https://developer.wordpress.com/docs/api/1.1/get/sites/%24site/stats/summary/"
+				"This command will output a summary of wpcom traffic stats across all of our sites.\nExample usage:\nstats:wpcom-traffic --period=year --date=2022-12-12\nstats:wpcom-traffic --num=3 --period=week --date=2021-10-25\nstats:wpcom-traffic --num=6 --period=month --date=2021-02-28\nstats:wpcom-traffic --period=day --date=2022-02-27\n\nThe stats come from: https://developer.wordpress.com/docs/api/1.1/get/sites/%24site/stats/summary/"
 			)
 			->addOption(
 				'num',
@@ -49,17 +43,19 @@ class Get_Site_Stats extends Command {
 				'period',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Options: day, week, month, year.\n
-				day: The output will return results over the past [num] days, the last day being the date specified.\n
-				week: The output will return results over the past [num] weeks, the last week being the week containing the date specified.\n
-				month: The output will return results over the past [num] months, the last month being the month containing the date specified.\n
-				year: The output will return results over the past [num] years, the last year being the year containing the date specified.'
+				"Options: day, week, month, year.\nday: The output will return results over the past [num] days, the last day being the date specified.\nweek: The output will return results over the past [num] weeks, the last week being the week containing the date specified.\nmonth: The output will return results over the past [num] months, the last month being the month containing the date specified.\nyear: The output will return results over the past [num] years, the last year being the year containing the date specified."
 			)
 			->addOption(
 				'date',
 				null,
 				InputOption::VALUE_REQUIRED,
 				'Date format: YYYY-MM-DD.'
+			)
+			->addOption(
+				'csv',
+				null,
+				InputOption::VALUE_NONE,
+				'Export stats to a CSV file.'
 			);
 	}
 
@@ -95,12 +91,39 @@ class Get_Site_Stats extends Command {
 
 		// Filter out non-production sites
 		$site_list = array();
+
+		$deny_list = array(
+			'mystagingwebsite.com',
+			'go-vip.co',
+			'wpcomstaging.com',
+			'wpengine.com',
+			'jurassic.ninja',
+			'woocommerce.com',
+			'atomicsites.blog',
+		);
+
 		foreach ( $sites->blogs->blogs as $site ) {
-			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false && strpos( $site->siteurl, 'jurassic.ninja' ) === false ) {
-				$site_list[] = array( $site->userblog_id, $site->siteurl );
+			$matches = false;
+			foreach ( $deny_list as $deny ) {
+				if ( strpos( $site->siteurl, $deny ) !== false ) {
+					$matches = true;
+					break;
+				}
+			}
+			if ( ! $matches ) {
+				$site_list[] = array(
+					'blog_id'  => $site->userblog_id,
+					'site_url' => $site->siteurl,
+				);
 			}
 		}
+
 		$site_count = count( $site_list );
+
+		if ( empty( $site_count ) ) {
+			$output->writeln( '<error>Zero production sites to check.<error>' );
+			exit;
+		}
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
 
@@ -112,11 +135,19 @@ class Get_Site_Stats extends Command {
 		$team51_site_stats = array();
 		foreach ( $site_list as $site ) {
 			$progress_bar->advance();
-			$stats = $this->get_site_stats( $site[0], $period, $date, $num );
-			//var_dump( $stats );
+			$stats = $this->get_site_stats( $site['blog_id'], $period, $date, $num );
+
 			//Checking if stats are not null. If not, add to array
-			if ( isset( $stats->views ) ) {
-				array_push( $team51_site_stats, array( $site[0], $site[1], $stats->views, $stats->visitors ) );
+			if ( ! empty( $stats->views ) ) {
+				array_push(
+					$team51_site_stats,
+					array(
+						'blog_id'  => $site['blog_id'],
+						'site_url' => $site['site_url'],
+						'views'    => $stats->views,
+						'visitors' => $stats->visitors,
+					)
+				);
 			}
 		}
 		$progress_bar->finish();
@@ -126,7 +157,7 @@ class Get_Site_Stats extends Command {
 		usort(
 			$team51_site_stats,
 			function ( $a, $b ) {
-				return $b[2] - $a[2];
+				return $b['views'] - $a['views'];
 			}
 		);
 
@@ -134,7 +165,7 @@ class Get_Site_Stats extends Command {
 		$sum_total_views = array_reduce(
 			$team51_site_stats,
 			function ( $carry, $site ) {
-				return $carry + $site[2];
+				return $carry + $site['views'];
 			},
 			0
 		);
@@ -142,14 +173,14 @@ class Get_Site_Stats extends Command {
 		$sum_total_visitors = array_reduce(
 			$team51_site_stats,
 			function ( $carry, $site ) {
-				return $carry + $site[3];
+				return $carry + $site['visitors'];
 			},
 			0
 		);
 
 		$formatted_team51_site_stats = array();
 		foreach ( $team51_site_stats as $site ) {
-			$formatted_team51_site_stats[] = array( $site[0], $site[1], number_format( $site[2], 0 ), number_format( $site[3], 0 ) );
+			$formatted_team51_site_stats[] = array( $site['blog_id'], $site['site_url'], number_format( $site['views'], 0 ), number_format( $site['visitors'], 0 ) );
 		}
 
 		$sum_total_views    = number_format( $sum_total_views, 0 );
@@ -159,12 +190,27 @@ class Get_Site_Stats extends Command {
 		// Output the stats in a table
 		$stats_table = new Table( $output );
 		$stats_table->setStyle( 'box-double' );
-		$stats_table->setHeaders( array( 'Site URL', 'Blog ID', 'Total Views', 'Total Visitors' ) );
+		$stats_table->setHeaders( array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors' ) );
 		$stats_table->setRows( $formatted_team51_site_stats );
 		$stats_table->render();
 
 		$output->writeln( '<info>Total views across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_views . '<info>' );
 		$output->writeln( '<info>Total visitors across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_visitors . '<info>' );
+
+		// Output CSV if --csv flag is set
+		if ( $input->getOption( 'csv' ) ) {
+			$output->writeln( '<info>Making the CSV...<info>' );
+			$timestamp = date( 'Y-m-d-H-i-s' );
+			$fp        = fopen( 't51-traffic-stats-' . $timestamp . '.csv', 'w' );
+			fputcsv( $fp, array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors' ) );
+			foreach ( $formatted_team51_site_stats as $fields ) {
+				fputcsv( $fp, $fields );
+			}
+			fclose( $fp );
+
+			$output->writeln( '<info>Done, CSV saved to your current working directory: t51-traffic-stats-' . $timestamp . '.csv<info>' );
+
+		}
 
 		$output->writeln( '<info>All done! :)<info>' );
 	}
