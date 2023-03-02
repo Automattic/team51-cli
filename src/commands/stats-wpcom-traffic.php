@@ -100,6 +100,8 @@ class Get_Site_Stats extends Command {
 			'jurassic.ninja',
 			'woocommerce.com',
 			'atomicsites.blog',
+			'ninomihovilic.com',
+			'team51.blog',
 		);
 
 		foreach ( $sites->blogs->blogs as $site ) {
@@ -150,6 +152,12 @@ class Get_Site_Stats extends Command {
 				);
 			}
 		}
+
+		if ( empty( $team51_site_stats ) ) {
+			$output->writeln( '<error>Zero sites with stats.<error>' );
+			exit;
+		}
+
 		$progress_bar->finish();
 		$output->writeln( '<info>  Yay!</info>' );
 
