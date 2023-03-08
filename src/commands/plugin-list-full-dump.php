@@ -4,16 +4,12 @@ namespace Team51\Command;
 
 use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Helper\ProgressBar;
 
 class Plugin_Summary extends Command {
 
-	protected static $defaultName = 'plugin-summary';
+	protected static $defaultName = 'plugin-list-full-dump';
 
 	/**
 	 * @var Api_Helper|null API Helper instance.
@@ -28,7 +24,7 @@ class Plugin_Summary extends Command {
 
 	protected function configure() {
 		$this
-			->setDescription( 'Dump a CSV of all plugins on t51 sites' );
+			->setDescription( 'Dumps a CSV of all plugins on on all t51 sites, including activation status' );
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -46,16 +42,38 @@ class Plugin_Summary extends Command {
 		}
 
 		// Filter out non-production sites
-		$site_list = array();
+		$deny_list = array(
+			'mystagingwebsite.com',
+			'go-vip.co',
+			'wpcomstaging.com',
+			'wpengine.com',
+			'jurassic.ninja',
+			'woocommerce.com',
+			'atomicsites.blog',
+		);
+
 		foreach ( $sites->blogs->blogs as $site ) {
-			if ( strpos( $site->siteurl, 'mystagingwebsite.com' ) === false && strpos( $site->siteurl, 'go-vip.co' ) === false && strpos( $site->siteurl, 'wpcomstaging.com' ) === false && strpos( $site->siteurl, 'wpengine.com' ) === false && strpos( $site->siteurl, 'jurassic.ninja' ) === false ) {
+			$matches = false;
+			foreach ( $deny_list as $deny ) {
+				if ( strpos( $site->siteurl, $deny ) !== false ) {
+					$matches = true;
+					break;
+				}
+			}
+			if ( ! $matches ) {
 				$site_list[] = array(
 					'blog_id'  => $site->userblog_id,
 					'site_url' => $site->siteurl,
 				);
 			}
 		}
+
 		$site_count = count( $site_list );
+
+		if ( empty( $site_count ) ) {
+			$output->writeln( '<error>No production sites found.<error>' );
+			exit;
+		}
 
 		$output->writeln( "<info>{$site_count} sites found.<info>" );
 
@@ -68,9 +86,9 @@ class Plugin_Summary extends Command {
 				foreach ( $jetpack_sites_plugins->sites->{$site['blog_id']} as $site_plugin ) {
 					$plugins_on_t51_sites[] = array(
 						$site['site_url'],
-                        $site['blog_id'],
+						$site['blog_id'],
 						$site_plugin->slug,
-                        $site_plugin->active,
+						$site_plugin->active,
 					);
 				}
 			}
@@ -78,15 +96,15 @@ class Plugin_Summary extends Command {
 
 		// make a csv out of the $plugins_on_t51_sites array
 		$output->writeln( '<info>Making the CSV...<info>' );
-
-		$fp = fopen( 'plugins-on-t51-sites.csv', 'w' );
-        fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Plugin Slug', 'Active' ) );
+		$timestamp = date( 'Y-m-d-H-i-s' );
+		$fp        = fopen( 'plugins-on-t51-sites-' . $timestamp . '.csv', 'w' );
+		fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Plugin Slug', 'Active' ) );
 		foreach ( $plugins_on_t51_sites as $fields ) {
 			fputcsv( $fp, $fields );
 		}
 		fclose( $fp );
 
-		$output->writeln( '<info>Done, CSV saved to your current working directory: plugins-on-t51-sites.csv<info>' );
+		$output->writeln( '<info>Done, CSV saved to your current working directory: plugins-on-t51-sites-' . $timestamp . '.csv<info>' );
 
 	}
 
