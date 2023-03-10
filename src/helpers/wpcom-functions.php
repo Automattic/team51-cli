@@ -3,27 +3,48 @@
 namespace Team51\Helper;
 
 /**
- * Gets the list of Jetpack sites connected to the a8cteam51 account.
+ * Get the complete list of WordPress.com sites for the a8cteam51 account, including WPORG sites with an active Jetpack
+ * connection and including P2 blogs (or any other site the user is merely subscribed to).
+ *
+ * By default, the parameter `include_domain_only` is false, but for a more complete list of sites, set it to true. Also by default,
+ * the list contains both active and inactive sites. Make sure to read the API documentation for a complete list of defaults and options.
+ *
+ * @param   array   $params    Optional. Additional parameters to pass to the API call.
+ *
+ * @link    https://developer.wordpress.com/docs/api/1.1/get/me/sites/
  *
  * @return  object[]|null
  */
-function get_wpcom_jetpack_sites(): ?array {
-	$sites = WPCOM_API_Helper::call_api( 'rest/v1.1/jetpack-blogs/' );
-	if ( is_null( $sites ) || ! property_exists( $sites, 'success' ) || ! $sites->success ) {
-		return null;
-	}
-
-	return $sites->blogs->blogs;
-}
-
-function get_wpcom_sites(): ?array {
-	$sites = WPCOM_API_Helper::call_api( 'rest/v1.1/me/sites/' );
-	if ( ! is_null( $sites ) && property_exists( $sites, 'error' ) ) {
+function get_wpcom_sites( array $params = array() ): ?array {
+	$query = \http_build_query( $params );
+	$sites = WPCOM_API_Helper::call_api( 'me/sites' . ( empty( $query ) ? '' : "?$query" ) );
+	if ( ! \is_null( $sites ) && \property_exists( $sites, 'error' ) ) {
 		console_writeln( $sites->message );
 		return null;
 	}
 
-	return $sites->sites;
+	return \array_combine(
+		\array_column( $sites->sites, 'ID' ),
+		$sites->sites
+	);
+}
+
+/**
+ * Get the list of active, Jetpack-enabled WordPress.com sites for the a8cteam51 account. This includes WPORG sites with an active
+ * Jetpack connection, but excludes things like WPCOM Simple sites, P2 blogs, and sites subscribed to.
+ *
+ * @return  object[]|null
+ */
+function get_wpcom_jetpack_sites(): ?array {
+	$sites = WPCOM_API_Helper::call_api( 'jetpack-blogs' );
+	if ( \is_null( $sites ) || ! \property_exists( $sites, 'success' ) || ! $sites->success ) {
+		return null;
+	}
+
+	return \array_combine(
+		\array_column( $sites->blogs->blogs, 'userblog_id' ),
+		$sites->blogs->blogs
+	);
 }
 
 /**
