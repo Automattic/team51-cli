@@ -54,7 +54,7 @@ final class WPCOM_API_Helper {
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
 			console_writeln(
-				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']}",
+				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']} {$result['body']}",
 				\in_array( $result['headers']['http_code'], array( 403, 404 ), true ) ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
 			);
 			return null;
@@ -69,13 +69,14 @@ final class WPCOM_API_Helper {
 	 * @param   string[]    $endpoints  The endpoints to call.
 	 * @param   string      $method     The HTTP method to use. One of 'GET', 'POST', 'PUT', 'DELETE'.
 	 * @param   array[]     $params     The parameters to send with each request.
+	 * @param   bool        $quiet      Whether to suppress the output of errors.
 	 *
 	 * @link    https://amphp.org/http-client/concurrent
 	 *
 	 * @return  array
 	 * @throws  \Throwable  If an error occurs in a request promise.
 	 */
-	public static function call_api_concurrent( array $endpoints, string $method = 'GET', array $params = array() ): array {
+	public static function call_api_concurrent( array $endpoints, string $method = 'GET', array $params = array(), bool $quiet = true ): array {
 		$http_client = HttpClientBuilder::buildDefault();
 		$promises    = array();
 
@@ -84,7 +85,7 @@ final class WPCOM_API_Helper {
 			$body     = $params[ $index ] ?? null;
 
 			$promises[ $index ] = call(
-				static function() use ( $body, $method, $http_client, $endpoint ) {
+				static function() use ( $body, $method, $http_client, $endpoint, $quiet ) {
 					$request = new Request( $endpoint, $method );
 					$request->setInactivityTimeout( 60000 );
 					$request->setTransferTimeout( 60000 );
@@ -106,7 +107,10 @@ final class WPCOM_API_Helper {
 
 					$status = $response->getStatus();
 					if ( 0 !== \strpos( (string) $status, '2' ) ) {
-						console_writeln( "❌ WordPress.com API error ($endpoint): $status", OutputInterface::VERBOSITY_QUIET );
+						console_writeln(
+							"❌ WordPress.com API error ($endpoint): $status $body",
+							$quiet ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
+						);
 						return null;
 					}
 
