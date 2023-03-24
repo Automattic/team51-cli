@@ -192,7 +192,7 @@ function is_contractor_mode(): bool {
  */
 function is_quiet_mode(): bool {
 	return \in_array( '-q', $_SERVER['argv'], true )
-        || \in_array( '--quiet', $_SERVER['argv'], true );
+		|| \in_array( '--quiet', $_SERVER['argv'], true );
 }
 
 /**
