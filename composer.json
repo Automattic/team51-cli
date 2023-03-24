@@ -2,6 +2,7 @@
     "require": {
         "ext-json": "*",
         "ext-sodium": "*",
+        "ext-gd": "*",
         "amphp/http-client": "^4.6",
         "phpseclib/phpseclib": "^3.0.7",
         "symfony/console": "^4.3",
