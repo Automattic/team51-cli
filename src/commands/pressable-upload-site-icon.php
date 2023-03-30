@@ -5,6 +5,7 @@ namespace Team51\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Team51\Helper\Pressable_Connection_Helper;
@@ -30,11 +31,19 @@ final class Pressable_Upload_Site_Icon extends Command {
 	protected ?object $pressable_site = null;
 
 	/**
+	 * Whether to actually upload the icon or just simulate doing so.
+	 *
+	 * @var bool|null
+	 */
+	protected ?bool $dry_run = null;
+
+	/**
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Uploads the site icon as apple-touch-icon.png on a Pressable site.' );
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to upload the icon to.' );
+		$this->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will not upload the icon.' );
 	}
 
 	/**
@@ -42,6 +51,8 @@ final class Pressable_Upload_Site_Icon extends Command {
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
+
+		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
 
 		// Retrieve the given site.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
@@ -101,15 +112,21 @@ final class Pressable_Upload_Site_Icon extends Command {
 			return 1;
 		}
 
-		$image = $this->process_image( $file_data );
+		$image = $this->process_image( $file_data, $output );
 		if ( false === $image ) {
 			$output->writeln( '<error>Could not process the site icon. Aborting.</error>' );
 			return 1;
 		}
 
 		// If site icon is set and downloaded successfully, upload it to the site.
-		$output->writeln( '<info>Uploading site icon through SFTP...</info>' );
-		$result = $sftp->put( 'apple-touch-icon.png', $image );
+		if ( ! $this->dry_run ) {
+			$output->writeln( '<info>Uploading site icon through SFTP...</info>' );
+			$result = $sftp->put( 'apple-touch-icon.png', $image );
+		} else {
+			$output->writeln( '<info>Dry run. Uploading skipped.</info>' );
+			$result = true;
+		}
+
 		$sftp->disconnect();
 
 		if ( false === $result ) {
@@ -117,8 +134,10 @@ final class Pressable_Upload_Site_Icon extends Command {
 			return 1;
 		}
 
-		$output->writeln( '<info>Site icon uploaded successfully.</info>' );
-		$output->writeln( "<info>URL: https://{$this->pressable_site->url}/apple-touch-icon.png</info>", OutputInterface::VERBOSITY_VERBOSE );
+		if ( ! $this->dry_run ) {
+			$output->writeln( '<info>Site icon uploaded successfully.</info>' );
+			$output->writeln( "<info>URL: https://{$this->pressable_site->url}/apple-touch-icon.png</info>", OutputInterface::VERBOSITY_VERBOSE );
+		}
 
 		return 0;
 	}
@@ -149,10 +168,16 @@ final class Pressable_Upload_Site_Icon extends Command {
 	 *
 	 * @return string|false
 	 */
-	private function process_image( string $data ) {
+	private function process_image( string $data, OutputInterface $output ) {
+		$image_info = getimagesizefromstring( $data );
+
+		// Do nothing if image is already PNG.
+		if ( $image_info && $image_info[2] === IMAGETYPE_PNG ) {
+			$output->writeln( '<comment>Image is already PNG. Skipping conversion.</comment>', OutputInterface::VERBOSITY_VERBOSE );
+			return $data;
+		}
+
 		$image = imagecreatefromstring( $data );
-		imagealphablending( $image, false );
-		imagesavealpha( $image, true );
 		ob_start();
 		imagepng( $image );
 		$image_data = ob_get_contents();
