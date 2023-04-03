@@ -42,6 +42,7 @@ final class Pressable_Upload_Site_Icon extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Uploads the site icon as apple-touch-icon.png on a Pressable site.' );
+		$this->setHelp( 'If a site is displaying a white square icon when bookmarking it in iOS, this command may help fix it.' );
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to upload the icon to.' );
 		$this->addOption( 'dry-run', null, InputOption::VALUE_NONE, 'Execute a dry run. It will output all the steps, but will not upload the icon.' );
 	}
@@ -84,7 +85,6 @@ final class Pressable_Upload_Site_Icon extends Command {
 			return 1;
 		}
 
-		// If the site doesn't have one, grab the site icon URL and download it.
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
 			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
