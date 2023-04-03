@@ -16,7 +16,7 @@ use function Team51\Helper\maybe_define_console_verbosity;
 /**
  * CLI command for uploading the site icon as apple-touch-icon.png on a Pressable site.
  */
-final class Pressable_Upload_Site_Icon extends Command {
+final class Pressable_Site_Upload_Icon extends Command {
 
 	/**
 	 * {@inheritdoc}
