@@ -37,6 +37,7 @@ $application->add( new Team51\Command\Pressable_Site_Rotate_Passwords() );
 $application->add( new Team51\Command\Pressable_Site_Rotate_SFTP_User_Password() );
 $application->add( new Team51\Command\Pressable_Site_Rotate_WP_User_Password() );
 $application->add( new Team51\Command\Pressable_Site_Run_WP_CLI_Command() );
+$application->add( new Team51\Command\Pressable_Site_Upload_Icon() );
 $application->add( new Team51\Command\Jetpack_Modules() );
 $application->add( new Team51\Command\Jetpack_Module() );
 $application->add( new Team51\Command\Jetpack_Sites_With() );
