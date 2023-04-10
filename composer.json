@@ -17,6 +17,7 @@
             "src/helpers/functions.php",
             "src/helpers/1password-functions.php",
             "src/helpers/deployhq-functions.php",
+            "src/helpers/github-functions.php",
             "src/helpers/pressable-functions.php",
             "src/helpers/wpcom-functions.php"
         ],
@@ -25,11 +26,13 @@
         ]
     },
     "scripts": {
-        "coding-standards:check": [
-            "@php phpcs --standard=.phpcs.xml -s -v"
-        ],
-        "coding-standards:fix": [
-            "@php phpcbf --standard=.phpcs.xml -v"
+        "format:php": "@php phpcbf --standard=.phpcs.xml -v",
+        "lint:php": "@php phpcs --standard=.phpcs.xml -s -v",
+
+        "packages-install": "@composer install --ignore-platform-reqs --no-interaction",
+        "packages-update": [
+            "@composer clear-cache",
+            "@composer update --prefer-stable --no-interaction"
         ]
     },
     "config": {
