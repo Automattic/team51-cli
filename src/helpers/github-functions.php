@@ -73,3 +73,51 @@ function update_github_repository( string $owner, string $repository, array $bod
 
 	return $result;
 }
+
+/**
+ * Deletes a label from a repository.
+ *
+ * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository     The name of the repository. The name is not case-sensitive.
+ * @param   string  $name           The name of the label.
+ *
+ * @link    https://docs.github.com/en/rest/issues/labels#delete-a-label
+ *
+ * @return  bool
+ */
+function delete_github_repository_label( string $owner, string $repository, string $name ): bool {
+	$result = GitHub_API_Helper::call_api( sprintf( 'repos/%s/%s/labels/%s', $owner, $repository, rawurlencode( $name ) ), 'DELETE' );
+	return ! \is_null( $result );
+}
+
+/**
+ * Creates a new label for a repository.
+ *
+ * @param   string          $owner           The account owner of the repository. The name is not case-sensitive.
+ * @param   string          $repository      The name of the repository. The name is not case-sensitive.
+ * @param   string          $name            The name of the label.
+ * @param   string|null     $color           The color of the label.
+ * @param   string|null     $description     A short description of the label.
+ *
+ * @link    https://docs.github.com/en/rest/issues/labels#create-a-label
+ *
+ * @return  object|null
+ */
+function create_github_repository_label( string $owner, string $repository, string $name, ?string $color = null, ?string $description = null ): ?object {
+	$result = GitHub_API_Helper::call_api(
+		sprintf( 'repos/%s/%s/labels', $owner, $repository ),
+		'POST',
+		array_filter(
+			array(
+				'name'        => $name,
+				'color'       => $color,
+				'description' => $description,
+			)
+		)
+	);
+	if ( \is_null( $result ) || ! \property_exists( $result, 'id' ) ) {
+		return null;
+	}
+
+	return $result;
+}
