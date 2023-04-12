@@ -281,6 +281,7 @@ class Create_Repository extends Command {
 		}
 
 		$progress_bar->finish();
+		$output->writeln( '' );
 
 		$output->writeln( "<fg=green;options=bold>GitHub repository creation and setup is complete! Check it out here: $repository->html_url</>" );
 
