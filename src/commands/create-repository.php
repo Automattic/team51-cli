@@ -319,8 +319,8 @@ class Create_Repository extends Command {
 							'A scaffold for WP.com Special Projects plugins.',
 							'wpcomsp-scaffold',
 							'wpcomsp_scaffold_',
-							'namespace WPcomSpecialProjects\Scaffold',
-							'WPcomSpecialProjects\\Scaffold\\',
+							'namespace WPCOMSpecialProjects\Scaffold',
+							'WPCOMSpecialProjects\\Scaffold\\',
 							'WPCOMSP_SCAFFOLD_'
 						),
 						array(
@@ -328,8 +328,8 @@ class Create_Repository extends Command {
 							$this->repo_description,
 							"wpcomsp-$this->repo_slug",
 							'wpcomsp_' . $this->plugin_php_globals_short_prefix . '_',
-							'namespace WPcomSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
-							'WPcomSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
+							'namespace WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
+							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
 							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ) . '_',
 						),
 						$file->getContents()
@@ -341,7 +341,7 @@ class Create_Repository extends Command {
 		run_system_command( array( 'composer', 'run-script', 'packages-update' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Ensure that the composer packages are up-to-date.
 
 		run_system_command( array( 'git', 'add', '.' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Stage the changes.
-		run_system_command( array( 'git', 'commit', "-m 'Tweaked project files from template'" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Commit the changes.
+		run_system_command( array( 'git', 'commit', "-m Tweaked project files from template" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Commit the changes.
 		run_system_command( array( 'git', 'push', '-u', 'origin', '--all' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Push changes to GitHub.
 		run_system_command( array( 'rm', '-rf', $this->repo_slug ), TEAM51_CLI_ROOT_DIR . '/scaffold/' ); // Remove the scaffold directory.
 
