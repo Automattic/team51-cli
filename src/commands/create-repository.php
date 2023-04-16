@@ -320,7 +320,7 @@ class Create_Repository extends Command {
 							'team51-plugin-scaffold',
 							'wpcomsp-scaffold',
 							'wpcomsp_scaffold',
-							'namespace WPCOMSpecialProjects\Scaffold',
+							'WPCOMSpecialProjects\Scaffold',
 							'WPCOMSpecialProjects\\Scaffold\\',
 							'WPCOMSP_SCAFFOLD'
 						),
@@ -330,7 +330,7 @@ class Create_Repository extends Command {
 							$this->repo_slug,
 							"wpcomsp-$this->repo_slug",
 							'wpcomsp_' . $this->plugin_php_globals_short_prefix,
-							'namespace WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
+							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
 							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
 							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ),
 						),
