@@ -200,16 +200,18 @@ class Create_Repository extends Command {
 				$this->plugin_name = \ucwords( $this->plugin_name );
 			}
 
-			$this->plugin_php_globals_short_prefix = $input->getOption( 'plugin-php-short-prefix' ) ?: $this->plugin_name;
-			if ( $this->repo_slug === $this->plugin_php_globals_short_prefix ) {
-				if ( 2 <= \substr_count( $this->plugin_php_globals_short_prefix, '-' ) ) {
+			$slugified_plugin_name = \str_replace( ' ', '_', $this->plugin_name );
+			$this->plugin_php_globals_short_prefix = $input->getOption( 'plugin-php-short-prefix' ) ?: $slugified_plugin_name;
+			if ( $slugified_plugin_name === $this->plugin_php_globals_short_prefix ) {
+				if ( 2 <= \substr_count( $this->plugin_php_globals_short_prefix, '_' ) ) {
 					$this->plugin_php_globals_short_prefix = '';
-					foreach ( \explode( '-', $this->repo_slug ) as $part ) {
+					foreach ( \explode( '_', $slugified_plugin_name ) as $part ) {
 						$this->plugin_php_globals_short_prefix .= $part[0];
 					}
 				} else {
-					$this->plugin_php_globals_short_prefix = \explode( '-', $this->plugin_php_globals_short_prefix )[0];
+					$this->plugin_php_globals_short_prefix = \explode( '_', $this->plugin_php_globals_short_prefix )[0];
 				}
+				$this->plugin_php_globals_short_prefix = \strtolower( $this->plugin_php_globals_short_prefix );
 			}
 		}
 
@@ -318,6 +320,7 @@ class Create_Repository extends Command {
 							'wpcomsp-scaffold',
 							'wpcomsp_scaffold_',
 							'namespace WPcomSpecialProjects\Scaffold',
+							'WPcomSpecialProjects\\Scaffold\\',
 							'WPCOMSP_SCAFFOLD_'
 						),
 						array(
@@ -326,6 +329,7 @@ class Create_Repository extends Command {
 							"wpcomsp-$this->repo_slug",
 							'wpcomsp_' . $this->plugin_php_globals_short_prefix . '_',
 							'namespace WPcomSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
+							'WPcomSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
 							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ) . '_',
 						),
 						$file->getContents()
