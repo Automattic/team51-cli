@@ -73,14 +73,14 @@ class Create_Repository extends Command {
 	 *
 	 * @var string|null
 	 */
-	protected ?string $php_globals_long_prefix = null;
+	protected ?string $site_php_globals_long_prefix = null;
 
 	/**
 	 * The short prefix for global PHP variables inside the project.
 	 *
 	 * @var string|null
 	 */
-	protected ?string $php_globals_short_prefix = null;
+	protected ?string $site_php_globals_short_prefix = null;
 
 	/**
 	 * Whether to create a new Pressable production site and configure it in DeployHQ.
@@ -88,6 +88,20 @@ class Create_Repository extends Command {
 	 * @var bool|null
 	 */
 	protected ?bool $create_production_site = null;
+
+	/**
+	 * The name of the new repository's plugin.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $plugin_name = null;
+
+	/**
+	 * The short prefix for global PHP variables inside the plugin.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $plugin_php_globals_short_prefix = null;
 
 	// endregion
 
@@ -102,13 +116,20 @@ class Create_Repository extends Command {
 
 		$this->addArgument( 'repo-slug', InputArgument::REQUIRED, 'Repository name in slug form (e.g. client-name).' )
 			->addOption( 'repo-description', null, InputOption::VALUE_REQUIRED, 'A short, human-friendly description for this project.' )
-			->addOption( 'repo-type', null, InputOption::VALUE_REQUIRED, 'The type of repository to create. One of either `project` or `issues`.', 'project' );
+			->addOption( 'repo-type', null, InputOption::VALUE_REQUIRED, 'The type of repository to create. One of either `project`, `plugin`, or `issues`.', 'project' );
 
+		// region PROJECT REPO OPTIONS
 		$this->addOption( 'site-production-url', null, InputArgument::REQUIRED, 'The hostname of the intended production site (do not include http/https, e.g. example.com).' )
 			->addOption( 'site-development-url', null, InputArgument::REQUIRED, 'The hostname of the intended development site (do not include http/https, e.g. development-example.com).' )
-			->addOption( 'php-long-prefix', null, InputOption::VALUE_REQUIRED, 'The long prefix for global PHP variables inside the project.' )
-			->addOption( 'php-short-prefix', null, InputOption::VALUE_REQUIRED, 'The short prefix for global PHP variables inside the project.' )
+			->addOption( 'site-php-long-prefix', null, InputOption::VALUE_REQUIRED, 'The long prefix for global PHP variables inside the project.' )
+			->addOption( 'site-php-short-prefix', null, InputOption::VALUE_REQUIRED, 'The short prefix for global PHP variables inside the project.' )
 			->addOption( 'create-production-site', null, InputOption::VALUE_NONE, 'This script can optionally create a new Pressable production site and configure it in DeployHQ by passing --create-production-site.' );
+		// endregion
+
+		// region PLUGIN REPO OPTIONS
+		$this->addOption( 'plugin-name', null, InputArgument::REQUIRED, 'The name of the plugin.' )
+			->addOption( 'plugin-php-short-prefix', null, InputOption::VALUE_REQUIRED, 'The short prefix for global PHP variables inside the plugin.' );
+		// endregion
 
 		// region LEGACY OPTIONS
 		$this->addOption( 'issue-repo-only', null, InputOption::VALUE_NONE, 'Is this a repository to track project issues only with no associated code?' )
@@ -126,7 +147,7 @@ class Create_Repository extends Command {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
 		// Retrieve and validate the modifier options.
-		$this->repo_type = get_enum_input( $input, $output, 'repo-type', array( 'project', 'issues' ), 'project' );
+		$this->repo_type = get_enum_input( $input, $output, 'repo-type', array( 'project', 'plugin', 'issues' ), 'project' );
 		if ( ! empty( $input->getOption( 'issue-repo-only' ) ) ) { // Legacy option.
 			$this->repo_type = 'issues';
 			$input->setOption( 'repo-type', 'issues' );
@@ -139,7 +160,7 @@ class Create_Repository extends Command {
 			exit( 1 );
 		}
 
-		$this->repo_slug = strtolower( $this->repo_slug );
+		$this->repo_slug = \strtolower( $this->repo_slug );
 		if ( ! \is_null( get_github_repository( GITHUB_API_OWNER, $this->repo_slug ) ) ) {
 			$output->writeln( "<error>Repository $this->repo_slug already exists in GitHub org. Please choose a different repository name. Aborting!</error>" );
 			exit( 1 );
@@ -150,8 +171,8 @@ class Create_Repository extends Command {
 		// Retrieve and validate project-specific options.
 		if ( 'project' === $this->repo_type ) {
 			$this->site_production_url = get_string_input( $input, $output, 'site-production-url', fn() => $this->prompt_production_url_input( $input, $output ) );
-			if ( false !== strpos( $this->site_production_url, 'http' ) ) {
-				$this->site_production_url = parse_url( $this->site_production_url, PHP_URL_HOST );
+			if ( false !== \strpos( $this->site_production_url, 'http' ) ) {
+				$this->site_production_url = \parse_url( $this->site_production_url, PHP_URL_HOST );
 			}
 
 			$this->site_development_url = get_string_input( $input, $output, 'site-development-url', fn() => $this->prompt_development_url_input( $input, $output ) );
@@ -159,16 +180,35 @@ class Create_Repository extends Command {
 				$this->site_development_url = parse_url( $this->site_development_url, PHP_URL_HOST );
 			}
 
-			$this->php_globals_long_prefix  = $input->getOption( 'php-long-prefix' ) ?: str_replace( '-', '_', $this->repo_slug );
-			$this->php_globals_short_prefix = $input->getOption( 'php-short-prefix' ) ?: $this->php_globals_long_prefix;
-			if ( $this->php_globals_long_prefix === $this->php_globals_short_prefix ) {
-				if ( 2 <= substr_count( $this->php_globals_long_prefix, '_' ) ) {
-					$this->php_globals_short_prefix = '';
-					foreach ( explode( '_', $this->php_globals_long_prefix ) as $part ) {
-						$this->php_globals_short_prefix .= $part[0];
+			$this->site_php_globals_long_prefix  = $input->getOption( 'site-php-long-prefix' ) ?: str_replace( '-', '_', $this->repo_slug );
+			$this->site_php_globals_short_prefix = $input->getOption( 'site-php-short-prefix' ) ?: $this->site_php_globals_long_prefix;
+			if ( $this->site_php_globals_long_prefix === $this->site_php_globals_short_prefix ) {
+				if ( 2 <= \substr_count( $this->site_php_globals_long_prefix, '_' ) ) {
+					$this->site_php_globals_short_prefix = '';
+					foreach ( \explode( '_', $this->site_php_globals_long_prefix ) as $part ) {
+						$this->site_php_globals_short_prefix .= $part[0];
 					}
 				} else {
-					$this->php_globals_short_prefix = explode( '_', $this->php_globals_long_prefix )[0];
+					$this->site_php_globals_short_prefix = \explode( '_', $this->site_php_globals_long_prefix )[0];
+				}
+			}
+		}
+		if ( 'plugin' === $this->repo_type ) {
+			$this->plugin_name = get_string_input( $input, $output, 'plugin-name', fn() => $this->prompt_plugin_name_input( $input, $output ) );
+			if ( empty( $this->plugin_name ) ) {
+				$this->plugin_name = \str_replace( '-', ' ', $this->repo_slug );
+				$this->plugin_name = \ucwords( $this->plugin_name );
+			}
+
+			$this->plugin_php_globals_short_prefix = $input->getOption( 'plugin-php-short-prefix' ) ?: $this->plugin_name;
+			if ( $this->repo_slug === $this->plugin_php_globals_short_prefix ) {
+				if ( 2 <= \substr_count( $this->plugin_php_globals_short_prefix, '-' ) ) {
+					$this->plugin_php_globals_short_prefix = '';
+					foreach ( \explode( '-', $this->repo_slug ) as $part ) {
+						$this->plugin_php_globals_short_prefix .= $part[0];
+					}
+				} else {
+					$this->plugin_php_globals_short_prefix = \explode( '-', $this->plugin_php_globals_short_prefix )[0];
 				}
 			}
 		}
@@ -218,44 +258,78 @@ class Create_Repository extends Command {
 		$output->writeln( "<comment>Cloning $this->repo_slug repository and making some tweaks.</comment>" );
 		run_system_command( array( 'git', 'clone', $repository->ssh_url, TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ) ); // Clone the repository.
 
-		run_system_command( array( 'git', 'submodule', 'init' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Initialize the submodules.
-		run_system_command( array( 'git', 'submodule', 'update' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Fetch submodule updates.
+		if ( 'project' === $this->repo_type ) {
+			run_system_command( array( 'git', 'submodule', 'init' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Initialize the submodules.
+			run_system_command( array( 'git', 'submodule', 'update' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Fetch submodule updates.
 
-		run_system_command( array( 'mv', './themes/build-processes-demo', "./themes/$this->repo_slug" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the theme directory.
-		run_system_command( array( 'mv', './mu-plugins/build-processes-demo-blocks', "./mu-plugins/$this->repo_slug-blocks" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the blocks plugin directory.
-		run_system_command( array( 'mv', './mu-plugins/build-processes-demo-features', "./mu-plugins/$this->repo_slug-features" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the features plugin directory.
+			run_system_command( array( 'mv', './themes/build-processes-demo', "./themes/$this->repo_slug" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the theme directory.
+			run_system_command( array( 'mv', './mu-plugins/build-processes-demo-blocks', "./mu-plugins/$this->repo_slug-blocks" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the blocks plugin directory.
+			run_system_command( array( 'mv', './mu-plugins/build-processes-demo-features', "./mu-plugins/$this->repo_slug-features" ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the features plugin directory.
+		}
+		if ( 'plugin' === $this->repo_type ) {
+			run_system_command( array( 'mv', 'team51-plugin-scaffold.php', $this->repo_slug . '.php' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the plugin bootstrap file.
+		}
 
 		// Replace the placeholders in the scaffold files.
-		foreach ( ( new Finder() )->files()->ignoreDotFiles( false )->in( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ) as $file ) {
-			file_put_contents(
-				$file->getRealPath(),
-				str_replace(
-					array(
-						'A demo project for showcasing standardized build processes for various asset types.',
-						'build-processes-demo-production.mystagingwebsite.com',
-						'build-processes-demo',
-						'build_processes_demo',
-						'bpd',
-						'BPD',
-					),
-					array(
-						$this->repo_description,
-						$this->site_production_url,
-						$this->repo_slug,
-						$this->php_globals_long_prefix,
-						$this->php_globals_short_prefix,
-						strtoupper( $this->php_globals_short_prefix ),
-					),
-					$file->getContents()
-				)
-			);
+		$files = ( new Finder() )->files()->ignoreDotFiles( false )->in( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" );
+		if ( 'project' === $this->repo_type || 'issues' === $this->repo_type ) {
+			foreach ( $files as $file ) {
+				file_put_contents(
+					$file->getRealPath(),
+					str_replace(
+						array(
+							'A demo project for showcasing standardized build processes for various asset types.',
+							'build-processes-demo-production.mystagingwebsite.com',
+							'build-processes-demo',
+							'build_processes_demo',
+							'bpd',
+							'BPD',
+						),
+						array(
+							$this->repo_description,
+							$this->site_production_url,
+							$this->repo_slug,
+							$this->site_php_globals_long_prefix,
+							$this->site_php_globals_short_prefix,
+							strtoupper( $this->site_php_globals_short_prefix ),
+						),
+						$file->getContents()
+					)
+				);
+			}
+		}
+		if ( 'plugin' === $this->repo_type ) {
+			foreach ( $files as $file ) {
+				file_put_contents(
+					$file->getRealPath(),
+					str_replace(
+						array(
+							'Team51 Plugin Scaffold',
+							'A scaffold for WP.com Special Projects plugins.',
+							'wpcomsp-scaffold',
+							'wpcomsp_scaffold_',
+							'namespace WPcomSpecialProjects\Scaffold',
+							'WPCOMSP_SCAFFOLD_'
+						),
+						array(
+							$this->plugin_name,
+							$this->repo_description,
+							"wpcomsp-$this->repo_slug",
+							'wpcomsp_' . $this->plugin_php_globals_short_prefix . '_',
+							'namespace WPcomSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
+							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ) . '_',
+						),
+						$file->getContents()
+					)
+				);
+			}
 		}
 
 		// Replace the scaffold README with the new README.
 		$readme = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_type-README.md" );
 		$readme = str_replace(
-			array( 'EXAMPLE_REPO_NAME', 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL' ),
-			array( $this->repo_slug, $this->site_production_url, $this->site_development_url ),
+			array( 'EXAMPLE_REPO_NAME', 'EXAMPLE_REPO_DESCRIPTION', 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL' ),
+			array( $this->repo_slug, $this->repo_description, $this->site_production_url, $this->site_development_url ),
 			$readme
 		);
 		file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug/README.md", $readme );
@@ -363,6 +437,23 @@ class Create_Repository extends Command {
 		}
 
 		return $site_url ?? null;
+	}
+
+	/**
+	 * Prompts the user for a plugin name if in interactive mode.
+	 *
+	 * @param   InputInterface      $input      The input object.
+	 * @param   OutputInterface     $output     The output object.
+	 *
+	 * @return  string|null
+	 */
+	protected function prompt_plugin_name_input( InputInterface $input, OutputInterface $output ): ?string {
+		if ( $input->isInteractive() ) {
+			$question    = new Question( '<question>Enter the plugin name:</question> ' );
+			$plugin_name = $this->getHelper( 'question' )->ask( $input, $output, $question );
+		}
+
+		return $plugin_name ?? null;
 	}
 
 	/**
