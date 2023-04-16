@@ -319,20 +319,20 @@ class Create_Repository extends Command {
 							'A scaffold for WP.com Special Projects plugins.',
 							'team51-plugin-scaffold',
 							'wpcomsp-scaffold',
-							'wpcomsp_scaffold_',
+							'wpcomsp_scaffold',
 							'namespace WPCOMSpecialProjects\Scaffold',
 							'WPCOMSpecialProjects\\Scaffold\\',
-							'WPCOMSP_SCAFFOLD_'
+							'WPCOMSP_SCAFFOLD'
 						),
 						array(
 							$this->plugin_name,
 							$this->repo_description,
 							$this->repo_slug,
 							"wpcomsp-$this->repo_slug",
-							'wpcomsp_' . $this->plugin_php_globals_short_prefix . '_',
+							'wpcomsp_' . $this->plugin_php_globals_short_prefix,
 							'namespace WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
 							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
-							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ) . '_',
+							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ),
 						),
 						$file->getContents()
 					)
