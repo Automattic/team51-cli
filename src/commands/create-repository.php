@@ -270,6 +270,15 @@ class Create_Repository extends Command {
 			run_system_command( array( 'mv', 'team51-plugin-scaffold.php', $this->repo_slug . '.php' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Rename the plugin bootstrap file.
 		}
 
+		// Replace the scaffold README with the new README.
+		$readme = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_type-README.md" );
+		$readme = str_replace(
+			array( 'EXAMPLE_REPO_NAME', 'EXAMPLE_REPO_DESCRIPTION', 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL' ),
+			array( $this->repo_slug, $this->repo_description, $this->site_production_url, $this->site_development_url ),
+			$readme
+		);
+		file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug/README.md", $readme );
+
 		// Replace the placeholders in the scaffold files.
 		$files = ( new Finder() )->files()->ignoreDotFiles( false )->in( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" );
 		if ( 'project' === $this->repo_type || 'issues' === $this->repo_type ) {
@@ -324,15 +333,6 @@ class Create_Repository extends Command {
 				);
 			}
 		}
-
-		// Replace the scaffold README with the new README.
-		$readme = file_get_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_type-README.md" );
-		$readme = str_replace(
-			array( 'EXAMPLE_REPO_NAME', 'EXAMPLE_REPO_DESCRIPTION', 'EXAMPLE_REPO_PROD_URL', 'EXAMPLE_REPO_DEV_URL' ),
-			array( $this->repo_slug, $this->repo_description, $this->site_production_url, $this->site_development_url ),
-			$readme
-		);
-		file_put_contents( TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug/README.md", $readme );
 
 		run_system_command( array( 'composer', 'run-script', 'packages-update' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Ensure that the composer packages are up-to-date.
 
