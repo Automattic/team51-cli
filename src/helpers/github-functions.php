@@ -121,3 +121,29 @@ function create_github_repository_label( string $owner, string $repository, stri
 
 	return $result;
 }
+
+/**
+ * Replaces all topics for a repository with the given ones.
+ *
+ * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository     The name of the repository. The name is not case-sensitive.
+ * @param   array   $topics         The topics to replace the existing topics with. Uppercase letters are not allowed.
+ *
+ * @link    https://docs.github.com/en/rest/repos/repos#replace-all-repository-topics
+ *
+ * @return  object|null
+ */
+function replace_github_repository_topics( string $owner, string $repository, array $topics ): ?object {
+	$result = GitHub_API_Helper::call_api(
+		sprintf( 'repos/%s/%s/topics', $owner, $repository ),
+		'PUT',
+		array(
+			'names' => $topics,
+		)
+	);
+	if ( \is_null( $result ) || ! \property_exists( $result, 'names' ) ) {
+		return null;
+	}
+
+	return $result;
+}

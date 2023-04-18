@@ -19,6 +19,7 @@ use function Team51\Helper\get_enum_input;
 use function Team51\Helper\get_github_repository;
 use function Team51\Helper\get_string_input;
 use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\replace_github_repository_topics;
 use function Team51\Helper\run_app_command;
 use function Team51\Helper\run_system_command;
 use function Team51\Helper\update_github_repository;
@@ -261,6 +262,8 @@ class Create_Repository extends Command {
 		$output->writeln( "<comment>Cloning $this->repo_slug repository and making some tweaks.</comment>" );
 		run_system_command( array( 'git', 'clone', $repository->ssh_url, TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ) ); // Clone the repository.
 
+		replace_github_repository_topics( GITHUB_API_OWNER, $this->repo_slug, array( "team51-$this->repo_type" ) ); // Set a topic on the repository for easier finding.
+
 		if ( 'project' === $this->repo_type ) {
 			run_system_command( array( 'git', 'submodule', 'init' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Initialize the submodules.
 			run_system_command( array( 'git', 'submodule', 'update' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Fetch submodule updates.
@@ -322,7 +325,7 @@ class Create_Repository extends Command {
 							'wpcomsp-scaffold',
 							'wpcomsp_scaffold',
 							'WPCOMSpecialProjects\Scaffold',
-							'WPCOMSpecialProjects\\Scaffold\\',
+							'WPCOMSpecialProjects\\Scaffold',
 							'WPCOMSP_SCAFFOLD'
 						),
 						array(
@@ -332,7 +335,7 @@ class Create_Repository extends Command {
 							"wpcomsp-$this->repo_slug",
 							'wpcomsp_' . $this->plugin_php_globals_short_prefix,
 							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
-							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ) . '\\',
+							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
 							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ),
 						),
 						$file->getContents()
