@@ -325,7 +325,7 @@ class Create_Repository extends Command {
 							'wpcomsp-scaffold',
 							'wpcomsp_scaffold',
 							'WPCOMSpecialProjects\Scaffold',
-							'WPCOMSpecialProjects\\Scaffold',
+							'WPCOMSpecialProjects\\\\Scaffold',
 							'WPCOMSP_SCAFFOLD'
 						),
 						array(
@@ -335,7 +335,7 @@ class Create_Repository extends Command {
 							"wpcomsp-$this->repo_slug",
 							'wpcomsp_' . $this->plugin_php_globals_short_prefix,
 							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
-							'WPCOMSpecialProjects\\' . \str_replace( ' ', '', $this->plugin_name ),
+							'WPCOMSpecialProjects\\\\' . \str_replace( ' ', '', $this->plugin_name ),
 							'WPCOMSP_' . \strtoupper( $this->plugin_php_globals_short_prefix ),
 						),
 						$file->getContents()
