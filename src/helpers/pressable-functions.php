@@ -192,12 +192,13 @@ function get_pressable_site_sftp_user_by_username( string $site_id, string $user
  */
 function get_pressable_site_sftp_user_by_id( string $site_id, string $user_id ): ?object {
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
+	if ( ! \is_array( $sftp_users ) ) {
+		return null;
+	}
 
-	if ( \is_array( $sftp_users ) ) {
-		foreach ( $sftp_users as $sftp_user ) {
-			if ( $user_id === (string) $sftp_user->id ) {
-				return $sftp_user;
-			}
+	foreach ( $sftp_users as $sftp_user ) {
+		if ( $user_id === (string) $sftp_user->id ) {
+			return $sftp_user;
 		}
 	}
 
@@ -214,12 +215,13 @@ function get_pressable_site_sftp_user_by_id( string $site_id, string $user_id ):
  */
 function get_pressable_site_sftp_user_by_email( string $site_id, string $user_email ): ?object {
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
+	if ( ! \is_array( $sftp_users ) ) {
+		return null;
+	}
 
-	if ( \is_array( $sftp_users ) ) {
-		foreach ( $sftp_users as $sftp_user ) {
-			if ( ! empty( $sftp_user->email ) && true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
-				return $sftp_user;
-			}
+	foreach ( $sftp_users as $sftp_user ) {
+		if ( ! empty( $sftp_user->email ) && true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
+			return $sftp_user;
 		}
 	}
 
