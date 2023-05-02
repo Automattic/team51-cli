@@ -327,7 +327,7 @@ function create_pressable_site_collaborator( string $collaborator_email, string 
 	}
 
 	// Now query the collaborator object. Adding the collaborator might take some time, so we need to retry it.
-	for ( $try = 0, $delay = 1; $try <= 3; $try++, $delay *= 2 ) {
+	for ( $try = 0, $delay = 1; $try <= 5; $try++, $delay *= 2 ) {
 		$collaborator = get_pressable_site_collaborator_by_email( $site_id, $collaborator_email );
 		if ( ! \is_null( $collaborator ) ) {
 			break;
