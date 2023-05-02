@@ -88,6 +88,8 @@ function decode_json_content( string $json, bool $associative = false, int $flag
 		return \json_decode( $json, $associative, 512, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Decoding Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original JSON:' . \PHP_EOL . $json );
+		console_writeln( $exception->getTraceAsString() );
 		return null;
 	}
 }
@@ -105,6 +107,8 @@ function encode_json_content( $data, int $flags = 0 ): ?string {
 		return \json_encode( $data, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Encoding Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original data:' . \PHP_EOL . \print_r( $data, true ) );
+		console_writeln( $exception->getTraceAsString() );
 		return null;
 	}
 }
