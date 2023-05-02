@@ -18,6 +18,9 @@
 
         <!-- Ignore WordPress-specific PHP recommendations. -->
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
-        <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
+    </rule>
+    <rule ref="Universal.Operators">
+        <!-- Allow short ternaries because they are just so useful. -->
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
     </rule>
 </ruleset>

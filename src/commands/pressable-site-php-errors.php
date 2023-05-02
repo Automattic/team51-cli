@@ -238,7 +238,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		foreach ( $parsed_php_errors as $parsed_php_error ) {
 			$error_hash = \hash( 'md5', $parsed_php_error['error_message'] );
 			if ( isset( $stats_table[ $error_hash ] ) ) {
-				$stats_table[ $error_hash ]['error_count']++;
+				++$stats_table[ $error_hash ]['error_count'];
 
 				if ( \strtotime( $parsed_php_error['timestamp'] ) > \strtotime( $stats_table[ $error_hash ]['timestamp'] ) ) {
 					$stats_table[ $error_hash ]['timestamp'] = $parsed_php_error['timestamp'];
