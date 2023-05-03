@@ -7,6 +7,8 @@ use Symfony\Component\Console\Exception\ExceptionInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 // region HTTP
 
@@ -128,6 +130,27 @@ function run_app_command( Application $application, string $command_name, array 
 	$input->setInteractive( $interactive );
 
 	return $command->run( $input, $output );
+}
+
+/**
+ * Runs a system command and returns the output.
+ *
+ * @param   array   $command            The command to run.
+ * @param   string  $working_directory  The working directory to run the command in.
+ *
+ * @link    https://symfony.com/doc/current/components/process.html
+ *
+ * @return  string
+ */
+function run_system_command( array $command, string $working_directory = '.' ): string {
+	$process = new Process( $command, $working_directory );
+	$process->run();
+
+	if ( ! $process->isSuccessful() ) {
+		throw new ProcessFailedException( $process );
+	}
+
+	return $process->getOutput();
 }
 
 // endregion
