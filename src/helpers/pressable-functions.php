@@ -3,7 +3,6 @@
 namespace Team51\Helper;
 
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Exception\ExceptionInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
@@ -65,7 +64,7 @@ function get_related_pressable_sites( object $site, ?callable $node_generator = 
 	$production_site = $site;
 	while ( ! empty( $production_site->clonedFromId ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		$production_site = get_pressable_site_by_id( $production_site->clonedFromId ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-		if ( false !== \is_null( $production_site ) ) {
+		if ( \is_null( $production_site ) ) {
 			break; // This is as high as we can go. Original site must've been deleted...
 		}
 	}
@@ -76,6 +75,9 @@ function get_related_pressable_sites( object $site, ?callable $node_generator = 
 
 	// Identify the related sites by level.
 	$all_sites = get_pressable_sites();
+	if ( ! \is_array( $all_sites ) ) {
+		return null;
+	}
 
 	do {
 		$has_next_level = false;
@@ -124,7 +126,7 @@ function get_pressable_site_by_id( string $site_id ): ?object {
  */
 function get_pressable_site_by_url( string $site_url, bool $exact = true ): ?object {
 	$sites = get_pressable_sites();
-	if ( \is_null( $sites ) ) {
+	if ( ! \is_array( $sites ) ) {
 		return null;
 	}
 
@@ -190,6 +192,9 @@ function get_pressable_site_sftp_user_by_username( string $site_id, string $user
  */
 function get_pressable_site_sftp_user_by_id( string $site_id, string $user_id ): ?object {
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
+	if ( ! \is_array( $sftp_users ) ) {
+		return null;
+	}
 
 	foreach ( $sftp_users as $sftp_user ) {
 		if ( $user_id === (string) $sftp_user->id ) {
@@ -210,6 +215,9 @@ function get_pressable_site_sftp_user_by_id( string $site_id, string $user_id ):
  */
 function get_pressable_site_sftp_user_by_email( string $site_id, string $user_email ): ?object {
 	$sftp_users = get_pressable_site_sftp_users( $site_id );
+	if ( ! \is_array( $sftp_users ) ) {
+		return null;
+	}
 
 	foreach ( $sftp_users as $sftp_user ) {
 		if ( ! empty( $sftp_user->email ) && true === is_case_insensitive_match( $sftp_user->email, $user_email ) ) {
@@ -284,7 +292,7 @@ function get_pressable_site_collaborator_by_id( string $site_id, string $collabo
  */
 function get_pressable_site_collaborator_by_email( string $site_id, string $collaborator_email ): ?object {
 	$collaborators = get_pressable_site_collaborators( $site_id );
-	if ( \is_null( $collaborators ) ) {
+	if ( ! \is_array( $collaborators ) ) {
 		return null;
 	}
 
@@ -327,13 +335,13 @@ function create_pressable_site_collaborator( string $collaborator_email, string 
 	}
 
 	// Now query the collaborator object. Adding the collaborator might take some time, so we need to retry it.
-	for ( $try = 0, $delay = 1; $try <= 3; $try++, $delay *= 2 ) {
+	for ( $try = 0, $delay = 1; $try <= 5; $try++, $delay *= 2 ) {
 		$collaborator = get_pressable_site_collaborator_by_email( $site_id, $collaborator_email );
 		if ( ! \is_null( $collaborator ) ) {
 			break;
 		}
 
-		sleep( $delay );
+		\sleep( $delay );
 	}
 
 	return $collaborator;

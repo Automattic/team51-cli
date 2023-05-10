@@ -53,7 +53,7 @@ final class Pressable_Site_Upload_Icon extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		$this->dry_run  = (bool) $input->getOption( 'dry-run' );
+		$this->dry_run = (bool) $input->getOption( 'dry-run' );
 
 		// Retrieve the given site.
 		$this->pressable_site = get_pressable_site_from_input( $input, $output, fn() => $this->prompt_site_input( $input, $output ) );
@@ -67,7 +67,7 @@ final class Pressable_Site_Upload_Icon extends Command {
 
 	/**
 	 * {@inheritDoc}
-     */
+	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$output->writeln( "<fg=green;options=bold>Uploading apple-touch-icon.png to {$this->pressable_site->url}</>" );
 

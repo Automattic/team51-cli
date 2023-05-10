@@ -58,14 +58,18 @@ final class Pressable_API_Helper {
 		}
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
 			$message = '';
-			if ( \property_exists( $result['body'], 'message' ) ) {
-				$message = $result['body']->message;
-			} elseif ( \property_exists( $result['body'], 'error' ) ) {
-				$message = $result['body']->error;
-			}
+			if ( \is_null( $result['body'] ) ) {
+				$message = '{no response body 😭}';
+			} else {
+				if ( \property_exists( $result['body'], 'message' ) ) {
+					$message = $result['body']->message;
+				} elseif ( \property_exists( $result['body'], 'error' ) ) {
+					$message = $result['body']->error;
+				}
 
-			if ( \property_exists( $result['body'], 'errors' ) && ! empty( $result['body']->errors ) ) {
-				$message .= ' ' . \implode( ', ', (array) $result['body']->errors );
+				if ( \property_exists( $result['body'], 'errors' ) && ! empty( $result['body']->errors ) ) {
+					$message .= ' ' . \implode( ', ', (array) $result['body']->errors );
+				}
 			}
 
 			console_writeln(

@@ -53,7 +53,7 @@ final class WPCOM_API_Helper {
 		);
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
-			$response_body = print_r($result['body'], true);
+			$response_body = print_r( $result['body'], true );
 			console_writeln(
 				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']} {$response_body}",
 				\in_array( $result['headers']['http_code'], array( 403, 404 ), true ) ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET

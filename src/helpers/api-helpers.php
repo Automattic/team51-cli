@@ -16,7 +16,7 @@ class API_Helper {
 	private const PRESABLE_TOKEN_FILE         = TEAM51_CLI_ROOT_DIR . '/secrets/pressable_token.json';
 	private const PRESABLE_TOKEN_EXPIRE_AFTER = '-59 minutes';
 
-	public function call_pressable_api( $query, $method, $data = [] ) {
+	public function call_pressable_api( $query, $method, $data = array() ) {
 		$api_request_url = 'https://my.pressable.com/v1/' . $query;
 
 		$data = json_encode( $data );
@@ -317,7 +317,7 @@ class API_Helper {
 			),
 		);
 
-		$options['http']['content'] = json_encode( ['query' => $query ] );
+		$options['http']['content'] = json_encode( array( 'query' => $query ) );
 
 		$context = stream_context_create( $options );
 		$result  = @file_get_contents( $api_request_url, false, $context );
