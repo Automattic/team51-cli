@@ -427,14 +427,16 @@ class Create_Repository extends Command {
 	 * @return  string|null
 	 */
 	protected function prompt_production_url_input( InputInterface $input, OutputInterface $output ): ?string {
+		$default = "$this->repo_slug-production.mystagingwebsite.com";
+
 		if ( ! empty( $input->getOption( 'production-url' ) ) ) { // Default to the legacy option, if set.
 			$site_url = $input->getOption( 'production-url' );
 		} elseif ( $input->isInteractive() ) {
-			$question = new Question( '<question>Enter the site production URL:</question> ' );
+			$question = new Question( "<question>Enter the site production URL or leave empty to use $default:</question> " );
 			$site_url = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 
-		return $site_url ?? null;
+		return $site_url ?? $default;
 	}
 
 	/**
@@ -446,14 +448,16 @@ class Create_Repository extends Command {
 	 * @return  string|null
 	 */
 	protected function prompt_development_url_input( InputInterface $input, OutputInterface $output ): ?string {
+		$default = "$this->repo_slug-development.mystagingwebsite.com";
+
 		if ( ! empty( $input->getOption( 'development-url' ) ) ) { // Default to the legacy option, if set.
 			$site_url = $input->getOption( 'development-url' );
 		} elseif ( $input->isInteractive() ) {
-			$question = new Question( '<question>Enter the site development URL:</question> ' );
+			$question = new Question( "<question>Enter the site development URL or leave empty to use $default:</question> " );
 			$site_url = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 
-		return $site_url ?? null;
+		return $site_url ?? $default;
 	}
 
 	/**
