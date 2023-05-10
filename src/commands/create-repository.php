@@ -121,8 +121,8 @@ class Create_Repository extends Command {
 			->addOption( 'repo-type', null, InputOption::VALUE_REQUIRED, 'The type of repository to create. One of either `project`, `plugin`, or `issues`.', 'project' );
 
 		// region PROJECT REPO OPTIONS
-		$this->addOption( 'site-production-url', null, InputArgument::REQUIRED, 'The hostname of the intended production site (do not include http/https, e.g. example.com).' )
-			->addOption( 'site-development-url', null, InputArgument::REQUIRED, 'The hostname of the intended development site (do not include http/https, e.g. development-example.com).' )
+		$this->addOption( 'site-production-url', null, InputOption::VALUE_REQUIRED, 'The hostname of the intended production site (do not include http/https, e.g. example.com).' )
+			->addOption( 'site-development-url', null, InputOption::VALUE_REQUIRED, 'The hostname of the intended development site (do not include http/https, e.g. development-example.com).' )
 			->addOption( 'site-php-long-prefix', null, InputOption::VALUE_REQUIRED, 'The long prefix for global PHP variables inside the project.' )
 			->addOption( 'site-php-short-prefix', null, InputOption::VALUE_REQUIRED, 'The short prefix for global PHP variables inside the project.' )
 			->addOption( 'create-production-site', null, InputOption::VALUE_NONE, 'This script can optionally create a new Pressable production site and configure it in DeployHQ by passing --create-production-site.' );
