@@ -105,7 +105,7 @@ final class Remove_User extends Command {
 		}
 
 		// Remove?
-		if ( $this->just_list ) {
+		if ( $this->just_list || ( empty( $pressable_collaborators ) && empty( $wpcom_users ) ) ) {
 			return 0;
 		}
 		if ( $input->isInteractive() ) {
@@ -224,7 +224,7 @@ final class Remove_User extends Command {
 	}
 
 	/**
-	 * Outputs the WordPress.com sites that failed to fetch collaborators from.
+	 * Outputs the WordPress.com sites that failed to fetch users from.
 	 *
 	 * @param   OutputInterface $output The output object.
 	 * @param   array           $sites  The sites to output.
@@ -234,7 +234,7 @@ final class Remove_User extends Command {
 	protected function output_wpcom_failed_sites( OutputInterface $output, array $sites ): void {
 		$table = new Table( $output );
 
-		$table->setHeaderTitle( 'Failed to fetch collaborators from the following WordPress.com sites' );
+		$table->setHeaderTitle( 'Failed to fetch users from the following WordPress.com sites' );
 		$table->setHeaders( array( 'WP URL', 'Site ID' ) );
 
 		foreach ( $sites as $site ) {
