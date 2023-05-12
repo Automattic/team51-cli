@@ -10,6 +10,7 @@ namespace Team51\Helper;
  * the list contains both active and inactive sites. Make sure to read the API documentation for a complete list of defaults and options.
  *
  * @param   array   $params    Optional. Additional parameters to pass to the API call.
+ *                             It's recommended to pass the `fields` parameter otherwise the response is likely to time out.
  *
  * @link    https://developer.wordpress.com/docs/api/1.1/get/me/sites/
  *
@@ -103,6 +104,23 @@ function get_wpcom_site_user_by_email( string $site_id_or_url, string $email ): 
 	}
 
 	return null;
+}
+
+/**
+ * Deletes or removes a user of a site.
+ *
+ * @param   string  $site_id_or_url     The site URL or WordPress.com site ID.
+ * @param   string  $user_id            The WP user ID.
+ *
+ * @return  bool|null
+ */
+function delete_wpcom_site_user_by_id( string $site_id_or_url, string $user_id ): ?bool {
+	$result = WPCOM_API_Helper::call_api( "sites/$site_id_or_url/users/$user_id/delete", 'POST' );
+	if ( \is_null( $result ) || ! \property_exists( $result, 'success' ) ) {
+		return null;
+	}
+
+	return $result->success;
 }
 
 /**

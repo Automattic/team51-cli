@@ -248,6 +248,21 @@ function reset_pressable_site_sftp_user_password( string $site_id, string $usern
 }
 
 /**
+ * Get a list of collaborators. This will return all the collaborators that are attached to your sites,
+ * plus any instances of you being a collaborator on a site.
+ *
+ * @return  object[]|null
+ */
+function get_pressable_collaborators(): ?array {
+	$collaborators = Pressable_API_Helper::call_api( 'collaborators' );
+	if ( \is_null( $collaborators ) || empty( $collaborators->data ) ) {
+		return null;
+	}
+
+	return $collaborators->data;
+}
+
+/**
  * Get a list of collaborators for the specified site.
  *
  * @param   string  $site_id    The site ID.
@@ -303,6 +318,23 @@ function get_pressable_site_collaborator_by_email( string $site_id, string $coll
 	}
 
 	return null;
+}
+
+/**
+ * Delete a collaborator with the specified id from the given site.
+ *
+ * @param   string  $site_id            The site ID.
+ * @param   string  $collaborator_id    The collaborator ID.
+ *
+ * @return  bool|null
+ */
+function delete_pressable_site_collaborator_by_id( string $site_id, string $collaborator_id ): ?bool {
+	$response = Pressable_API_Helper::call_api( "/sites/$site_id/collaborators/$collaborator_id", 'DELETE' );
+	if ( \is_null( $response ) || ! \property_exists( $response, 'message' ) ) {
+		return $response;
+	}
+
+	return 'Success' === $response->message;
 }
 
 /**
