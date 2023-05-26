@@ -263,7 +263,7 @@ class Create_Repository extends Command {
 		run_system_command( array( 'git', 'clone', $repository->ssh_url, TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ) ); // Clone the repository.
 
 		replace_github_repository_topics( GITHUB_API_OWNER, $this->repo_slug, array( "team51-$this->repo_type" ) ); // Set a topic on the repository for easier finding.
-		sleep( 5 ); // Sometimes, the `mv` commands below fail with an error of `no such file or directory`. This is a hacky way to get around that by hopefully giving the filesystem enough time to catch up.
+		sleep( 30 ); // Sometimes, the `mv` commands below fail with an error of `no such file or directory`. This is a hacky way to get around that by hopefully giving the filesystem enough time to catch up. The number seems high, but 5s turned out to be too low but this worked.
 
 		if ( 'project' === $this->repo_type ) {
 			run_system_command( array( 'git', 'submodule', 'init' ), TEAM51_CLI_ROOT_DIR . "/scaffold/$this->repo_slug" ); // Initialize the submodules.
