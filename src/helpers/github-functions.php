@@ -3,6 +3,30 @@
 namespace Team51\Helper;
 
 /**
+ * Lists repositories for the specified organization.
+ *
+ * @param   string $organization The organization name. The name is not case-sensitive.
+ * @param   array  $query_params The query parameters to add to the request.
+ *
+ * @link    https://docs.github.com/en/rest/repos/repos#list-organization-repositories
+ *
+ * @return  array|null
+ */
+function get_github_repositories( string $organization, array $query_params = array() ): ?array {
+	$request_url = sprintf( 'orgs/%s/repos', $organization );
+	if ( ! empty( $query_params ) ) {
+		$request_url .= '?' . \http_build_query( $query_params );
+	}
+
+	$result = GitHub_API_Helper::call_api( $request_url );
+	if ( ! \is_array( $result ) ) {
+		return null;
+	}
+
+	return $result;
+}
+
+/**
  * Returns the description of the repository with the given owner and name.
  *
  * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
@@ -146,4 +170,67 @@ function replace_github_repository_topics( string $owner, string $repository, ar
 	}
 
 	return $result;
+}
+
+/**
+ * Lists all secrets available in a repository without revealing their encrypted values.
+ *
+ * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository     The name of the repository. The name is not case-sensitive.
+ *
+ * @return  object[]|null
+ */
+function get_github_repository_secrets( string $owner, string $repository ): ?array {
+	$result = GitHub_API_Helper::call_api( \sprintf( 'repos/%s/%s/actions/secrets', $owner, $repository ) );
+	if ( \is_null( $result ) || ! \property_exists( $result, 'secrets' ) ) {
+		return null;
+	}
+
+	return $result->secrets;
+}
+
+/**
+ * Gets your public key, which you need to encrypt secrets. You need to encrypt a secret before you can create or update secrets.
+ *
+ * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository     The name of the repository. The name is not case-sensitive.
+ *
+ * @return  object|null
+ */
+function get_github_repository_public_key( string $owner, string $repository ): ?object {
+	$result = GitHub_API_Helper::call_api( \sprintf( 'repos/%s/%s/actions/secrets/public-key', $owner, $repository ) );
+	if ( \is_null( $result ) || ! \property_exists( $result, 'key' ) ) {
+		return null;
+	}
+
+	return $result;
+}
+
+/**
+ * Creates or updates a repository secret with an encrypted value.
+ *
+ * @param   string  $owner              The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository         The name of the repository. The name is not case-sensitive.
+ * @param   string  $secret_name        The name of the secret.
+ * @param   string  $encrypted_value    Value for your secret, encrypted with LibSodium using the public key retrieved from the Get a repository public key endpoint.
+ * @param   string  $key_id             ID of the key you used to encrypt the secret.
+ *
+ * @link    https://docs.github.com/en/rest/actions/secrets#create-or-update-a-repository-secret
+ *
+ * @return  bool
+ */
+function update_github_repository_secret( string $owner, string $repository, string $secret_name, string $encrypted_value, string $key_id ): bool {
+	$result = GitHub_API_Helper::call_api(
+		\sprintf( 'repos/%s/%s/actions/secrets/%s', $owner, $repository, $secret_name ),
+		'PUT',
+		array(
+			'encrypted_value' => $encrypted_value,
+			'key_id'          => $key_id,
+		)
+	);
+	if ( \is_null( $result ) ) {
+		return false;
+	}
+
+	return \is_object( $result ); // On success, we just have an empty object.
 }
