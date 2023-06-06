@@ -94,14 +94,14 @@ final class Remove_User extends Command {
 
 		$wpcom_users = $this->get_wpcom_users( $output );
 		if ( ! \is_array( $wpcom_users ) ) {
-			$output->writeln( '<error>Something has gone wrong while looking up the WordPress.com collaborators.</error>' );
+			$output->writeln( '<error>Something has gone wrong while looking up the WordPress.com users.</error>' );
 			return 1;
 		}
 
 		if ( empty( $wpcom_users ) ) {
 			$output->writeln( "<info>No users found on WordPress.com sites with the email '$this->user'.</info>" );
 		} else {
-			$this->output_wpcom_collaborators( $output, $wpcom_users );
+			$this->output_wpcom_users( $output, $wpcom_users );
 		}
 
 		// Remove?
@@ -124,6 +124,7 @@ final class Remove_User extends Command {
 			}
 		}
 		foreach ( $wpcom_users as $user ) {
+			$user->email = $this->user; // The email is not returned by the API, but the API is filtered by it, so we know what it must be ...
 			if ( delete_wpcom_site_user_by_id( $user->siteId, $user->userId ) ) {
 				$output->writeln( "<info>✅ Removed $user->email from WordPress.com site $user->siteName.</info>" );
 			} else {
@@ -203,7 +204,7 @@ final class Remove_User extends Command {
 
 		$collaborators = WPCOM_API_Helper::call_api_concurrent(
 			\array_map(
-				fn ( $site ) => "sites/$site->ID/users/?search=$this->user&search_columns=user_email&fields=ID,email,site_ID,URL",
+				fn ( $site ) => "sites/$site->ID/users/?search=$this->user&search_columns=user_email",
 				$sites
 			)
 		);
@@ -246,20 +247,20 @@ final class Remove_User extends Command {
 	}
 
 	/**
-	 * Outputs the WordPress.com collaborators to the console in tabular form.
+	 * Outputs the WordPress.com users to the console in tabular form.
 	 *
-	 * @param   OutputInterface $output         The output object.
-	 * @param   object[]        $collaborators  The collaborators to output.
+	 * @param   OutputInterface $output The output object.
+	 * @param   object[]        $users  The users to output.
 	 *
 	 * @return  void
 	 */
-	protected function output_wpcom_collaborators( OutputInterface $output, array $collaborators ): void {
+	protected function output_wpcom_users( OutputInterface $output, array $users ): void {
 		$table = new Table( $output );
 
-		$table->setHeaderTitle( "$this->user is a collaborator on the following WordPress.com sites" );
+		$table->setHeaderTitle( "$this->user is a user on the following WordPress.com sites" );
 		$table->setHeaders( array( 'WP URL', 'Site ID', 'WP User ID' ) );
 
-		foreach ( $collaborators as $collaborator ) {
+		foreach ( $users as $collaborator ) {
 			$table->addRow( array( $collaborator->siteName, $collaborator->siteId, $collaborator->userId ) );
 		}
 
