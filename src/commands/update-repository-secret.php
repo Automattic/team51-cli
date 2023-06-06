@@ -1,168 +1,171 @@
 <?php
-/**
- *
- * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
- */
 
 namespace Team51\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use Team51\Helper\API_Helper;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
+use function Team51\Helper\get_enum_input;
+use function Team51\Helper\get_github_repositories;
+use function Team51\Helper\get_github_repository;
+use function Team51\Helper\get_github_repository_public_key;
+use function Team51\Helper\get_github_repository_secrets;
+use function Team51\Helper\maybe_define_console_verbosity;
+use function Team51\Helper\update_github_repository_secret;
 
 /**
- * class Update_Repository_Secret
+ * CLI command for updating a GitHub repository secret.
  */
 class Update_Repository_Secret extends Command {
+	// region FIELDS AND CONSTANTS
 
 	/**
-	 * @var string|null The default command name.
+	 * {@inheritdoc}
 	 */
 	protected static $defaultName = 'update-repository-secret'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
-	 * @var string $repo_name Repository name.
+	 * Whether processing multiple sites or just a single given one.
+	 * Currently, can only be set to `all`, if at all.
+	 *
+	 * @var string|null
 	 */
-	protected $repo_name = '';
+	protected ?string $multiple = null;
 
 	/**
-	 * @var string $secret_name Secret name.
+	 * The list of GitHub repositories to process.
+	 *
+	 * @var array|null
 	 */
-	protected $secret_name = '';
+	protected ?array $repositories = null;
 
 	/**
-	 * @var Api_Helper|null API Helper instance.
+	 * The secret name to update.
+	 *
+	 * @var string|null $secret_name
 	 */
-	protected $api_helper = null;
+	protected ?string $secret_name = null;
+
+	// endregion
 
 	/**
-	 * @var OutputInterface $output Output instance.
+	 * {@inheritDoc}
 	 */
-	protected $output;
+	protected function configure(): void {
+		$this->setDescription( 'Updates GitHub repository secret on github.com in the organization specified with GITHUB_API_OWNER. and project name' )
+			->setHelp( 'This command allows you to update Github repository secret or create one if it is missing.' );
 
+		$this->addArgument( 'repo-slug', InputArgument::OPTIONAL, 'The slug of the GitHub repository' )
+			->addOption( 'secret-name', null, InputOption::VALUE_REQUIRED, 'Secret name in all caps (e.g., GH_BOT_TOKEN)', 'GH_BOT_TOKEN' );
 
-	public function __construct() {
-		parent::__construct();
-
-		$this->api_helper = new API_Helper();
+		$this->addOption( 'multiple', null, InputOption::VALUE_REQUIRED, 'Determines whether the \'repo-slug\' argument is optional or not. Accepts only \'all\' currently.' );
 	}
 
-	protected function configure() {
-		$this
-			->setDescription( 'Updates GitHub repository secret on github.com in the organization specified with GITHUB_API_OWNER. and project name' )
-			->setHelp( 'This command allows you to update Github repository secret or create one if it is missing.' )
-			->addOption( 'repo-slug', null, InputOption::VALUE_REQUIRED, 'Repository name in slug form (e.g. client-name)?' )
-			->addOption( 'secret-name', null, InputOption::VALUE_REQUIRED, 'Secret name in all caps (e.g. GH_BOT_TOKEN)?' );
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function initialize( InputInterface $input, OutputInterface $output ): void {
+		maybe_define_console_verbosity( $output->getVerbosity() );
+
+		// Retrieve and validate the modifier options.
+		$this->multiple = get_enum_input( $input, $output, 'multiple', array( 'all' ) );
+
+		// If processing a single repository, retrieve it from the input.
+		if ( 'all' !== $this->multiple ) {
+			$repo_slug = $input->getArgument( 'repo-slug' );
+			if ( empty( $repo_slug ) ) {
+				$output->writeln( '<error>Repository slug is required.</error>' );
+				exit( 1 );
+			}
+
+			if ( \is_null( get_github_repository( GITHUB_API_OWNER, $repo_slug ) ) ) {
+				$output->writeln( '<error>Repository not found.</error>' );
+				exit( 1 );
+			}
+
+			// Set the repo slug as an argument for the command.
+			$input->setArgument( 'repo-slug', $repo_slug );
+
+			// Set the repo slug as the only repository to process.
+			$this->repositories = array( $repo_slug );
+		} else {
+			$page = 1;
+			do {
+				$repositories_page = get_github_repositories(
+					GITHUB_API_OWNER,
+					array(
+						'per_page' => 100,
+						'page'     => $page,
+					)
+				);
+				if ( \is_null( $repositories_page ) ) {
+					$output->writeln( '<error>Failed to retrieve repositories.</error>' );
+					exit( 1 );
+				}
+
+				$this->repositories = array_merge( $this->repositories ?? array(), array_column( $repositories_page, 'name' ) );
+				++$page;
+			} while ( ! empty( $repositories_page ) );
+		}
+
+		// Retrieve the given secret name which is always required.
+		$this->secret_name = \strtoupper( $input->getOption( 'secret-name' ) );
+		if ( 'GH_BOT_TOKEN' !== $this->secret_name && ! defined( $this->secret_name ) ) {
+			$output->writeln( '<error>No constant with the given secret name found.</error>' );
+			exit( 1 );
+		}
 	}
 
 	/**
-	 * Executes the current command.
-	 *
-	 * @param InputInterface $input
-	 * @param OutputInterface $output
-	 *
-	 * @return void
+	 * {@inheritDoc}
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$template_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.tpl.json';
-		$config_file = TEAM51_CLI_ROOT_DIR . '/secrets/config.json';
-		\exec( \sprintf( 'op inject -i %1$s -o %2$s', $template_file, $config_file ) );
-
-		$config = json_decode( file_get_contents( $config_file ) );
-		\unlink( $config_file );
-
-		$this->output   = $output;
-		$success_repo   = $this->verify_input_repo_name( $input );
-		$success_secret = $this->verify_input_secret_name( $input );
-
-		if ( false === $success_repo || false === $success_secret ) {
-			return 1;
+	protected function interact( InputInterface $input, OutputInterface $output ): void {
+		switch ( $this->multiple ) {
+			case 'all':
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to update the $this->secret_name secret on <fg=red;options=bold>ALL</> repositories? [y/N]</question> " );
+				break;
+			default:
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to update the $this->secret_name secret on {$this->repositories[0]}? [y/N]</question> " );
 		}
 
-		$this->repo_name       = $input->getOption( 'repo-slug' );
-		$this->secret_name     = $input->getOption( 'secret-name' );
-		$success_secret_exists = $this->verify_secret_exists( $this->secret_name, $config );
-
-		if ( false === $success_secret_exists ) {
-			return 1;
+		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+			$output->writeln( '<comment>Command aborted by user.</comment>' );
+			exit( 2 );
 		}
+	}
 
-		$this->verify_repo_on_github();
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
+		foreach ( $this->repositories as $repository ) {
+			$secrets = get_github_repository_secrets( GITHUB_API_OWNER, $repository );
+			if ( ! \in_array( $this->secret_name, \array_column( $secrets, 'name' ), true ) ) {
+				$output->writeln( "<comment>Secret $this->secret_name not found on $repository. Skipping...</comment>", OutputInterface::VERBOSITY_VERBOSE );
+				continue;
+			}
 
-		$repo_key = $this->get_repo_public_key();
-		$this->verify_repo_key( $repo_key );
+			$repo_public_key = get_github_repository_public_key( GITHUB_API_OWNER, $repository );
+			if ( empty( $repo_public_key ) ) {
+				$output->writeln( "<error>Failed to retrieve public key for $repository. Skipping...</error>" );
+				continue;
+			}
 
-		$new_secret = $this->get_secret_key( $this->secret_name, $config );
+			$secret_value    = \constant( 'GH_BOT_TOKEN' === $this->secret_name ? 'GITHUB_API_BOT_SECRETS_TOKEN' : $this->secret_name );
+			$encrypted_value = $this->seal_secret( $secret_value, \base64_decode( $repo_public_key->key ) );
 
-		if ( empty( $new_secret ) ) {
-			return 1;
+			$result = update_github_repository_secret( GITHUB_API_OWNER, $repository, $this->secret_name, $encrypted_value, $repo_public_key->key_id );
+			if ( $result ) {
+				$output->writeln( "<fg=green;options=bold>Successfully updated secret $this->secret_name on $repository.</>" );
+			} else {
+				$output->writeln( "<error>Failed to update secret $this->secret_name on $repository.</error>" );
+			}
 		}
-
-		$repo_public_key_id = $repo_key['key_id'];
-		$repo_public_key    = base64_decode( $repo_key['key'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-
-		$this->verify_public_key( $repo_public_key );
-
-		$sealbox = $this->seal_secret( $new_secret, $repo_public_key );
-
-		$this->update_repo_secret( $sealbox, $repo_public_key_id, $this->secret_name );
 
 		return 0;
-	}
-
-	/**
-	 * Is passed string valid repository name in org/user.
-	 *
-	 * @return bool
-	 */
-	private function is_valid_repo(): bool {
-		$repository_exists = $this->api_helper->call_github_api(
-			sprintf( 'repos/%s/%s', GITHUB_API_OWNER, $this->repo_name ),
-			'',
-			'GET'
-		);
-
-		return ! ( true === empty( $repository_exists->id ) );
-	}
-
-	/**
-	 * Get repo public key.
-	 *
-	 * @return array
-	 */
-	private function get_repo_public_key(): array {
-		$key_response = $this->api_helper->call_github_api(
-			sprintf( 'repos/%s/%s/actions/secrets/public-key', GITHUB_API_OWNER, $this->repo_name ),
-			array(),
-			'GET'
-		);
-
-		return array(
-			'key_id' => $key_response->key_id ?? null,
-			'key'    => $key_response->key ?? null,
-		);
-	}
-
-	/**
-	 * Update GitHub repo secret.
-	 *
-	 * @param string $sealbox Sealed secret string.
-	 * @param int $key_id Github KEY ID.
-	 * @param string $secret_name Secret name to be used.
-	 */
-	private function update_repo_secret( string $sealbox, int $key_id, string $secret_name ) {
-		$update_response = $this->api_helper->call_github_api(
-			sprintf( 'repos/%s/%s/actions/secrets/%s', GITHUB_API_OWNER, $this->repo_name, $secret_name ),
-			array(
-				'encrypted_value' => $sealbox,
-				'key_id'          => (string) $key_id,
-			),
-			'PUT'
-		);
 	}
 
 	/**
@@ -171,88 +174,6 @@ class Update_Repository_Secret extends Command {
 	 * @throws \SodiumException
 	 */
 	private function seal_secret( string $secret_string, string $public_key ): string {
-		return base64_encode( sodium_crypto_box_seal( $secret_string, $public_key ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-	}
-
-	private function verify_input_repo_name( InputInterface $input ) {
-		if ( true === empty( $input->getOption( 'repo-slug' ) ) ) {
-			$this->output->writeln( '<error>You must pass a repository slug with --repo-slug.</error>' );
-			return false;
-		}
-	}
-
-	private function verify_input_secret_name( InputInterface $input ) {
-		if ( true === empty( $input->getOption( 'secret-name' ) ) ) {
-			$this->output->writeln( '<error>You must pass a secret name with --secret-name.</error>' );
-			return false;
-		}
-	}
-
-	private function verify_secret_exists( string $secret_name, $config ) {
-		$secret_boom = \array_map( 'strtolower', \explode( '_', $secret_name, 2 ) );
-		if ( 'GH_BOT_TOKEN' !== $secret_name && empty( $config->{$secret_boom[0]}->{$secret_boom[1]} ) ) { // Legacy is a beach!
-			$this->output->writeln( '<error>Secret does not exist in config.json file.</error>' );
-			return false;
-		}
-	}
-
-	private function get_secret_key( string $secret_name, $config ) {
-		if ( 'GH_BOT_TOKEN' === $secret_name && empty( $config->GH_BOT_TOKEN ) ) { // Legacy is a beach!
-			$secret_name = 'GITHUB_API_BOT_SECRETS_TOKEN';
-			$this->verify_secret_exists( $secret_name, $config );
-		}
-		$secret_boom = \array_map( 'strtolower', \explode( '_', $secret_name, 2 ) );
-		if ( ! empty( $config->{$secret_boom[0]}->{$secret_boom[1]} ) ) {
-			$secret = $config->{$secret_boom[0]}->{$secret_boom[1]};
-		} else {
-			$this->output->writeln( '<error>Secret could not be retrieved. Aborting!</error>' );
-		}
-		return $secret;
-	}
-
-	/**
-	 * @param string|bool $public_key
-	 *
-	 * @return void
-	 */
-	private function verify_public_key( $public_key ): void {
-		if ( false === $public_key ) {
-			$this->output->writeln( "<error>Repository key for {$this->repo_name} is empty.</error>" );
-			$this->exit();
-		}
-	}
-
-	/**
-	 * Verify that repo name exists on GitHub.
-	 */
-	private function verify_repo_on_github(): void {
-		// Verify repo we're trying to update secret exist.
-		if ( false === $this->is_valid_repo() ) {
-			$this->output->writeln( "<error>Repository {$this->repo_name} doesn't exist in GitHub org. Please choose a different repository name. Aborting!</error>" );
-			$this->exit();
-		}
-	}
-
-	/**
-	 * Verify that both key_id and key elements exist in repo_key.
-	 *
-	 * @param array $repo_key
-	 *
-	 * @return void
-	 */
-	private function verify_repo_key( array $repo_key ): void {
-		if ( true === empty( $repo_key['key_id'] ) || true === empty( $repo_key['key'] ) ) {
-			$this->output->writeln( "<error>Repository key for {$this->repo_name} is empty. Aborting!</error>" );
-			$this->exit();
-		}
-	}
-
-	/**
-	 * Exit/break command execution.
-	 *
-	 * @param int $code
-	 */
-	private function exit( int $code = 1 ): void {
-		exit( $code ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		return \base64_encode( \sodium_crypto_box_seal( $secret_string, $public_key ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 }
