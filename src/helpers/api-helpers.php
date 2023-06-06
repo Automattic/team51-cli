@@ -272,35 +272,6 @@ class API_Helper {
 		return json_decode( $result );
 	}
 
-	public function call_front_api( $query, $data = array(), $method = 'GET' ) {
-		$api_request_url = 'https://api2.frontapp.com/' . $query;
-
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/json',
-			'Authorization: Bearer ' . FRONT_API_TOKEN,
-			'User-Agent: PHP',
-		);
-
-		$options = array(
-			'http' => array(
-				'header'        => $headers,
-				'ignore_errors' => true,
-			),
-		);
-
-		if ( ! empty( $data ) && in_array( $method, array( 'POST', 'PUT' ) ) ) {
-			$data                       = json_encode( $data );
-			$options['http']['content'] = $data;
-			$options['http']['method']  = $method;
-		}
-
-		$context = stream_context_create( $options );
-		$result  = @file_get_contents( $api_request_url, false, $context );
-
-		return json_decode( $result );
-	}
-
 	public function call_github_graphql_api( $query, $associative = false ) {
 		$api_request_url = 'https://api.github.com/graphql';
 
