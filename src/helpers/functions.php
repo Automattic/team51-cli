@@ -7,6 +7,8 @@ use Symfony\Component\Console\Exception\ExceptionInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 // region HTTP
 
@@ -88,6 +90,8 @@ function decode_json_content( string $json, bool $associative = false, int $flag
 		return \json_decode( $json, $associative, 512, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Decoding Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original JSON:' . \PHP_EOL . $json );
+		console_writeln( $exception->getTraceAsString() );
 		return null;
 	}
 }
@@ -105,6 +109,8 @@ function encode_json_content( $data, int $flags = 0 ): ?string {
 		return \json_encode( $data, $flags | JSON_THROW_ON_ERROR );
 	} catch ( \JsonException $exception ) {
 		console_writeln( "JSON Encoding Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original data:' . \PHP_EOL . \print_r( $data, true ) );
+		console_writeln( $exception->getTraceAsString() );
 		return null;
 	}
 }
@@ -128,6 +134,27 @@ function run_app_command( Application $application, string $command_name, array 
 	$input->setInteractive( $interactive );
 
 	return $command->run( $input, $output );
+}
+
+/**
+ * Runs a system command and returns the output.
+ *
+ * @param   array   $command            The command to run.
+ * @param   string  $working_directory  The working directory to run the command in.
+ *
+ * @link    https://symfony.com/doc/current/components/process.html
+ *
+ * @return  string
+ */
+function run_system_command( array $command, string $working_directory = '.' ): string {
+	$process = new Process( $command, $working_directory );
+	$process->run();
+
+	if ( ! $process->isSuccessful() ) {
+		throw new ProcessFailedException( $process );
+	}
+
+	return $process->getOutput();
 }
 
 // endregion
@@ -192,7 +219,7 @@ function is_contractor_mode(): bool {
  */
 function is_quiet_mode(): bool {
 	return \in_array( '-q', $_SERVER['argv'], true )
-        || \in_array( '--quiet', $_SERVER['argv'], true );
+		|| \in_array( '--quiet', $_SERVER['argv'], true );
 }
 
 /**

@@ -144,6 +144,19 @@ class Create_Production_Site extends Command {
 			$output
 		);
 
+		$output->writeln( '<comment>Installing the Plugin Autoupdate Filter plugin.</comment>' );
+		/* @noinspection PhpUnhandledExceptionInspection */
+		run_app_command(
+			$this->getApplication(),
+			Pressable_Site_Run_WP_CLI_Command::getDefaultName(),
+			array(
+				'site'           => $pressable_site->data->id,
+				'wp-cli-command' => 'plugin install https://github.com/a8cteam51/plugin-autoupdate-filter/releases/latest/download/plugin-autoupdate-filter.zip --activate',
+			),
+			$output
+		);
+
+
 		$jetpack_activation_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/activate', (int) $pressable_site->data->id );
 		$jetpack_connection_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/next_url', (int) $pressable_site->data->id );
 		$networkadmin_search_link = sprintf( 'https://wordpress.com/wp-admin/network/sites.php?s=%s&submit=Search+Sites', $pressable_site->data->url );
