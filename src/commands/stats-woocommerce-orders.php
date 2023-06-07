@@ -275,17 +275,11 @@ class Get_WooCommerce_Stats extends Command {
 	// Helper functions, getting list of plugins and getting woocommerce stats
 	private function get_list_of_plugins( $site_id ) {
 		$plugin_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/plugins', array() );
-		if ( empty( $plugin_list->data ) ) {
-			$plugin_list = null;
-		}
 		return $plugin_list;
 	}
 
 	private function get_woocommerce_stats( $site_id, $unit, $date ) {
 		$woocommerce_stats = $this->api_helper->call_wpcom_api( '/wpcom/v2/sites/' . $site_id . '/stats/orders?unit=' . $unit . '&date=' . $date . '&quantity=1', array() );
-		if ( ! empty( $woocommerce_stats->error ) ) {
-			$woocommerce_stats = null;
-		}
 		return $woocommerce_stats;
 	}
 }
