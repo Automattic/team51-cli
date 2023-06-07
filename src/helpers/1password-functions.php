@@ -162,14 +162,14 @@ function _build_1password_command_string( string $command, array $flags, array $
 
 	foreach ( $flags as $flag => $value ) {
 		if ( \in_array( $flag, $value_flags, true ) ) {
-			$command .= " --$flag " . \implode( ',', (array) $value );
+			$command .= " --$flag " . \escapeshellarg( \implode( ',', (array) $value ) );
 		} elseif ( $value ) {
 			$command .= " --$flag";
 		}
 	}
 	foreach ( $global_flags as $flag => $value ) {
 		if ( \in_array( $flag, array( 'account', 'config', 'encoding', 'session' ), true ) ) {
-			$command .= " --$flag " . \implode( ',', (array) $value );
+			$command .= " --$flag " . \escapeshellarg( \implode( ',', (array) $value ) );
 		} elseif ( $value ) {
 			$command .= " --$flag";
 		}

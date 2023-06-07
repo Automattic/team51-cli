@@ -2,7 +2,14 @@
 
 namespace Team51\Helper;
 
+use Amp\Dns\Record;
+use Amp\Http\Client\HttpClientBuilder;
+use Amp\Http\Client\Request;
 use Symfony\Component\Console\Output\OutputInterface;
+use function Amp\call;
+use function Amp\Dns\resolve;
+use function Amp\Promise\all;
+use function Amp\Promise\wait;
 
 /**
  * Performs the calls to the WordPress.com API and parses the responses.
@@ -46,14 +53,75 @@ final class WPCOM_API_Helper {
 		);
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
+			$response_body = print_r( $result['body'], true );
 			console_writeln(
-				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']}",
+				"❌ WordPress.com API error ($endpoint): {$result['headers']['http_code']} {$response_body}",
 				\in_array( $result['headers']['http_code'], array( 403, 404 ), true ) ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
 			);
 			return null;
 		}
 
 		return $result['body'];
+	}
+
+	/**
+	 * Calls a list of given endpoints on the WordPress.com API concurrently and returns the responses synchronously.
+	 *
+	 * @param   string[]    $endpoints  The endpoints to call.
+	 * @param   string      $method     The HTTP method to use. One of 'GET', 'POST', 'PUT', 'DELETE'.
+	 * @param   array[]     $params     The parameters to send with each request.
+	 * @param   bool        $quiet      Whether to suppress the output of errors.
+	 *
+	 * @link    https://amphp.org/http-client/concurrent
+	 *
+	 * @return  array
+	 * @throws  \Throwable  If an error occurs in a request promise.
+	 */
+	public static function call_api_concurrent( array $endpoints, string $method = 'GET', array $params = array(), bool $quiet = true ): array {
+		$http_client = HttpClientBuilder::buildDefault();
+		$promises    = array();
+
+		foreach ( $endpoints as $index => $endpoint ) {
+			$endpoint = self::get_request_url( $endpoint );
+			$body     = $params[ $index ] ?? null;
+
+			$promises[ $index ] = call(
+				static function() use ( $body, $method, $http_client, $endpoint, $quiet ) {
+					$request = new Request( $endpoint, $method );
+					$request->setInactivityTimeout( 60000 );
+					$request->setTransferTimeout( 60000 );
+
+					$request->setHeaders(
+						array(
+							'Accept'        => 'application/json',
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . WPCOM_API_ACCOUNT_TOKEN,
+							'User-Agent'    => 'PHP',
+						)
+					);
+					if ( ! \is_null( $body ) && \in_array( $method, array( 'POST', 'PUT' ), true ) ) {
+						$request->setBody( encode_json_content( $body ) );
+					}
+
+					$response = yield $http_client->request( $request );
+					$body     = yield $response->getBody()->buffer();
+
+					$status = $response->getStatus();
+					if ( 0 !== \strpos( (string) $status, '2' ) ) {
+						console_writeln(
+							"❌ WordPress.com API error ($endpoint): $status $body",
+							$quiet ? OutputInterface::VERBOSITY_DEBUG : OutputInterface::VERBOSITY_QUIET
+						);
+						return null;
+					}
+
+					$body = $body ?: '{}'; // On non-2xx status codes, the WPCOM body is empty and that will trigger a needless exception.
+					return decode_json_content( $body );
+				}
+			);
+		}
+
+		return wait( all( $promises ) );
 	}
 
 	/**

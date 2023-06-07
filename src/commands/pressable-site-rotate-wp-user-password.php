@@ -136,14 +136,14 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		switch ( $this->multiple ) {
 			case 'all':
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on <fg=red;options=bold>ALL</> sites? [Y/n]</question> ", false );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on <fg=red;options=bold>ALL</> sites? [y/N]</question> ", false );
 				break;
 			case 'related':
 				output_related_pressable_sites( $output, get_related_pressable_sites( $this->pressable_sites[0] ) );
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on all the sites listed above? [Y/n]</question> ", false );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on all the sites listed above? [y/N]</question> ", false );
 				break;
 			default:
-				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on {$this->pressable_sites[0]->displayName} (ID {$this->pressable_sites[0]->id}, URL {$this->pressable_sites[0]->url})? [Y/n]</question> ", false );
+				$question = new ConfirmationQuestion( "<question>Are you sure you want to rotate the WP user password of $this->wp_user_email on {$this->pressable_sites[0]->displayName} (ID {$this->pressable_sites[0]->id}, URL {$this->pressable_sites[0]->url})? [y/N]</question> ", false );
 		}
 
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
@@ -152,7 +152,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		}
 
 		if ( 'all' === $this->multiple && false === $this->dry_run ) {
-			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? [Y/n]</question> ', false );
+			$question = new ConfirmationQuestion( '<question>This is <fg=red;options=bold>NOT</> a dry run. Are you sure you want to continue rotating the WP users password? [y/N]</question> ', false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit( 2 );
@@ -229,7 +229,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 		if ( ! $input->isInteractive() ) {
 			$email = 'concierge@wordpress.com';
 		} else {
-			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [Y/n]</question> ', false );
+			$question = new ConfirmationQuestion( '<question>No user was provided. Do you wish to continue with the default concierge user? [y/N]</question> ', false );
 			if ( true === $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$email = 'concierge@wordpress.com';
 			} else {

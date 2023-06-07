@@ -12,6 +12,7 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use function Team51\Helper\create_pressable_site_collaborator;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_sites;
+use function Team51\Helper\maybe_define_console_verbosity;
 
 /**
  * CLI command for creating a new collaborator on a Pressable site.
@@ -34,6 +35,13 @@ class Pressable_Site_Create_Collaborator extends Command {
 		->addOption( 'email', null, InputOption::VALUE_REQUIRED, 'The user email.' )
 		->addOption( 'site', null, InputOption::VALUE_OPTIONAL, 'The Pressable site. Can be a numeric site ID or by domain.' )
 		->addOption( 'search', null, InputOption::VALUE_OPTIONAL, 'Search for any site by domain.' );
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function initialize( InputInterface $input, OutputInterface $output ): void {
+		maybe_define_console_verbosity( $output->getVerbosity() );
 	}
 
 	/**
