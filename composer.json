@@ -2,11 +2,13 @@
     "require": {
         "ext-json": "*",
         "ext-sodium": "*",
-        "symfony/console": "^4.3",
-        "symfony/filesystem": "^4.3",
-        "symfony/process": "^4.3",
-        "phpseclib/phpseclib": "^3.0.7",
-        "amphp/http-client": "^4.6"
+        "ext-gd": "*",
+        "amphp/http-client": "^4.6",
+        "phpseclib/phpseclib": "^3.0",
+        "symfony/console": "^4.4",
+        "symfony/filesystem": "^4.4",
+        "symfony/finder": "^4.4",
+        "symfony/process": "^4.4"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
@@ -16,6 +18,7 @@
             "src/helpers/functions.php",
             "src/helpers/1password-functions.php",
             "src/helpers/deployhq-functions.php",
+            "src/helpers/github-functions.php",
             "src/helpers/pressable-functions.php",
             "src/helpers/wpcom-functions.php"
         ],
@@ -24,11 +27,13 @@
         ]
     },
     "scripts": {
-        "coding-standards:check": [
-            "@php phpcs --standard=.phpcs.xml -s -v"
-        ],
-        "coding-standards:fix": [
-            "@php phpcbf --standard=.phpcs.xml -v"
+        "format:php": "@php phpcbf --standard=.phpcs.xml -v",
+        "lint:php": "@php phpcs --standard=.phpcs.xml -s -v",
+
+        "packages-install": "@composer install --ignore-platform-reqs --no-interaction",
+        "packages-update": [
+            "@composer clear-cache",
+            "@composer update --prefer-stable --no-interaction"
         ]
     },
     "config": {

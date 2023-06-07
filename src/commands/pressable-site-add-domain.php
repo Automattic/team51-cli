@@ -101,7 +101,7 @@ final class Pressable_Site_Add_Domain extends Command {
 	 */
 	protected function interact( InputInterface $input, OutputInterface $output ): void {
 		$primary  = $this->primary ? ' and set it as primary' : '';
-		$question = new ConfirmationQuestion( "<question>Are you sure you want to add the domain $this->new_domain to {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})$primary? [Y/n]</question> ", false );
+		$question = new ConfirmationQuestion( "<question>Are you sure you want to add the domain $this->new_domain to {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url})$primary? [y/N]</question> ", false );
 		if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 			$output->writeln( '<comment>Command aborted by user.</comment>' );
 			exit( 2 );
@@ -109,7 +109,7 @@ final class Pressable_Site_Add_Domain extends Command {
 
 		// If the site is a staging one, confirm that it's ok to convert it to a live one.
 		if ( $this->pressable_site->staging ) {
-			$question = new ConfirmationQuestion( "<question>{$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) is a staging site. Adding a domain will first convert it to a live site. Continue? [Y/n]</question> ", false );
+			$question = new ConfirmationQuestion( "<question>{$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) is a staging site. Adding a domain will first convert it to a live site. Continue? [y/N]</question> ", false );
 			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
 				$output->writeln( '<comment>Command aborted by user.</comment>' );
 				exit( 2 );

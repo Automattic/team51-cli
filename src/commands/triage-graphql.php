@@ -10,7 +10,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Triage_GraphQL extends Command {
 	protected static $defaultName = 'triage';
 
-	const TRIAGE_STATUS = '🆕 Needs Triaged';
+	const TRIAGE_STATUS           = '🆕 Needs Triaged';
+	const IN_PROGRESS_STATUS      = '🏗 In Progress';
+	const WAITING_FEEDBACK_STATUS = '⌛ Waiting Feedback';
 
 	protected function configure() {
 		$this->setDescription( 'Generates a Digest Post of what upcoming Triage issues we have.' )
@@ -41,22 +43,26 @@ class Triage_GraphQL extends Command {
 		// Merge all nodes from each response.
 		$nodes = array_merge( ...array_map( fn ( $response ) => $response->data->node->items->nodes, $all_items ) );
 
-		$triage_nodes = array_filter( $nodes, fn ( $node ) => array_search( self::TRIAGE_STATUS, array_column( $node->fieldValues->nodes, 'name' ) ) !== false );
+		$triage_nodes   = array_filter( $nodes, fn ( $node ) => array_search( self::TRIAGE_STATUS, array_column( $node->fieldValues->nodes, 'name' ) ) !== false );
+		$progress_nodes = array_filter( $nodes, fn ( $node ) => array_search( self::IN_PROGRESS_STATUS, array_column( $node->fieldValues->nodes, 'name' ) ) !== false );
+		$feedback_nodes = array_filter( $nodes, fn ( $node ) => array_search( self::WAITING_FEEDBACK_STATUS, array_column( $node->fieldValues->nodes, 'name' ) ) !== false );
 
-		$output->writeln( sprintf( '<comment>Triage currently has %d cards.</comment>', count( $triage_nodes ) ) );
+		$output->writeln( sprintf( '<comment>"Triage" currently has %d cards.</comment>', count( $triage_nodes ) ) );
+		$output->writeln( sprintf( '<comment>"In Progress" currently has %d cards.</comment>', count( $progress_nodes ) ) );
+		$output->writeln( sprintf( '<comment>"Waiting Feedback" currently has %d cards.</comment>', count( $feedback_nodes ) ) );
 
-		$issues = [];
+		$issues = array();
 
 		foreach ( $triage_nodes as $node ) {
 			$due_date = array_column( $node->fieldValues->nodes, 'date' )[0] ?? 9999;
 
-			$issues[] = [
+			$issues[] = array(
 				'due_in' => $due_date === 9999 ? $due_date : ( strtotime( $due_date ) - strtotime( 'today' ) ) / ( 24 * 60 * 60 ),
 				'title'  => $node->content->title,
 				'number' => $node->content->number,
 				'url'    => $node->content->url,
 				'labels' => array_column( $node->content->labels->nodes, 'name' ),
-			];
+			);
 		}
 
 		$output->writeln( '' );
@@ -70,7 +76,7 @@ class Triage_GraphQL extends Command {
 				$type = 'error';
 			}
 
-			switch( $issue['due_in'] ) {
+			switch ( $issue['due_in'] ) {
 				case -1:
 					$how_long = 'Due YESTERDAY!';
 					break;
@@ -89,7 +95,7 @@ class Triage_GraphQL extends Command {
 			}
 
 			$tags = '';
-			if ( sizeof ( $issue['labels'] ) ) {
+			if ( sizeof( $issue['labels'] ) ) {
 				foreach ( $issue['labels'] as $tag_name ) {
 					$tags .= "*{$tag_name}* ";
 				}
