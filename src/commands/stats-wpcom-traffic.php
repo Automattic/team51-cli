@@ -148,6 +148,8 @@ class Get_Site_Stats extends Command {
 						'site_url' => $site['site_url'],
 						'views'    => $stats->views,
 						'visitors' => $stats->visitors,
+						'comments' => $stats->comments,
+						'followers' => $stats->followers,
 					)
 				);
 			}
@@ -186,31 +188,51 @@ class Get_Site_Stats extends Command {
 			0
 		);
 
+		$sum_total_comments = array_reduce(
+			$team51_site_stats,
+			function ( $carry, $site ) {
+				return $carry + $site['comments'];
+			},
+			0
+		);
+
+		$sum_total_followers = array_reduce(
+			$team51_site_stats,
+			function ( $carry, $site ) {
+				return $carry + $site['followers'];
+			},
+			0
+		);
+
 		$formatted_team51_site_stats = array();
 		foreach ( $team51_site_stats as $site ) {
-			$formatted_team51_site_stats[] = array( $site['blog_id'], $site['site_url'], number_format( $site['views'], 0 ), number_format( $site['visitors'], 0 ) );
+			$formatted_team51_site_stats[] = array( $site['blog_id'], $site['site_url'], number_format( $site['views'], 0 ), number_format( $site['visitors'], 0 ), number_format( $site['comments'], 0 ), number_format( $site['followers'], 0 ) );
 		}
 
 		$sum_total_views    = number_format( $sum_total_views, 0 );
 		$sum_total_visitors = number_format( $sum_total_visitors, 0 );
+		$sum_total_comments = number_format( $sum_total_comments, 0 );
+		$sum_total_followers = number_format( $sum_total_followers, 0 );
 
 		$output->writeln( '<info>Site stats for Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . '<info>' );
 		// Output the stats in a table
 		$stats_table = new Table( $output );
 		$stats_table->setStyle( 'box-double' );
-		$stats_table->setHeaders( array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors' ) );
+		$stats_table->setHeaders( array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors', 'Total Comments', 'Total Followers' ) );
 		$stats_table->setRows( $formatted_team51_site_stats );
 		$stats_table->render();
 
 		$output->writeln( '<info>Total views across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_views . '<info>' );
 		$output->writeln( '<info>Total visitors across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_visitors . '<info>' );
+		$output->writeln( '<info>Total comments across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_comments . '<info>' );
+		$output->writeln( '<info>Total followers across Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . ': ' . $sum_total_followers . '<info>' );
 
 		// Output CSV if --csv flag is set
 		if ( $input->getOption( 'csv' ) ) {
 			$output->writeln( '<info>Making the CSV...<info>' );
 			$timestamp = date( 'Y-m-d-H-i-s' );
 			$fp        = fopen( 't51-traffic-stats-' . $timestamp . '.csv', 'w' );
-			fputcsv( $fp, array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors' ) );
+			fputcsv( $fp, array( 'Blog ID', 'Site URL', 'Total Views', 'Total Visitors', 'Total Comments', 'Total Followers' ) );
 			foreach ( $formatted_team51_site_stats as $fields ) {
 				fputcsv( $fp, $fields );
 			}
