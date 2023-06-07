@@ -275,7 +275,7 @@ class Get_WooCommerce_Stats extends Command {
 	// Helper functions, getting list of plugins and getting woocommerce stats
 	private function get_list_of_plugins( $site_id ) {
 		$plugin_list = $this->api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site_id . '/rest-api/?path=/jetpack/v4/plugins', array() );
-		if ( ! empty( $plugin_list->error ) ) {
+		if ( empty( $plugin_list->data ) ) {
 			$plugin_list = null;
 		}
 		return $plugin_list;
