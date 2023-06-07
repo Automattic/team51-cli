@@ -249,9 +249,6 @@ class Get_Site_Stats extends Command {
 
 	private function get_site_stats( $site_id, $period, $date, $num ) {
 		$site_stats = $this->api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_id . '/stats/summary?period=' . $period . '&date=' . $date . '&num=' . $num, array() );
-		if ( ! empty( $site_stats->error ) ) {
-			$site_stats = null;
-		}
 		return $site_stats;
 
 	}
