@@ -60,7 +60,7 @@ class Pressable_Site_Open_Shell extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Opens an interactive SSH or SFTP shell to a given Pressable site.' )
-			->setHelp( 'This command accepts a Pressable site as an input, then searches for the concierge user to generate the host argument. Lastly, it calls the system SSH/SFTP applications which will authenticate automatically via AutoProxxy.' );
+			->setHelp( 'This command accepts a Pressable site as an input, then searches for the concierge user to generate the host argument. Lastly, it calls the system SSH/SFTP applications which will authenticate automatically via AutoProxxy. If the command is run in verbose mode, it will display the SSH user ID.' );
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to connect to.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' )
@@ -137,6 +137,11 @@ class Pressable_Site_Open_Shell extends Command {
 
 		// Call the system SSH/SFTP application.
 		$ssh_host = $sftp_user->username . '@' . Pressable_Connection_Helper::SSH_HOST;
+
+		// If verbose mode is set, show the SSH connect string.
+		if ( $output->isVerbose() ) {
+			$output->writeln( "<comment>Connecting to $ssh_host...</comment>" );
+		}
 		if ( ! \is_null( \passthru( "$this->shell_type $ssh_host", $result_code ) ) ) {
 			$output->writeln( "<error>Could not open an interactive $this->shell_type shell. Error code: $result_code</error>" );
 			return 1;
