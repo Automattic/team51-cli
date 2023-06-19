@@ -10,6 +10,7 @@ src/helpers/pressable_token.json
 .idea
 sites.csv
 sites.json
+.vscode
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,composer,phpstorm+all,visualstudiocode,windows,linux

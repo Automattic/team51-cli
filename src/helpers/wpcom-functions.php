@@ -2,6 +2,9 @@
 
 namespace Team51\Helper;
 
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Get the complete list of WordPress.com sites for the a8cteam51 account, including WPORG sites with an active Jetpack
  * connection and including P2 blogs (or any other site the user is merely subscribed to).
@@ -121,4 +124,27 @@ function set_wpcom_site_user_wp_password( string $site_id_or_url, string $user_i
 	}
 
 	return true;
+}
+
+/**
+ * Grabs a value from the console input and tries to retrieve a WPCOM site based on it.
+ *
+ * @param InputInterface  $input         The console input.
+ * @param OutputInterface $output        The console output.
+ * @param callable|null   $no_input_func The function to call if no input is given.
+ * @param string          $name          The name of the value to grab.
+ *
+ * @return object|null
+ */
+function get_wpcom_site_from_input( InputInterface $input, OutputInterface $output, ?callable $no_input_func = null, string $name = 'site' ): ?object {
+	$site_id_or_url = get_site_input( $input, $output, $no_input_func, $name );
+	$wpcom_site     = get_wpcom_site( $site_id_or_url );
+
+	if ( \is_null( $wpcom_site ) ) {
+		$output->writeln( "<error>WPCOM site $site_id_or_url not found.</error>" );
+	} else {
+		$output->writeln( "<comment>WPCOM site found: $wpcom_site->name (ID $wpcom_site->ID, URL $wpcom_site->URL).</comment>", OutputInterface::VERBOSITY_VERY_VERBOSE );
+	}
+
+	return $wpcom_site;
 }

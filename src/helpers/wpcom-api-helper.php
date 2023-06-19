@@ -37,9 +37,9 @@ final class WPCOM_API_Helper {
 	 *
 	 * @link    https://developer.wordpress.com/docs/api/
 	 *
-	 * @return  object|null
+	 * @return  object|array|null
 	 */
-	public static function call_api( string $endpoint, string $method = 'GET', array $params = array() ): ?object {
+	public static function call_api( string $endpoint, string $method = 'GET', array $params = array() ) {
 		$result = get_remote_content(
 			self::get_request_url( $endpoint ),
 			array(
