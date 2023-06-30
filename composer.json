@@ -27,8 +27,8 @@
         ]
     },
     "scripts": {
-        "format:php": "@php phpcbf --standard=.phpcs.xml -v",
-        "lint:php": "@php phpcs --standard=.phpcs.xml -s -v",
+        "format:php": "@php phpcbf -d error_reporting=24575 --standard=.phpcs.xml -v",
+        "lint:php": "@php phpcs -d error_reporting=24575 --standard=.phpcs.xml -s -v",
 
         "packages-install": "@composer install --ignore-platform-reqs --no-interaction",
         "packages-update": [
