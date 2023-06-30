@@ -86,11 +86,16 @@ class Create_Production_Site_WPCOM extends Command {
 
 			$transfer_id = $transfer_response->transfer_id;
 
-			do {
-				// Wait 10 seconds before checking the status, otherwise we get banned
+			// Wait 40 seconds before checking the status, it needs around 40 seconds to complete the transfer, if we will do more request we will get banned.
+			for ( $i = 0; $i < 4; $i++ ) {
+				$progress_bar->advance();
 				sleep( 10 );
+			}
+
+			do {
 				$transfer_status_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/automated-transfers/status/' . $transfer_id );
 				$progress_bar->advance();
+				sleep( 10 );
 
 			} while ( 'complete' !== $transfer_status_response->status );
 
@@ -98,7 +103,7 @@ class Create_Production_Site_WPCOM extends Command {
 
 		}
 
-		$output->writeln( '<info>Site is Atomic!</info>' );
+		$output->writeln( "\n<info>Site is Atomic!</info>" );
 
 		// Check if site has the SFTP/SSH user
 		$ssh_users_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/hosting/ssh-users', array(), 'GET', true );
