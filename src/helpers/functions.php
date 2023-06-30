@@ -19,10 +19,11 @@ use Symfony\Component\Process\Process;
  * @param   array           $headers    The headers to send with the request.
  * @param   string          $method     The HTTP method to use for the request.
  * @param   string|null     $content    The content to send with the request.
+ * @param   bool            $fix_malformed_response    Should try to fix API response.
  *
  * @return  array|null
  */
-function get_remote_content( string $url, array $headers = array(), string $method = 'GET', ?string $content = null ): ?array {
+function get_remote_content( string $url, array $headers = array(), string $method = 'GET', ?string $content = null, bool $fix_malformed_response = false ): ?array {
 	$options = array(
 		'http' => array(
 			'header'        => $headers,
@@ -37,6 +38,37 @@ function get_remote_content( string $url, array $headers = array(), string $meth
 	$result = @\file_get_contents( $url, false, $context ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	if ( false === $result ) {
 		return null;
+	}
+
+	if ( $fix_malformed_response ) {
+		$pattern = '(
+		    \{ # JSON object start
+		        (
+		            \s*
+		            "[^"]+"                  # key
+		            \s*:\s*                  # colon
+		            (
+		                                     # value
+		                (?:
+		                    "[^"]+" |        # string
+		                    \d+(?:\.\d+)? |  # number
+		                    true |
+		                    false |
+		                    null
+		                ) |
+		                (?R)                 # pattern recursion
+		            )
+		            \s*
+		            ,?                       # comma
+		        )*
+		    \} # JSON object end
+		)x';
+
+		preg_match_all( $pattern, $result, $matches );
+
+		if ( isset( $matches[0][0] ) ) {
+			$result = $matches[0][0];
+		}
 	}
 
 	return array(

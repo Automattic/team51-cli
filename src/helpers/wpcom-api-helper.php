@@ -34,14 +34,15 @@ final class WPCOM_API_Helper {
 	 * @param   string  $endpoint   The endpoint to call.
 	 * @param   string  $method     The HTTP method to use. One of 'GET', 'POST', 'PUT', 'DELETE'.
 	 * @param   array   $params     The parameters to send with the request.
-	 *
-	 * @link    https://developer.wordpress.com/docs/api/
+	 * @param   bool $use_wpcom_private_api     Should use WPCOM private API or public.
 	 *
 	 * @return  object|array|null
+	 *@link    https://developer.wordpress.com/docs/api/
+	 *
 	 */
-	public static function call_api( string $endpoint, string $method = 'GET', array $params = array() ) {
+	public static function call_api( string $endpoint, string $method = 'GET', array $params = array(), bool $use_wpcom_private_api = false, bool $fix_malformed_response = false ) {
 		$result = get_remote_content(
-			self::get_request_url( $endpoint ),
+			self::get_request_url( $endpoint, $use_wpcom_private_api ),
 			array(
 				'Accept: application/json',
 				'Content-Type: application/json',
@@ -49,7 +50,8 @@ final class WPCOM_API_Helper {
 				'User-Agent: PHP',
 			),
 			$method,
-			encode_json_content( $params )
+			encode_json_content( $params ),
+			$fix_malformed_response
 		);
 
 		if ( 0 !== \strpos( $result['headers']['http_code'], '2' ) ) {
@@ -131,10 +133,11 @@ final class WPCOM_API_Helper {
 	 * @param   string      $path               The WP REST API path to call.
 	 * @param   mixed|null  $body               The body to send with the request.
 	 * @param   bool|null   $json               Whether to send the body as JSON.
+	 * @param   bool $use_wpcom_private_api     Should use WPCOM private API or public.
 	 *
 	 * @return  object|null
 	 */
-	public static function call_site_api( string $site_id_or_url, string $path, $body = null, ?bool $json = null ): ?object {
+	public static function call_site_api( string $site_id_or_url, string $path, $body = null, ?bool $json = null, bool $use_wpcom_private_api = false ): ?object {
 		$site_id = self::ensure_site_id( $site_id_or_url );
 		if ( \is_null( $site_id ) ) {
 			console_writeln( "❌ WordPress.com API error: Invalid site ID or URL ($site_id_or_url)", OutputInterface::VERBOSITY_QUIET );
@@ -147,7 +150,28 @@ final class WPCOM_API_Helper {
 			$params['body'] = $params['json'] ? encode_json_content( $body ) : $body;
 		}
 
-		return self::call_api( "jetpack-blogs/$site_id/rest-api", 'POST', $params );
+		return self::call_api( "jetpack-blogs/$site_id/rest-api", 'POST', $params, $use_wpcom_private_api );
+	}
+
+	/**
+	 * Calls a given endpoint on a site connected to WordPress.com via the WPCOM API.
+	 *
+	 * @param string $site_id_or_url The site URL or WordPress.com site ID.
+	 * @param string $path The WP REST API path to call.
+	 * @param array $params The params to send with the request.
+	 * @param string $method The HTTP method to use. One of 'GET', 'POST', 'PUT', 'DELETE'.
+	 * @param bool $use_wpcom_private_api Should use WPCOM private API or public.
+	 *
+	 * @return array|object|null
+	 */
+	public static function call_site_wpcom_api( string $site_id_or_url, string $path, array $params = array(), string $method = 'GET', bool $use_wpcom_private_api = false ) {
+		$site_id = self::ensure_site_id( $site_id_or_url );
+		if ( \is_null( $site_id ) ) {
+			console_writeln( "❌ WordPress.com API error: Invalid site ID or URL ($site_id_or_url)", OutputInterface::VERBOSITY_QUIET );
+			return null;
+		}
+
+		return self::call_api( 'sites/' . $site_id . $path, $method, $params, $use_wpcom_private_api );
 	}
 
 	// endregion
@@ -158,13 +182,17 @@ final class WPCOM_API_Helper {
 	 * Prepares the fully qualified request URL for the given endpoint.
 	 *
 	 * @param   string  $endpoint   The endpoint to call.
+	 * @param   bool  $use_wpcom_private_api   Should use WPCOM private API or public.
 	 *
 	 * @return  string
 	 */
-	private static function get_request_url( string $endpoint ): string {
+	private static function get_request_url( string $endpoint, bool $use_wpcom_private_api = false ): string {
+
+		$route = $use_wpcom_private_api ? 'wpcom/v2' : 'rest/v1.1';
+
 		$endpoint = \trim( $endpoint, '/' );
-		if ( 0 !== \strpos( $endpoint, 'rest/v1.1' ) ) {
-			$endpoint = 'rest/v1.1/' . $endpoint;
+		if ( 0 !== \strpos( $endpoint, $route ) ) {
+			$endpoint = sprintf( '%s/%s', $route, $endpoint );
 		}
 
 		return self::BASE_URL . $endpoint;
