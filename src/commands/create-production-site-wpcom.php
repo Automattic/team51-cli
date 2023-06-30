@@ -113,7 +113,7 @@ class Create_Production_Site_WPCOM extends Command {
 
 			$create_ssh_user_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/hosting/ssh-user', array(), 'POST', true );
 
-			if ( ! isset( $transfer_response->transfer_id ) ) {
+			if ( ! isset( $create_ssh_user_response->username ) ) {
 				$output->writeln( '<error>There was an issue when creating the SFTP/SSH user.</error>' );
 				exit;
 			}
