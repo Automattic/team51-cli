@@ -86,7 +86,9 @@ class Create_Production_Site_WPCOM extends Command {
 
 			$transfer_id = $transfer_response->transfer_id;
 
-			// Wait 40 seconds before checking the status, it needs around 40 seconds to complete the transfer, if we will do more request we will get banned.
+			// Wait 40 seconds before checking the status, it needs around 40 seconds to complete the transfer.
+			// Trying multiple requests causes them to fail, sometimes they even fail with this delay.
+			// The issue is here https://opengrok.a8c.com/source/xref/wpcom/public.api/rest/class.wpcom-json-api.php?r=bc8e60c9#1542. Not sure why this happens, it's like the json-api module gets disconnected.
 			for ( $i = 0; $i < 4; $i++ ) {
 				$progress_bar->advance();
 				sleep( 10 );
