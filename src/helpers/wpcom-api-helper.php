@@ -41,6 +41,7 @@ final class WPCOM_API_Helper {
 	 *
 	 */
 	public static function call_api( string $endpoint, string $method = 'GET', array $params = array(), bool $use_wpcom_private_api = false, bool $fix_malformed_response = false ) {
+		console_writeln( "Calling WordPress.com API endpoint: $endpoint" );
 		$result = get_remote_content(
 			self::get_request_url( $endpoint, $use_wpcom_private_api ),
 			array(
@@ -165,6 +166,12 @@ final class WPCOM_API_Helper {
 	 * @return array|object|null
 	 */
 	public static function call_site_wpcom_api( string $site_id_or_url, string $path, array $params = array(), string $method = 'GET', bool $use_wpcom_private_api = false ) {
+		console_writeln("call_site_wpcom_api");
+		console_writeln($site_id_or_url);
+		console_writeln($path);
+		console_writeln(print_r($params, true));
+		console_writeln($method);
+		console_writeln(print_r($use_wpcom_private_api));
 		$site_id = self::ensure_site_id( $site_id_or_url );
 		if ( \is_null( $site_id ) ) {
 			console_writeln( "❌ WordPress.com API error: Invalid site ID or URL ($site_id_or_url)", OutputInterface::VERBOSITY_QUIET );
@@ -187,14 +194,13 @@ final class WPCOM_API_Helper {
 	 * @return  string
 	 */
 	private static function get_request_url( string $endpoint, bool $use_wpcom_private_api = false ): string {
-
 		$route = $use_wpcom_private_api ? 'wpcom/v2' : 'rest/v1.1';
 
 		$endpoint = \trim( $endpoint, '/' );
 		if ( 0 !== \strpos( $endpoint, $route ) ) {
 			$endpoint = sprintf( '%s/%s', $route, $endpoint );
 		}
-
+		console_writeln(self::BASE_URL . $endpoint);
 		return self::BASE_URL . $endpoint;
 	}
 

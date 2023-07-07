@@ -10,6 +10,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use Team51\Helper\DeployHQ_API_Helper;
 use Team51\Helper\GitHub_API_Helper;
 use Team51\Helper\WPCOM_API_Helper;
+
+use function Team51\Helper\console_writeln;
 use function Team51\Helper\get_wpcom_site;
 
 class Create_Production_Site_WPCOM extends Command {
@@ -45,6 +47,8 @@ class Create_Production_Site_WPCOM extends Command {
 		$site = get_wpcom_site( $input->getOption( 'blog-id' ) );
 
 		if ( empty( $site ) ) {
+			// This doesn't necessarily mean the site isn't there. If it's Atomic, we're blocked.
+			// Check the Atomic status to confirm it's OK.
 			$output->writeln( '<error>There was an issue when pulling site information.</error>' );
 			exit;
 		}
@@ -53,6 +57,8 @@ class Create_Production_Site_WPCOM extends Command {
 		$site_name_data = explode( '.', $site_name_data['host'] );
 		$project_name   = $site_name_data[0];
 
+		$output->writeln(sprintf("Site Name Data\n\n%s\n\nProject Name: %s", print_r($site_name_data, true), $project_name));
+		exit;
 		$github_repo = $input->getOption( 'connect-to-repo' );
 
 		$progress_bar = new ProgressBar( $output );
@@ -77,7 +83,7 @@ class Create_Production_Site_WPCOM extends Command {
 			// {"atomic_transfer_id":799050,"blog_id":220708266,"status":"active","created_at":"2023-06-29 09:47:46","is_stuck":false,"is_stuck_reset":false,"in_lossless_revert":false,"transfer_id":799050,"success":true}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 			// <html xmlns="http://www.w3.org/1999/xhtml">"
 			// which causes an issue when decoding json, so we remove the HTML and then decode the JSON with fix_malformed_response = true
-			$transfer_response = WPCOM_API_Helper::call_api( 'sites/' . $site->ID . '/automated-transfers/initiate', 'POST', array(), false, true );
+			$transfer_response = WPCOM_API_Helper::call_api( 'sites/' . $site->ID . '/automated-transfers/initiate', 'POST', array(''), false, true );
 
 			if ( ! isset( $transfer_response->transfer_id ) ) {
 				$output->writeln( '<error>There was an issue when initiating the transfer to Atomic.</error>' );
@@ -85,22 +91,25 @@ class Create_Production_Site_WPCOM extends Command {
 			}
 
 			$transfer_id = $transfer_response->transfer_id;
-
+			$output->writeln("Transfer ID: $transfer_id");
 			// Wait 40 seconds before checking the status, it needs around 40 seconds to complete the transfer.
 			// Trying multiple requests causes them to fail, sometimes they even fail with this delay.
 			// The issue is here https://opengrok.a8c.com/source/xref/wpcom/public.api/rest/class.wpcom-json-api.php?r=bc8e60c9#1542. Not sure why this happens, it's like the json-api module gets disconnected.
-			for ( $i = 0; $i < 4; $i++ ) {
-				$progress_bar->advance();
-				sleep( 10 );
-			}
+			// for ( $i = 0; $i < 4; $i++ ) {
+			// 	$progress_bar->advance();
+			// 	sleep( 10 );
+			// }
 
+			console_writeln("Entering loop");
 			do {
+				sleep(5);
+				$output->writeln(sprintf("TOP: Calling API %s/automated-transfers/status/%s", $site->ID, $transfer_id)); 
 				$transfer_status_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/automated-transfers/status/' . $transfer_id );
+				$output->writeln(sprintf("Status: %s", $transfer_status_response->status));
 				$progress_bar->advance();
-				sleep( 10 );
-
+				$output->writeln("BOTTOM: Waiting or exiting loop");
 			} while ( 'complete' !== $transfer_status_response->status );
-
+			console_writeln("Exiting loop");
 			$progress_bar->finish();
 
 		}
