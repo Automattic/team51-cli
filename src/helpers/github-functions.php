@@ -99,6 +99,21 @@ function update_github_repository( string $owner, string $repository, array $bod
 }
 
 /**
+ * Deletes a repository. If OAuth is used, the delete_repo scope is required.
+ *
+ * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
+ * @param   string  $repository     The name of the repository. The name is not case-sensitive.
+ *
+ * @link    https://docs.github.com/en/rest/repos/repos#delete-a-repository
+ *
+ * @return   bool
+ */
+function delete_github_repository( string $owner, string $repository ): bool {
+	$result = GitHub_API_Helper::call_api( sprintf( 'repos/%s/%s', $owner, $repository ), 'DELETE' );
+	return ! \is_null( $result );
+}
+
+/**
  * Deletes a label from a repository.
  *
  * @param   string  $owner          The account owner of the repository. The name is not case-sensitive.
