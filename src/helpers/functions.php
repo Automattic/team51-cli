@@ -144,17 +144,21 @@ function run_app_command( Application $application, string $command_name, array 
  *
  * @link    https://symfony.com/doc/current/components/process.html
  *
- * @return  string
+ * @return  Process
  */
-function run_system_command( array $command, string $working_directory = '.' ): string {
+function run_system_command( array $command, string $working_directory = '.' ): Process {
 	$process = new Process( $command, $working_directory );
-	$process->run();
 
-	if ( ! $process->isSuccessful() ) {
-		throw new ProcessFailedException( $process );
+	try {
+		$process->mustRun();
+	} catch ( ProcessFailedException $exception ) {
+		console_writeln( "Process Failed Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original command:' . \PHP_EOL . \print_r( $command, true ) );
+		console_writeln( $exception->getTraceAsString() );
+		exit( $exception->getCode() );
 	}
 
-	return $process->getOutput();
+	return $process;
 }
 
 // endregion
