@@ -11,7 +11,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use function Team51\Helper\run_app_command;
 
 class Create_Production_Site extends Command {
-	protected static $defaultName = 'create-production-site';
+	protected static $defaultName = 'pressable:create-production-site';
 
 	const DEPLOYHQ_ZONE_EUROPE  = 3; // UK
 	const DEPLOYHQ_ZONE_US_EAST = 6;
@@ -25,6 +25,7 @@ class Create_Production_Site extends Command {
 	protected function configure() {
 		$this
 		->setDescription( 'Creates a new production site (on Pressable).' )
+		->setAliases( array( 'create-production-site' )
 		->setHelp( 'This command allows you to create a new production site.' )
 		->addOption( 'site-name', null, InputOption::VALUE_REQUIRED, 'This is root name that will be given to the site. Think of it as really the project name. No need to specify "prod" or "development" in the naming here. The script will take care of that for you -- no spaces, hyphens, non-alphanumeric characters, or capitalized letters.' )
 		->addOption( 'connect-to-repo', null, InputOption::VALUE_REQUIRED, "The repository you'd like to have automatically configured in DeployHQ to work with the new site. This accepts the repository slug.\nOnly GitHub repositories are supported and they must be in the a8cteam51 organization, otherwise the script won't have access." )

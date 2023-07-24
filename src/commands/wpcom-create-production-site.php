@@ -15,7 +15,7 @@ use function Team51\Helper\console_writeln;
 use function Team51\Helper\get_wpcom_site;
 
 class Create_Production_Site_WPCOM extends Command {
-	protected static $defaultName = 'create-production-site-wpcom';
+	protected static $defaultName = 'wpcom:create-production-site';
 
 	const DEPLOYHQ_ZONE_EUROPE  = 3; // UK
 	const DEPLOYHQ_ZONE_US_EAST = 6;
