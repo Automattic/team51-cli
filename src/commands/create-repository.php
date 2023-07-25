@@ -258,6 +258,7 @@ class Create_Repository extends Command {
 		}
 
 		$output->writeln( "<fg=green;options=bold>Successfully created $this->repo_slug repository from template.</>" );
+		sleep( 15 ); // Give GitHub a few seconds to catch up. Otherwise, sometimes the next step fails with the warning "You appear to have cloned an empty repository".
 
 		// Clone the repository and make some tweaks.
 		$output->writeln( "<comment>Cloning $this->repo_slug repository and making some tweaks.</comment>" );
