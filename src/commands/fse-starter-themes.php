@@ -38,13 +38,9 @@ class FSE_Starter_Themes extends Command {
 		$repository = 'themes';
 
 		$themes = GitHub_API_Helper::call_api( sprintf( 'repos/%s/%s/contents', $owner, $repository ) );
-
 		if ( is_null( $themes ) ) {
-			$output->writeln(
-				'❌ Failed to retrieve themes',
-				OutputInterface::VERBOSITY_QUIET
-			);
-			return null;
+			$output->writeln( '❌ Failed to retrieve themes', OutputInterface::VERBOSITY_QUIET );
+			return 1;
 		}
 
 		foreach ( $themes as $theme ) {
@@ -70,6 +66,7 @@ class FSE_Starter_Themes extends Command {
 						$inc_patterns_exists = true;
 					}
 					if ( 'style.css' === $file->name ) {
+						var_dump( $file->url );
 						$css_content = GitHub_API_Helper::call_api( $file->url, 'GET' );
 						var_dump( $css_content );
 
