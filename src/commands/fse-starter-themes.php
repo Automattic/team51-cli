@@ -5,6 +5,7 @@ namespace Team51\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\Table;
 use function Team51\Helper\get_github_repository;
 use Team51\Helper\GitHub_API_Helper;
 use function Team51\Helper\maybe_define_console_verbosity;
@@ -36,11 +37,14 @@ class FSE_Starter_Themes extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$owner      = 'Automattic';
 		$repository = 'themes';
+		$theme_list = [];
 
 		$themes = GitHub_API_Helper::call_api( sprintf( 'repos/%s/%s/contents', $owner, $repository ) );
 		if ( is_null( $themes ) ) {
 			$output->writeln( '❌ Failed to retrieve themes', OutputInterface::VERBOSITY_QUIET );
 			return 1;
+		} else {
+			$output->writeln( '✅ Retrieving themes...', OutputInterface::VERBOSITY_QUIET );
 		}
 
 		foreach ( $themes as $theme ) {
@@ -79,8 +83,12 @@ class FSE_Starter_Themes extends Command {
 							}
 
 							// Match "Theme URI:"
-							if ( preg_match( '/Theme URI:\s*(.*)/i', $css_content, $matches ) ) {
-								$theme_uri = trim( $matches[1] );
+							$theme_uri = "https://github.com/Automattic/themes/tree/trunk/" . $theme->name;
+							if (preg_match('/Theme URI:([^\n]*\S)/i', $css_content, $matches)) {
+								$found_uri = trim($matches[1]);
+								if (!empty($found_uri)) {
+									$theme_uri = $found_uri;
+								}
 							}
 						}
 
@@ -91,13 +99,48 @@ class FSE_Starter_Themes extends Command {
 				}
 
 				if ( $theme_json_exists && ! $inc_patterns_exists && $empty_template_value ) {
-					$output->writeln( $theme->name, OutputInterface::VERBOSITY_NORMAL );
-					$output->writeln( $theme_uri, OutputInterface::VERBOSITY_NORMAL );
-					$output->writeln( $theme_name, OutputInterface::VERBOSITY_NORMAL );
+					$theme_list[] = array(
+						'name' => $theme->name,
+						'uri'  => $theme_uri,
+						'title' => $theme_name,
+					);
 				}
 			}
 		}
+
+		$output->writeln( 'Found ' . count( $theme_list ) . ' compatible starter themes.', OutputInterface::VERBOSITY_VERBOSE );
+		$this->output_theme_list( $theme_list, $output );
+
 		return 0;
+	}
+
+	/**
+	 * Outputs in tabular form the list of WordPress 6.0+ themes.
+	 *
+	 * @param   array               $theme_list      The list of sites with the plugin installed.
+	 * @param   OutputInterface     $output                 The output object.
+	 *
+	 * @return  void
+	 */
+	protected function output_theme_list( array $theme_list, OutputInterface $output ): void {
+		$table = new Table( $output );
+
+		$table->setHeaderTitle( 'FSE Starter Themes' );
+		$table->setHeaders( array( 'Theme Name', 'Slug', 'URL' ) );
+
+		foreach ( $theme_list as $theme ) {
+			$table->addRow(
+				array(
+					$theme['title'],
+					$theme['name'],
+					$theme['uri'],
+				)
+			);
+		}
+
+		$table->setColumnMaxWidth( 0, 128 );
+		$table->setStyle( 'box-double' );
+		$table->render();
 	}
 
 	protected function call_github_api( string $url ): ?object {
