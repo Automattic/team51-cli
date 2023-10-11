@@ -9,11 +9,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Team51\Helper\DeployHQ_API_Helper;
 use Team51\Helper\GitHub_API_Helper;
+use Team51\Helper\Slack_API_Helper;
 use Team51\Helper\WPCOM_API_Helper;
 use function Team51\Helper\get_wpcom_site;
 
 class Create_Production_Site_WPCOM extends Command {
-	protected static $defaultName = 'create-production-site-wpcom';
+	protected static $defaultName = 'wpcom:create-production-site';
 
 	const DEPLOYHQ_ZONE_EUROPE  = 3; // UK
 	const DEPLOYHQ_ZONE_US_EAST = 6;
@@ -62,15 +63,17 @@ class Create_Production_Site_WPCOM extends Command {
 			$eligible_for_atomic_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/automated-transfers/eligibility' );
 
 			if ( true !== $eligible_for_atomic_response->is_eligible ) {
-				$output->writeln( '<error>Site is not eligible for Atomic! ' . implode( ' | ', $eligible_for_atomic_response->errors ) . '</error>' );
+				$output->writeln( '<info>Site is not eligible for Atomic!</info>' );
+				foreach ( $eligible_for_atomic_response->errors as $error ) {
+					$output->writeln( "<error>$error->message</error>" );
+				}
 				exit;
 			}
 
-			$output->writeln( '<info>Site is eligible for Atomic</info>' );
+			$output->writeln( '<info>Site is eligible for Atomic</info>\n' );
 			$output->writeln( '<comment>Starting transfer to Atomic</comment>' );
 
 			$progress_bar->start();
-			$progress_bar->advance();
 
 			// This uses a hack to remove the HTML that is returned by the API. The API returns something like:
 			// Original JSON:
@@ -81,25 +84,26 @@ class Create_Production_Site_WPCOM extends Command {
 
 			if ( ! isset( $transfer_response->transfer_id ) ) {
 				$output->writeln( '<error>There was an issue when initiating the transfer to Atomic.</error>' );
+				$output->writeln( "\n<info>Check the blog Jetpack Site Info status https://mc.a8c.com/tools/reportcard/blog/?blog_id={$site->ID} .</info>" );
+				// https://atomicuniversity.wordpress.com/what-is-atomic/atomic-101-common-issues/stuck-transfers/
 				exit;
 			}
 
-			$transfer_id = $transfer_response->transfer_id;
-
-			// Wait 40 seconds before checking the status, it needs around 40 seconds to complete the transfer.
-			// Trying multiple requests causes them to fail, sometimes they even fail with this delay.
-			// The issue is here https://opengrok.a8c.com/source/xref/wpcom/public.api/rest/class.wpcom-json-api.php?r=bc8e60c9#1542. Not sure why this happens, it's like the json-api module gets disconnected.
-			for ( $i = 0; $i < 4; $i++ ) {
-				$progress_bar->advance();
-				sleep( 10 );
-			}
-
+			$i               = 0;
+			$transfer_status = 'started';
 			do {
-				$transfer_status_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/automated-transfers/status/' . $transfer_id );
 				$progress_bar->advance();
-				sleep( 10 );
+				sleep( 2 );
 
-			} while ( 'complete' !== $transfer_status_response->status );
+				if ( 0 === $i % 5 ) {
+					$transfer_status_response = WPCOM_API_Helper::call_site_wpcom_api( $site->ID, '/automated-transfers/status/' );
+					$transfer_status          = $transfer_status_response->status;
+					$output->writeln( "\n<info>Transfer status: {$transfer_status_response->status}</info>" );
+				}
+
+				++$i;
+
+			} while ( 'complete' !== $transfer_status );
 
 			$progress_bar->finish();
 
@@ -119,6 +123,8 @@ class Create_Production_Site_WPCOM extends Command {
 				$output->writeln( '<error>There was an issue when creating the SFTP/SSH user.</error>' );
 				exit;
 			}
+
+			$output->writeln( "<info>Created the SFTP/SSH user.</info>\n" );
 
 			$ssh_user['username'] = $create_ssh_user_response->username;
 
@@ -141,7 +147,7 @@ class Create_Production_Site_WPCOM extends Command {
 		}
 
 		$output->writeln( '<info>SSH Key attached.</info>' );
-		$output->writeln( '<info>SSH enabled.</info>' );
+		$output->writeln( '<info>SSH enabled.</info>\n' );
 
 		// Create DeployHQ Project
 		// Assign default datacenter zone for DeployHQ.
@@ -318,14 +324,15 @@ class Create_Production_Site_WPCOM extends Command {
 
 		$output->writeln( "\n<info>Deploy HQ is now set up and ready to start receiving and deploying commits!</info>\n" );
 
-		// todo remove api helper
-		//      ( new API_Helper() )->log_to_slack((
-		//          sprintf(
-		//              'INFO: WPCOM / DeployHQ: %s run for %s',
-		//              'create-production-site',
-		//              $project_name
-		//          )
-		//      ));
+		( new Slack_API_Helper() )->log_to_slack(
+			(
+			sprintf(
+				'INFO: WPCOM / DeployHQ: %s run for %s',
+				'wpcom:create-production-site',
+				$project_name
+			)
+			)
+		);
 
 		exit;
 	}
