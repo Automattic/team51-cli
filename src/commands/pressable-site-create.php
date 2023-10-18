@@ -11,7 +11,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use function Team51\Helper\run_app_command;
 
 class Create_Production_Site extends Command {
-	protected static $defaultName = 'create-production-site';
+	protected static $defaultName = 'pressable:create-site';
 
 	const DEPLOYHQ_ZONE_EUROPE  = 3; // UK
 	const DEPLOYHQ_ZONE_US_EAST = 6;
