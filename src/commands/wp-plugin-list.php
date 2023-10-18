@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Plugin_List extends Command {
-	protected static $defaultName = 'plugin-list';
+	protected static $defaultName = 'wp:plugin-list';
 
 	protected function configure() {
 		$this

@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Jetpack_Enable_SSO extends Command {
-	protected static $defaultName = 'jetpack-enable-sso';
+	protected static $defaultName = 'jetpack:enable-sso-module';
 
 	protected function configure() {
 		$this

@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Jetpack_Modules extends Command {
-	protected static $defaultName = 'jetpack-module-list';
+	protected static $defaultName = 'jetpack:list-modules';
 
 	protected function configure() {
 		$this

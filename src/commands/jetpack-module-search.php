@@ -12,7 +12,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 
 class Jetpack_Sites_With extends Command {
-	protected static $defaultName = 'jetpack-sites-with';
+	protected static $defaultName = 'jetpack:search-modules';
 
 	/**
 	 * @var Api_Helper|null API Helper instance.
