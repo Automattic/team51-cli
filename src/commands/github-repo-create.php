@@ -32,7 +32,7 @@ class Create_Repository extends Command {
 	/**
 	 * {@inheritdoc}
 	 */
-	protected static $defaultName = 'create-repository'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected static $defaultName = 'github:create-repository'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
 	 * The new repository's slug.
