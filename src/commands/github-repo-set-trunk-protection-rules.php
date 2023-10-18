@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Add_Branch_Protection_Rules extends Command {
-    protected static $defaultName = 'add-branch-protection-rules';
+    protected static $defaultName = 'github:set-repo-trunk-protection-rules';
 
     protected function configure() {
         $this

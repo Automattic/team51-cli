@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Jetpack_Module extends Command {
-	protected static $defaultName = 'jetpack-module';
+	protected static $defaultName = 'jetpack:toggle-module';
 
 	private array $settings = array(
 		'enable'  => true,

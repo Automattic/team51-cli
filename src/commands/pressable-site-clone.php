@@ -16,7 +16,7 @@ use function Team51\Helper\run_app_command;
 use function Team51\Helper\run_pressable_site_wp_cli_command;
 
 class Create_Development_Site extends Command {
-	protected static $defaultName = 'create-development-site';
+	protected static $defaultName = 'pressable:clone-site';
 
 	protected function configure() {
 		$this
