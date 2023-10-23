@@ -31,6 +31,16 @@ class Pressable_Get_Db_Backup extends Command {
 	protected static $defaultName = 'pressable:get-db-backup'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
+	 * Safety Net data file URLs.
+	 *
+	 * @var string[]
+	 */
+	protected const SAFETY_NET_DATA_URLS = [
+		'scrublist' => 'https://github.com/a8cteam51/safety-net/blob/trunk/assets/data/option_scrublist.txt',
+		'denylist' => 'https://github.com/a8cteam51/safety-net/blob/trunk/assets/data/plugin_denylist.txt',
+	];
+
+	/**
 	 * The Pressable site to connect to.
 	 *
 	 * @var object|null
@@ -51,6 +61,27 @@ class Pressable_Get_Db_Backup extends Command {
 	 */
 	protected ?string $shell_type = null;
 
+	/**
+	 * The exported SQL filename.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $sql_filename = null;
+
+	/**
+	 * File handle for the exported SQL file.
+	 *
+	 * @var resource|null
+	 */
+	protected ?resource $sql_file = null;
+
+	/**
+	 * The current table we are processing.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $current_table = null;
+
 	// endregion
 
 	// region INHERITED METHODS
@@ -59,8 +90,8 @@ class Pressable_Get_Db_Backup extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function configure(): void {
-		$this->setDescription( 'Downloads a database backup .' )
-			->setHelp( 'This command accepts a Pressable site as an input, then exports and downloads the database for that site.' );
+		$this->setDescription( 'Downloads a Pressable database backup.' )
+			->setHelp( "This command accepts a Pressable site as an input, then exports and downloads the database for that site.\nThe downloaded file will be in the current directory with the name pressable-<site id>-<timestamp>.sql" );
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to connect to.' )
 			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' );
@@ -148,6 +179,49 @@ class Pressable_Get_Db_Backup extends Command {
 		}
 
 		return $site ?? null;
+	}
+
+	/**
+	 * Processes the current line of the SQL file. Updates the data as necessary
+	 *
+	 * @param string $line	The current line of the SQL file.
+	 *
+	 * @return string
+	 */
+	function process_line( string $line ) {
+		return $line;
+	}
+
+	/**
+	 * Opens the SQL file for processing.
+	 *
+	 * @return resource | false
+	 */
+	private function open_sql_file( ) : resource|false {
+		$this->sql_file = fopen( $this->sql_filename, 'r' );
+	}
+
+	/**
+	 * Checks if we are currently in the specified table.
+	 *
+	 * @param string $table_name
+	 *
+	 * @return bool
+	 */
+	private function is_in_table( string $table_name ) : bool {
+		return $this->current_table === $table_name;
+	}
+
+	/**
+	 * Retrieves list from Safety Net repo
+	 *
+	 * @param $listname string
+	 *
+	 * @return array
+	 */
+	function get_safety_net_list( string $listname ) : array {
+		$list = file_get_contents( self::SAFETY_NET_DATA_URLS[$listname] );
+		return explode( "\n", $list );
 	}
 
 	// endregion
