@@ -170,7 +170,7 @@ class Pressable_Get_Db_Backup extends Command {
 
 		$date = new \DateTime();
 		$formatted_date = $date->format('Y-m-d');
-		$filename = "{$this->pressable_site->id}-{$formatted_date}.sql";
+		$filename = "{$this->pressable_site->displayName}-{$formatted_date}.sql";
 
 		$ssh->setTimeout( 0 ); // Disable timeout in case the command takes a long time.
 		$ssh->exec(
