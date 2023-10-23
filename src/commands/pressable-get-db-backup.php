@@ -142,18 +142,10 @@ class Pressable_Get_Db_Backup extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		// TEST CODE
-		$this->sql_filename = '/Users/taco/Downloads/149844071-2023-10-23-b8f3f0f.sql';
-		$this->process_sql_file();
-
 		$this->denylist = $this->get_safety_net_list( 'denylist' );
 		$this->scrublist = $this->get_safety_net_list( 'scrublist' );
-		$output->writeln('DENY LIST:');
-		$output->writeln(print_r($this->denylist, true));
-		$output->writeln('SCRUB LIST:');
-		$output->writeln(print_r($this->scrublist, true));
-		return 1;
-		// END TEST CODE
+		$this->process_sql_file();
+
 		$output->writeln( "<fg=magenta;options=bold>Exporting {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) as $this->user_email.</>" );
 
 		// Retrieve the SFTP user for the given email.
@@ -220,12 +212,15 @@ class Pressable_Get_Db_Backup extends Command {
 	/**
 	 * Processes the downloaded SQL file.
 	 *
-	 * @return void
+	 * @return bool
 	 */
 	function process_sql_file() {
 		$file = fopen( $this->sql_filename, 'r' );
-		foreach ( $file as $line ) {
-			$this->process_line( $line );
+		if ( ! $file ) {
+			return false;
+		}
+		while (($line = fgets($file)) !== false) {
+			$line = $this->process_line( $line );
 		}
 	}
 
