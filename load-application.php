@@ -50,7 +50,9 @@ $application->addCommands(
 		new Team51\Command\WPCOM_Get_Stickers(),
 		new Team51\Command\WPCOM_Add_Sticker(),
 		new Team51\Command\WPCOM_Remove_Sticker(),
+		new Team51\Command\WPCOM_Site_Run_WP_CLI_Command(),
 		new Team51\Command\Create_Production_Site_WPCOM(),
+		new Team51\Command\Create_Development_Site_WPCOM(),
 	)
 );
 

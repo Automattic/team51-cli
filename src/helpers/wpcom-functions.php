@@ -2,9 +2,11 @@
 
 namespace Team51\Helper;
 
-use stdClass;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Team51\Command\Pressable_Site_Run_WP_CLI_Command;
+use Team51\Command\WPCOM_Site_Run_WP_CLI_Command;
 
 /**
  * Get the complete list of WordPress.com sites for the a8cteam51 account, including WPORG sites with an active Jetpack
@@ -59,7 +61,7 @@ function get_wpcom_jetpack_sites(): ?array {
  * @return  object|null
  */
 function get_wpcom_site( string $site_id_or_url ): ?object {
-	$site = WPCOM_API_Helper::call_api( "sites/$site_id_or_url" );
+	$site = WPCOM_API_Helper::call_api( "read/sites/$site_id_or_url" );
 	if ( empty( $site ) ) {
 		return null;
 	}
@@ -148,4 +150,63 @@ function get_wpcom_site_from_input( InputInterface $input, OutputInterface $outp
 	}
 
 	return $wpcom_site;
+}
+
+/**
+ * Get SFTP user for the specified site. Only one SFTP user is allowed per site.
+ *
+ * @param   string  $site_id        The site ID.
+ *
+ * @return  string
+ */
+function get_wpcom_site_sftp_user( string $site_id ): ?string {
+	$sftp_users_response = WPCOM_API_Helper::call_site_wpcom_api( $site_id, '/hosting/ssh-users', array(), 'GET', true );
+	if ( ! \is_object( $sftp_users_response ) || ! \property_exists( $sftp_users_response, 'users' ) || empty( $sftp_users_response->users ) ) {
+		return null;
+	}
+
+	return $sftp_users_response->users[0];
+}
+
+/**
+ * Resets an SFTP user password for the specified site.
+ *
+ * @param   string  $site_id    The site ID.
+ *
+ * @return  string|null     The new password or null if the password could not be reset.
+ */
+function reset_wpcom_site_sftp_user_password( string $site_id, string $username ): ?string {
+	$reset_password_response = WPCOM_API_Helper::call_site_wpcom_api( $site_id, "/hosting/ssh-user/$username/reset-password", array(), 'POST', true );
+
+	if ( \is_null( $reset_password_response ) || empty( $reset_password_response->password ) ) {
+		return null;
+	}
+
+	return $reset_password_response->password;
+}
+
+/**
+ * Runs a given WP-CLI command on a given WPCOM site and returns the exit code.
+ *
+ * @param   Application         $application        The application instance.
+ * @param   string              $site_id_or_url     The WPCOM site ID or URL to run the command on.
+ * @param   string              $wp_cli_command     The WP-CLI command to execute.
+ * @param   OutputInterface     $output             The output to use for the command.
+ * @param   bool                $interactive        Whether to run the command in interactive mode.
+ *
+ * @return int  The command exit code.
+ * @noinspection PhpDocMissingThrowsInspection
+ */
+function run_wpcom_site_wp_cli_command( Application $application, string $site_id_or_url, string $wp_cli_command, OutputInterface $output, bool $interactive = false ): int {
+	/* @noinspection PhpUnhandledExceptionInspection */
+	return run_app_command(
+		$application,
+		WPCOM_Site_Run_WP_CLI_Command::getDefaultName(),
+		array(
+			'site'           => $site_id_or_url,
+			'wp-cli-command' => $wp_cli_command,
+		),
+		$output,
+		$interactive
+	);
 }
