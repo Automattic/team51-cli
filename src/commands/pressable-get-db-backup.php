@@ -142,7 +142,24 @@ class Pressable_Get_Db_Backup extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<fg=magenta;options=bold>Downloading the database for {$this->pressable_site->url}).</>" );
+		// TEST CODE
+		$this->sql_filename = '/Users/taco/Downloads/149844071-2023-10-23-b8f3f0f.sql';
+		$this->process_sql_file();
+
+		$this->denylist = $this->get_safety_net_list( 'denylist' );
+		$this->scrublist = $this->get_safety_net_list( 'scrublist' );
+		$output->writeln('DENY LIST:');
+		$output->writeln(print_r($this->denylist, true));
+		$output->writeln('SCRUB LIST:');
+		$output->writeln(print_r($this->scrublist, true));
+		return 1;
+		// END TEST CODE
+		$output->writeln( "<fg=magenta;options=bold>Exporting {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) as $this->user_email.</>" );
+
+		// Retrieve the SFTP user for the given email.
+		$sftp_user = get_pressable_site_sftp_user_by_email( $this->pressable_site->id, $this->user_email );
+		if ( \is_null( $sftp_user ) ) {
+			$output->writeln( "<comment>Could not find a Pressable SFTP user with the email $this->user_email on {$this->pressable_site->displayName}. Creating...</comment>", OutputInterface::VERBOSITY_VERBOSE );
 
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
