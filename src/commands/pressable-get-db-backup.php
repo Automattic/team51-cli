@@ -205,7 +205,36 @@ class Pressable_Get_Db_Backup extends Command {
 	 *
 	 * @return string
 	 */
-	function process_line( string $line ) {
+	private function process_line( string $line ) {
+		if ( $this->current_table === false ){
+			// Check if we're on a new table
+			// Format in the SQL file:
+			// 	-- Dumping data for table `<table>`
+			if ( preg_match( '/^-- Dumping data for table `(.*)`$/', $line, $matches ) ) {
+				$this->current_table = $matches[1];
+			}
+			return $line;
+		}
+
+		// Check if we're actually in the table's data
+		// We want INSERT lines. If the line is "UNLOCK TABLES;", then we've left
+		if ( $line === "UNLOCK TABLES;" ) {
+			$this->current_table = false;
+			return $line;
+		}
+		if ( ! preg_match( '/^INSERT INTO `(.*)`/', $line, $matches ) ) {
+			return $line;
+		}
+
+		// If we're in wp_options, scrub the options
+		if ( $this->current_table === 'wp_options' ) {
+			return $this->scrub_options( $line );
+		}
+		// Check if we're in a table we want to scrub
+		if ( $this->current_table === in_array( $this->current_table, $this->scrublist ) ) {
+			return '';
+		}
+
 		return $line;
 	}
 
@@ -214,7 +243,7 @@ class Pressable_Get_Db_Backup extends Command {
 	 *
 	 * @return bool
 	 */
-	function process_sql_file() {
+	private function process_sql_file() {
 		$file = fopen( $this->sql_filename, 'r' );
 		if ( ! $file ) {
 			return false;
@@ -238,13 +267,24 @@ class Pressable_Get_Db_Backup extends Command {
 	/**
 	 * Retrieves list from Safety Net repo
 	 *
-	 * @param $listname string
+	 * @param string $listname
 	 *
 	 * @return array
 	 */
-	function get_safety_net_list( string $listname ) : array {
+	private function get_safety_net_list( string $listname ) : array {
 		$list = file_get_contents( self::SAFETY_NET_DATA_URLS[$listname] );
 		return explode( "\n", $list );
+	}
+
+	/**
+	 * Scrub the options table
+	 *
+	 * @param string $line
+	 *
+	 * @return string
+	 */
+	private function scrub_options( string $line ) : string {
+		return $line;
 	}
 
 	// endregion
