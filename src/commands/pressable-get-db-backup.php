@@ -142,47 +142,25 @@ class Pressable_Get_Db_Backup extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		$output->writeln( "<fg=magenta;options=bold>Exporting {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) as $this->user_email.</>" );
+		$output->writeln( "<fg=magenta;options=bold>Downloading the database for {$this->pressable_site->url}).</>" );
 
-		// Retrieve the SFTP user for the given email.
-		$sftp_user = get_pressable_site_sftp_user_by_email( $this->pressable_site->id, $this->user_email );
-		if ( \is_null( $sftp_user ) ) {
-			$output->writeln( "<comment>Could not find a Pressable SFTP user with the email $this->user_email on {$this->pressable_site->displayName}. Creating...</comment>", OutputInterface::VERBOSITY_VERBOSE );
-
-			$sftp_user = create_pressable_site_collaborator( $this->user_email, $this->pressable_site->id );
-			if ( \is_null( $sftp_user ) ) {
-				$output->writeln( "<error>Could not create a Pressable SFTP user with the email $this->user_email on {$this->pressable_site->displayName}.</>" );
-				return 1;
-			}
-
-			// SFTP users are different from collaborator users. We need to query the API again to get the SFTP user.
-			$sftp_user = get_pressable_site_sftp_user_by_email( $this->pressable_site->id, $this->user_email );
-		}
-
-		// Team51 users are logged-in through AutoProxxy, but for everyone else we must first reset their password and display it.
-		if ( ! \strpos( $this->user_email, '@automattic.com' ) ) { // Check both against 'false' and '0'.
-			$output->writeln( "<comment>Resetting the SFTP password of $sftp_user->email on {$this->pressable_site->displayName}...</comment>", OutputInterface::VERBOSITY_VERBOSE );
-
-			$result = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $sftp_user->username );
-			if ( \is_null( $result ) ) {
-				$output->writeln( "<error>Could not reset the SFTP password of $sftp_user->email on {$this->pressable_site->displayName}.</>" );
-				return 1;
-			}
-
-			$output->writeln( "<comment>New SFTP user password:</comment> <fg=green;options=bold>$result</>" );
-		}
-
-		// Call the system SSH/SFTP application.
-		$ssh_host = $sftp_user->username . '@' . Pressable_Connection_Helper::SSH_HOST;
-
-		// If verbose mode is set, show the SSH connect string.
-		if ( $output->isVerbose() ) {
-			$output->writeln( "<comment>Connecting to $ssh_host...</comment>" );
-		}
-		if ( ! \is_null( \passthru( "$this->shell_type $ssh_host", $result_code ) ) ) {
-			$output->writeln( "<error>Could not open a $this->shell_type shell. Error code: $result_code</error>" );
+		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
+		if ( \is_null( $ssh ) ) {
+			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
 			return 1;
 		}
+
+		$date = new \DateTime();
+		$formatted_date = $date->format('Y-m-d');
+		$filename = "{$this->pressable_site->id}-{$formatted_date}.sql";
+
+		$ssh->setTimeout( 0 ); // Disable timeout in case the command takes a long time.
+		$ssh->exec(
+			"wp db export $filename --exclude_tables=wp_users,woocommerce_order_itemmeta,woocommerce_order_items,wc_orders,wc_order_addresses,wc_order_operational_data,wc_orders_meta,wpml_mails",
+			static function( string $str ): void {
+				echo $str;
+			}
+		);
 
 		return 0;
 	}
@@ -199,7 +177,7 @@ class Pressable_Get_Db_Backup extends Command {
 	 *
 	 * @return  string|null
 	 */
-	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
+	private function prompt_site_input( InputInterface $input,OutputInterface $output ): ?string {
 		if ( $input->isInteractive() ) {
 			$question = new Question( '<question>Enter the site ID or URL to connect to:</question> ' );
 			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
