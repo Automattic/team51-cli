@@ -160,6 +160,7 @@ class Pressable_Get_Db_Backup extends Command {
 		$sftp_user = get_pressable_site_sftp_user_by_email( $this->pressable_site->id, $this->user_email );
 		if ( \is_null( $sftp_user ) ) {
 			$output->writeln( "<comment>Could not find a Pressable SFTP user with the email $this->user_email on {$this->pressable_site->displayName}. Creating...</comment>", OutputInterface::VERBOSITY_VERBOSE );
+		}
 
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
