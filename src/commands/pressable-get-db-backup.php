@@ -41,6 +41,22 @@ class Pressable_Get_Db_Backup extends Command {
 	];
 
 	/**
+	 * Tables to scrub
+	 *
+	 * @var string[]
+	 */
+	protected const SCRUBBED_TABLES = [
+		'wp_users',
+		'woocommerce_order_itemmeta',
+		'woocommerce_order_items',
+		'wc_orders',
+		'wc_order_addresses',
+		'wc_order_operational_data',
+		'wc_orders_meta',
+		'wpml_mails',
+	];
+
+	/**
 	 * The Pressable site to connect to.
 	 *
 	 * @var object|null
@@ -69,11 +85,11 @@ class Pressable_Get_Db_Backup extends Command {
 	protected ?string $sql_filename = null;
 
 	/**
-	 * The current table we are processing.
+	 * The current table we are processing. (False if we're outside of actual table data)
 	 *
-	 * @var string|null
+	 * @var string|bool
 	 */
-	protected ?string $current_table = null;
+	protected string|bool $current_table = false;
 
 	/**
 	 * List of options to scrub.
@@ -142,10 +158,17 @@ class Pressable_Get_Db_Backup extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
+		// TEST CODE
+		$this->sql_filename = '/Users/taco/Downloads/149844071-2023-10-23-b8f3f0f.sql';
+		// END TEST CODE
+
 		$this->denylist = $this->get_safety_net_list( 'denylist' );
 		$this->scrublist = $this->get_safety_net_list( 'scrublist' );
 		$this->process_sql_file();
 
+		//TEST CODE
+		return 1;
+		// END TEST CODE
 		$output->writeln( "<fg=magenta;options=bold>Exporting {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) as $this->user_email.</>" );
 
 		// Retrieve the SFTP user for the given email.
@@ -231,7 +254,7 @@ class Pressable_Get_Db_Backup extends Command {
 			return $this->scrub_options( $line );
 		}
 		// Check if we're in a table we want to scrub
-		if ( $this->current_table === in_array( $this->current_table, $this->scrublist ) ) {
+		if ( $this->current_table === in_array( $this->current_table, self::SCRUBBED_TABLES ) ) {
 			return '';
 		}
 
@@ -250,6 +273,8 @@ class Pressable_Get_Db_Backup extends Command {
 		}
 		while (($line = fgets($file)) !== false) {
 			$line = $this->process_line( $line );
+			// TEST CODE
+			print($line);
 		}
 	}
 
