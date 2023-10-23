@@ -36,8 +36,8 @@ class Pressable_Get_Db_Backup extends Command {
 	 * @var string[]
 	 */
 	protected const SAFETY_NET_DATA_URLS = [
-		'scrublist' => 'https://github.com/a8cteam51/safety-net/blob/trunk/assets/data/option_scrublist.txt',
-		'denylist' => 'https://github.com/a8cteam51/safety-net/blob/trunk/assets/data/plugin_denylist.txt',
+		'scrublist' => 'https://github.com/a8cteam51/safety-net/raw/trunk/assets/data/option_scrublist.txt',
+		'denylist' => 'https://github.com/a8cteam51/safety-net/raw/trunk/assets/data/plugin_denylist.txt',
 	];
 
 	/**
@@ -69,18 +69,25 @@ class Pressable_Get_Db_Backup extends Command {
 	protected ?string $sql_filename = null;
 
 	/**
-	 * File handle for the exported SQL file.
-	 *
-	 * @var resource|null
-	 */
-	protected ?resource $sql_file = null;
-
-	/**
 	 * The current table we are processing.
 	 *
 	 * @var string|null
 	 */
 	protected ?string $current_table = null;
+
+	/**
+	 * List of options to scrub.
+	 *
+	 * @var array
+	 */
+	protected array $scrublist = [];
+
+	/**
+	 * List of plugins to deny.
+	 *
+	 * @var array
+	 */
+	protected array $denylist = [];
 
 	// endregion
 
@@ -215,12 +222,15 @@ class Pressable_Get_Db_Backup extends Command {
 	}
 
 	/**
-	 * Opens the SQL file for processing.
+	 * Processes the downloaded SQL file.
 	 *
-	 * @return resource | false
+	 * @return void
 	 */
-	private function open_sql_file( ) : resource|false {
-		$this->sql_file = fopen( $this->sql_filename, 'r' );
+	function process_sql_file() {
+		$file = fopen( $this->sql_filename, 'r' );
+		foreach ( $file as $line ) {
+			$this->process_line( $line );
+		}
 	}
 
 	/**
