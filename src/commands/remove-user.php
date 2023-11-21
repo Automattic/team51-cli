@@ -2,207 +2,271 @@
 
 namespace Team51\Command;
 
-use Team51\Helper\API_Helper;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Team51\Helper\WPCOM_API_Helper;
+use function Team51\Helper\delete_pressable_site_collaborator_by_id;
+use function Team51\Helper\delete_wpcom_site_user_by_id;
+use function Team51\Helper\get_email_input;
+use function Team51\Helper\get_pressable_collaborators;
+use function Team51\Helper\get_wpcom_sites;
+use function Team51\Helper\maybe_define_console_verbosity;
 
-class Remove_User extends Command {
-	protected static $defaultName = 'remove-user';
-	private $api_helper;
-	private $output;
+/**
+ * CLI command to remove a Pressable collaborators and WPCOM user by email.
+ */
+final class Remove_User extends Command {
+	// region FIELDS AND CONSTANTS
 
-	protected function configure() {
-		$this
-		->setDescription( 'Removes a Pressable collaborator and WordPress user based on email.' )
-		->setHelp( 'This command allows you to bulk-delete from all sites a Pressable collaborator and WordPress user via CLI.' )
-		->addOption( 'email', null, InputOption::VALUE_REQUIRED, "The email of the user you'd like to remove access from sites." )
-		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' );
-	}
+	/**
+	 * {@inheritdoc}
+	 */
+	protected static $defaultName = 'remove-user'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$this->api_helper = new API_Helper();
-		$this->output     = $output;
+	/**
+	 * The user identifier. Currently, only email is supported.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $user = null;
 
-		$email = $input->getOption( 'email' );
+	/**
+	 * Whether to just list the sites where the user was found.
+	 *
+	 * @var bool|null
+	 */
+	protected ?bool $just_list = null;
 
-		if ( empty( $email ) ) {
-			$email = trim( readline( 'Please provide the email of the user you want to remove: ' ) );
-			if ( empty( $email ) ) {
-				$output->writeln( '<error>Missing collaborator email (--email=user@domain.com).</error>' );
-				exit;
-			}
-		}
+	// endregion
 
-		$output->writeln( '<comment>Getting collaborator data from Pressable.</comment>' );
+	// region INHERITED METHODS
 
-		// Each site will have a separate collaborator instance/ID for the same user/email.
-		$collaborator_data = array();
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function configure(): void {
+		$this->setDescription( 'Removes a Pressable collaborator and WordPress user by email.' )
+			->setHelp( 'This command allows you to delete in bulk via CLI all Pressable collaborators and WPCOM users registered with the given email.' );
 
-		$collaborators = $this->api_helper->call_pressable_api(
-			'collaborators',
-			'GET',
-			array()
-		);
-
-		// TODO: This code is duplicated below for the site clone. Should be a function.
-		if ( empty( $collaborators->data ) ) {
-			$output->writeln( '<error>Something has gone wrong while looking up the Pressable collaborators site.</error>' );
-			exit;
-		}
-
-		foreach ( $collaborators->data as $collaborator ) {
-			if ( $collaborator->email === $email ) {
-				$collaborator_data[] = $collaborator;
-			}
-		}
-
-		if ( empty( $collaborator_data ) ) {
-			$output->writeln( "<info>No collaborators found in Pressable with the email '$email'.</info>" );
-		} else {
-			$site_info = new Table( $output );
-			$site_info->setStyle( 'box-double' );
-			$site_info->setHeaders( array( 'Default Pressable URL', 'Site ID' ) );
-
-			$collaborator_sites = array();
-
-			$output->writeln( '' );
-			$output->writeln( "<info>$email is a collaborator on the following Pressable sites:</info>" );
-			foreach ( $collaborator_data as $collaborator ) {
-				$collaborator_sites[] = array( $collaborator->siteName . '.mystagingwebsite.com', $collaborator->siteId );
-			}
-
-			$site_info->setRows( $collaborator_sites );
-			$site_info->render();
-		}
-
-		// Get users from wordpress.com
-		$wpcom_collaborator_data = $this->get_wpcom_users( $email );
-
-		if ( empty( $wpcom_collaborator_data ) ) {
-			$output->writeln( "<info>No collaborators found in WordPress.com with the email '$email'.</info>" );
-		} else {
-			$site_info = new Table( $output );
-			$site_info->setStyle( 'box-double' );
-			$site_info->setHeaders( array( 'WP URL', 'Site ID', 'WP User ID' ) );
-			$wpcom_collaborator_sites = array();
-
-			$output->writeln( '' );
-			$output->writeln( "<info>$email is a user on the following WordPress sites:</info>" );
-			foreach ( $wpcom_collaborator_data as $collaborator ) {
-				$wpcom_collaborator_sites[] = array( $collaborator->siteName, $collaborator->siteId, $collaborator->userId );
-			}
-			$site_info->setRows( $wpcom_collaborator_sites );
-			$site_info->render();
-		}
-
-		// Bail here unless the user has asked to remove the collaborator.
-		if ( $input->getOption( 'list' ) ) {
-			exit;
-		}
-
-		// Remove?
-		if ( ! $input->getOption( 'no-interaction' ) ) {
-			$confirm_remove = trim( readline( 'Are you sure you want to remove this user from WordPress.com and Pressable? (y/N) ' ) );
-			if ( 'y' !== $confirm_remove ) {
-				exit;
-			}
-		}
-
-		// Remove from Pressable
-		foreach ( $collaborator_data as $collaborator ) {
-			$removed_collaborator = $this->api_helper->call_pressable_api( "/sites/{$collaborator->siteId}/collaborators/{$collaborator->id}", 'DELETE', array() );
-			if ( 'Success' === $removed_collaborator->message ) {
-				$output->writeln( "<info>✓ Removed {$collaborator->email} from {$collaborator->siteName}. (Pressable site)</info>" );
-			} else {
-				$output->writeln( "<comment>❌ Failed to remove from {$collaborator->email} from Pressable site '{$collaborator->siteName}.</comment>" );
-			}
-		}
-
-		// Remove from WordPress
-		foreach ( $wpcom_collaborator_data as $collaborator ) {
-			$removed_collaborator = $this->api_helper->call_wpcom_api( "rest/v1.1/sites/{$collaborator->siteId}/users/{$collaborator->userId}/delete", array(), 'POST' );
-
-			if ( isset( $removed_collaborator->success ) && $removed_collaborator->success ) {
-				$output->writeln( "<info>✓ Removed {$collaborator->email} from {$collaborator->siteName} (WordPress site).</info>" );
-			} else {
-				$output->writeln( "<comment>❌ Failed to remove {$collaborator->email} from WordPress site '{$collaborator->siteName}.</comment>" );
-			}
-		}
-
-		// TODO: Remove user from Github too?
-
-		$output->writeln( '<info>All done!<info>' );
+		$this->addArgument( 'user', InputArgument::REQUIRED, 'The email of the user you\'d like to remove access from sites.' )
+			->addOption( 'list', null, InputOption::VALUE_NONE, 'Instead of removing the user, just list the sites where an account was found.' );
 	}
 
 	/**
-	 * Given an email, return the list of sites owned by that user.
+	 * {@inheritDoc}
 	 */
-	private function get_wpcom_users( $email ) {
-		$exclude_sites   = array(
-			'https://woocommerce.com',
-		);
+	protected function initialize( InputInterface $input, OutputInterface $output ): void {
+		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		$this->output->writeln( '<comment>Fetching list of WordPress.com & Jetpack sites...</comment>' );
-
-		$all_sites = $this->api_helper->call_wpcom_api( 'rest/v1.1/me/sites/?fields=ID,URL', array() );
-
-		if ( ! empty( $all_sites->error ) ) {
-			$this->output->writeln( '<error>Failed. ' . $all_sites->message . '<error>' );
-			exit;
-		}
-
-		// Filter out sites from exclude list.
-		$filtered_sites = array_filter(
-			$all_sites->sites,
-			function( $site ) use ( $exclude_sites ) {
-				foreach ( $exclude_sites as $exclude ) {
-					if ( $exclude === $site->URL ) {
-						return false;
-					}
-				}
-				return true;
-			}
-		);
-
-		$this->output->writeln( "<comment>Searching for '$email' across " . count( $filtered_sites ) . ' WordPress.com & Jetpack sites...</comment>' );
-
-		$site_users_endpoints = array_map(
-			static function( $site ) use ( $email ) {
-				return "sites/$site->ID/users/?search=$email&search_columns=user_email&fields=ID,email,site_ID,URL";
-			},
-			$filtered_sites
-		);
-
-		// concurrent call for all endpoints.
-		$sites_users = WPCOM_API_Helper::call_api_concurrent( $site_users_endpoints );
-
-		// clean up data by removing entries were user was not found.
-		$sites_users = array_filter(
-			$sites_users,
-			static function( $user ) {
-				return ( isset( $user ) && ! isset( $user->error ) && $user->found > 0 );
-			}
-		);
-
-		$data = array();
-		foreach ( $filtered_sites as $site ) {
-			foreach ( $site_users_endpoints as $index => $endpoint ) {
-				if ( isset( $sites_users[ $index ] ) && str_contains( $endpoint, $site->ID ) ) {
-					$data[] = (object) array(
-						'userId'   => $sites_users[ $index ]->users[0]->ID,
-						'email'    => $sites_users[ $index ]->users[0]->email,
-						'siteId'   => $site->ID,
-						'siteName' => $site->URL,
-					);
-				}
-			}
-		}
-
-		return $data;
+		$this->user      = get_email_input( $input, $output, null, 'user' );
+		$this->just_list = (bool) $input->getOption( 'list' );
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
+		$action = $this->just_list ? "Listing all sites where $this->user is found." : "Removing $this->user from all sites.";
+		$output->writeln( "<fg=magenta;options=bold>$action</>" );
+
+		// Get collaborators from Pressable
+		$output->writeln( '<comment>Getting collaborator data from Pressable.</comment>' );
+
+		$pressable_collaborators = $this->get_pressable_collaborators();
+		if ( ! \is_array( $pressable_collaborators ) ) {
+			$output->writeln( '<error>Something has gone wrong while looking up the Pressable collaborators.</error>' );
+			return 1;
+		}
+
+		if ( empty( $pressable_collaborators ) ) {
+			$output->writeln( "<info>No collaborators found in Pressable with the email '$this->user'.</info>" );
+		} else {
+			$this->output_pressable_collaborators( $output, $pressable_collaborators );
+		}
+
+		// Get users from wordpress.com
+		$output->writeln( '<comment>Getting user data from WordPress.com.</comment>' );
+
+		$wpcom_users = $this->get_wpcom_users( $output );
+		if ( ! \is_array( $wpcom_users ) ) {
+			$output->writeln( '<error>Something has gone wrong while looking up the WordPress.com users.</error>' );
+			return 1;
+		}
+
+		if ( empty( $wpcom_users ) ) {
+			$output->writeln( "<info>No users found on WordPress.com sites with the email '$this->user'.</info>" );
+		} else {
+			$this->output_wpcom_users( $output, $wpcom_users );
+		}
+
+		// Remove?
+		if ( $this->just_list || ( empty( $pressable_collaborators ) && empty( $wpcom_users ) ) ) {
+			return 0;
+		}
+		if ( $input->isInteractive() ) {
+			$question = new ConfirmationQuestion( '<question>Are you sure you want to remove this user on <fg=red;options=bold>ALL</> sites listed above? [y/N]</question> ', false );
+			if ( true !== $this->getHelper( 'question' )->ask( $input, $output, $question ) ) {
+				$output->writeln( '<comment>Aborting.</comment>' );
+				return 1;
+			}
+		}
+
+		foreach ( $pressable_collaborators as $collaborator ) {
+			if ( delete_pressable_site_collaborator_by_id( $collaborator->siteId, $collaborator->id ) ) {
+				$output->writeln( "<info>✅ Removed $collaborator->email from Pressable site $collaborator->siteName.</info>" );
+			} else {
+				$output->writeln( "<comment>❌ Failed to remove from $collaborator->email from Pressable site $collaborator->siteName.</comment>" );
+			}
+		}
+		foreach ( $wpcom_users as $user ) {
+			$user->email = $this->user; // The email is not returned by the API, but the API is filtered by it, so we know what it must be ...
+			if ( delete_wpcom_site_user_by_id( $user->siteId, $user->userId ) ) {
+				$output->writeln( "<info>✅ Removed $user->email from WordPress.com site $user->siteName.</info>" );
+			} else {
+				$output->writeln( "<comment>❌ Failed to remove $user->email from WordPress.com site $user->siteName.</comment>" );
+			}
+		}
+
+		return 0;
+	}
+
+	// endregion
+
+	// region HELPERS
+
+	/**
+	 * Returns the Pressable collaborator objects that match the given email.
+	 *
+	 * @return  object[]|null
+	 */
+	protected function get_pressable_collaborators(): ?array {
+		$collaborators = get_pressable_collaborators();
+		if ( ! \is_array( $collaborators ) ) {
+			return null;
+		}
+
+		return \array_filter(
+			$collaborators,
+			fn ( $collaborator ) => $collaborator->email === $this->user,
+		);
+	}
+
+	/**
+	 * Outputs the Pressable collaborators to the console in tabular form.
+	 *
+	 * @param   OutputInterface $output         The output object.
+	 * @param   object[]        $collaborators  The collaborators to output.
+	 *
+	 * @return  void
+	 */
+	protected function output_pressable_collaborators( OutputInterface $output, array $collaborators ): void {
+		$table = new Table( $output );
+
+		$table->setHeaderTitle( "$this->user is a collaborator on the following Pressable sites" );
+		$table->setHeaders( array( 'Default Pressable URL', 'Site ID', 'Collaborator ID' ) );
+
+		foreach ( $collaborators as $collaborator ) {
+			$table->addRow( array( $collaborator->siteName . '.mystagingwebsite.com', $collaborator->siteId, $collaborator->id ) );
+		}
+
+		$table->setStyle( 'box-double' );
+		$table->render();
+	}
+
+	/**
+	 * Returns the WordPress.com collaborator objects that match the given email.
+	 *
+	 * @return  object[]|null
+	 * @noinspection PhpDocMissingThrowsInspection
+	 */
+	protected function get_wpcom_users( OutputInterface $output ): ?array {
+		// Get sites from WPCOM.
+		$output->writeln( '<comment>Fetching the list of WordPress.com & Jetpack sites...</comment>', OutputInterface::VERBOSITY_VERBOSE );
+
+		$sites = get_wpcom_sites( array( 'fields' => 'ID,URL' ) );
+		if ( ! \is_array( $sites ) ) {
+			return null;
+		}
+
+		$excluded = array( 'https://woocommerce.com' );
+		$sites    = \array_filter(
+			$sites,
+			static fn ( $site ) => ! \in_array( $site->URL, $excluded, true ),
+		);
+
+		// Search for the user on each site.
+		$output->writeln( "<comment>Searching for '$this->user' across " . \count( $sites ) . ' WordPress.com & Jetpack sites...</comment>', OutputInterface::VERBOSITY_VERBOSE );
+
+		$collaborators = WPCOM_API_Helper::call_api_concurrent(
+			\array_map(
+				fn ( $site ) => "sites/$site->ID/users/?search=$this->user&search_columns=user_email",
+				$sites
+			)
+		);
+		$failed_sites  = \array_intersect_key( $sites, \array_filter( $collaborators, static fn ( $collaborator ) => \is_null( $collaborator ) ) );
+		$collaborators = \array_filter( $collaborators, static fn ( $collaborator ) => \is_object( $collaborator ) && 0 < $collaborator->found );
+
+		! empty( $failed_sites ) && $this->output_wpcom_failed_sites( $output, $failed_sites );
+
+		return \array_map(
+			static fn( string $site_id, object $collaborator ) => (object) array(
+				'siteId'   => $site_id,
+				'siteName' => $sites[ $site_id ]->URL,
+				'userId'   => $collaborator->users[0]->ID,
+			),
+			\array_keys( $collaborators ),
+			$collaborators,
+		);
+	}
+
+	/**
+	 * Outputs the WordPress.com sites that failed to fetch users from.
+	 *
+	 * @param   OutputInterface $output The output object.
+	 * @param   array           $sites  The sites to output.
+	 *
+	 * @return  void
+	 */
+	protected function output_wpcom_failed_sites( OutputInterface $output, array $sites ): void {
+		$table = new Table( $output );
+
+		$table->setHeaderTitle( 'Failed to fetch users from the following WordPress.com sites' );
+		$table->setHeaders( array( 'WP URL', 'Site ID' ) );
+
+		foreach ( $sites as $site ) {
+			$table->addRow( array( $site->URL, $site->ID ) );
+		}
+
+		$table->setStyle( 'box-double' );
+		$table->render();
+	}
+
+	/**
+	 * Outputs the WordPress.com users to the console in tabular form.
+	 *
+	 * @param   OutputInterface $output The output object.
+	 * @param   object[]        $users  The users to output.
+	 *
+	 * @return  void
+	 */
+	protected function output_wpcom_users( OutputInterface $output, array $users ): void {
+		$table = new Table( $output );
+
+		$table->setHeaderTitle( "$this->user is a user on the following WordPress.com sites" );
+		$table->setHeaders( array( 'WP URL', 'Site ID', 'WP User ID' ) );
+
+		foreach ( $users as $collaborator ) {
+			$table->addRow( array( $collaborator->siteName, $collaborator->siteId, $collaborator->userId ) );
+		}
+
+		$table->setStyle( 'box-double' );
+		$table->render();
+	}
+
+	// endregion
 }
