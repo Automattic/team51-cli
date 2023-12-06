@@ -155,7 +155,7 @@ class Create_Development_Site extends Command {
 		}
 
 		$server_config = array(
-			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
+			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . $label : 'Development',
 			'environment' => 'development',
 			'branch'      => ! empty( $input->getOption( 'branch' ) ) ? $input->getOption( 'branch' ) : 'develop',
 		);
