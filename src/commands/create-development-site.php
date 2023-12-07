@@ -75,7 +75,7 @@ class Create_Development_Site extends Command {
 			"sites/$production_site_id/clone",
 			'POST',
 			array(
-				'name' => $site_name,
+				'name'    => $site_name,
 				'staging' => true,
 			)
 		);
@@ -137,25 +137,28 @@ class Create_Development_Site extends Command {
 
 			if ( ! is_null( $ssh_connection ) ) {
 				$ssh_connection->exec( 'mv -f htdocs/wp-content/plugins/safety-net htdocs/wp-content/mu-plugins/safety-net' );
-				$ssh_connection->exec( 'ls htdocs/wp-content/mu-plugins', function ( $result ) use ( $pressable_site, $output ) {
-					if ( false === strpos( $result, 'safety-net' ) ) {
-						$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
-					}
-					if ( false === strpos( $result, 'load-safety-net.php' ) ) {
-						$output->writeln( "<comment>Copying Safety Net loader to mu-plugins folder...</comment>" );
+				$ssh_connection->exec(
+					'ls htdocs/wp-content/mu-plugins',
+					function ( $result ) use ( $pressable_site, $output ) {
+						if ( false === strpos( $result, 'safety-net' ) ) {
+							$output->writeln( "<error>Failed to install Safety Net on {$pressable_site->data->id}.</error>" );
+						}
+						if ( false === strpos( $result, 'load-safety-net.php' ) ) {
+							$output->writeln( '<comment>Copying Safety Net loader to mu-plugins folder...</comment>' );
 
-						$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
-						$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents(__DIR__ . '/../../scaffold/load-safety-net.php' ) );
-						if ( ! $result ) {
-							$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
+							$sftp   = Pressable_Connection_Helper::get_sftp_connection( $pressable_site->data->id );
+							$result = $sftp->put( '/htdocs/wp-content/mu-plugins/load-safety-net.php', file_get_contents( __DIR__ . '/../../scaffold/load-safety-net.php' ) );
+							if ( ! $result ) {
+								$output->writeln( "<error>Failed to copy safety-net-loader.php to {$pressable_site->data->id}.</error>" );
+							}
 						}
 					}
-				} );
+				);
 			}
 		}
 
 		$server_config = array(
-			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . time() : 'Development',
+			'name'        => ! empty( $input->getOption( 'temporary-clone' ) ) ? 'Development-' . $label : 'Development',
 			'environment' => 'development',
 			'branch'      => ! empty( $input->getOption( 'branch' ) ) ? $input->getOption( 'branch' ) : 'develop',
 		);
