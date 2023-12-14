@@ -39,6 +39,13 @@ class Plugin_Search extends Command {
 	 */
 	protected ?bool $partial = null;
 
+	/**
+	 * The version comparison to use.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $version_compare = null;
+
 	//endregion
 
 	// region INHERITED METHODS
@@ -51,7 +58,8 @@ class Plugin_Search extends Command {
 			->setHelp( "This command will output a list of Jetpack sites connected to the a8cteam51 account where a particular plugin is installed.\nThe search can be made for an exact match plugin slug, or\na general text search. Letter case is ignored in both search types.\nExample usage:\nplugin-search woocommerce\nplugin-search woo --partial\n" );
 
 		$this->addArgument( 'plugin-slug', InputArgument::REQUIRED, "The slug of the plugin to search for. This is an exact match against the plugin installation folder name,\nthe main plugin file name without the .php extension, and the Text Domain.\n" )
-			->addOption( 'partial', null, InputOption::VALUE_NONE, "Optional.\nUse for general text/partial match search. Using this option will also search the plugin Name field." );
+			->addOption( 'partial', null, InputOption::VALUE_NONE, "Optional.\nUse for general text/partial match search. Using this option will also search the plugin Name field." )
+			->addOption( 'version-compare', null, InputOption::VALUE_OPTIONAL, "Optional.\nUse to find entries in comparison to your check, e.g \"<= 8.4.0\"" );
 	}
 
 	/**
@@ -60,8 +68,9 @@ class Plugin_Search extends Command {
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
 
-		$this->plugin_slug = \strtolower( $input->getArgument( 'plugin-slug' ) );
-		$this->partial     = (bool) $input->getOption( 'partial' );
+		$this->plugin_slug     = \strtolower( $input->getArgument( 'plugin-slug' ) );
+		$this->partial         = (bool) $input->getOption( 'partial' );
+		$this->version_compare = (string) $input->getOption( 'version-compare' );
 	}
 
 	/**
@@ -164,13 +173,35 @@ class Plugin_Search extends Command {
 	 * @return  void
 	 */
 	protected function output_found_site_list( array $sites_with_plugin, OutputInterface $output ): void {
-		$table = new Table( $output );
+		$table        = new Table( $output );
+		$header_title = 'Found sites';
 
-		$table->setHeaderTitle( 'Found sites' );
+		// Set-up version comparison.
+		if ( ! empty( $this->version_compare ) ) {
+			$header_title .= ' with version comparison ' . $this->version_compare;
+
+			// Split the version comparison into operator and version.
+			$version_compare_parts = explode( ' ', $this->version_compare );
+
+			// If the version comparison is invalid, output an error and return.
+			if ( 2 !== count( $version_compare_parts ) ) {
+				$output->writeln( '<error>Invalid version comparison.</error>' );
+				return;
+			}
+
+			$version_compare_operator = $version_compare_parts[0];
+			$version_compare_version  = $version_compare_parts[1];
+		}
+
+		$table->setHeaderTitle( $header_title );
 		$table->setHeaders( array( 'Site URL', 'Plugin Name', 'Plugin Path', 'Plugin Status', 'Plugin Version' ) );
 
 		foreach ( $sites_with_plugin as $site ) {
 			foreach ( $site['plugins'] as $match ) {
+				// If the version comparison is set, check if the plugin version matches the comparison.
+				if ( ! empty( $this->version_compare ) && ! version_compare( $match['Version'], $version_compare_version, $version_compare_operator ) ) {
+					continue;
+				}
 				$table->addRow( array( $site['site']->domain, $match['Name'], $match['path'], ( $match['active'] ? 'Active' : 'Inactive' ), $match['Version'] ) );
 			}
 		}
