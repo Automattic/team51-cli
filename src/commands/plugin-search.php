@@ -59,7 +59,7 @@ class Plugin_Search extends Command {
 
 		$this->addArgument( 'plugin-slug', InputArgument::REQUIRED, "The slug of the plugin to search for. This is an exact match against the plugin installation folder name,\nthe main plugin file name without the .php extension, and the Text Domain.\n" )
 			->addOption( 'partial', null, InputOption::VALUE_NONE, "Optional.\nUse for general text/partial match search. Using this option will also search the plugin Name field." )
-			->addOption( 'version-compare', null, InputOption::VALUE_OPTIONAL, "Optional.\nUse to find entries in comparison to your check, e.g \"<= 8.4.0\"" );
+			->addOption( 'version-compare', null, InputOption::VALUE_OPTIONAL, "Optional.\nUse to find entries in comparison to your check, formatting is strict, e.g. \"<= 8.4.0\"" );
 	}
 
 	/**
@@ -185,7 +185,7 @@ class Plugin_Search extends Command {
 
 			// If the version comparison is invalid, output an error and return.
 			if ( 2 !== count( $version_compare_parts ) ) {
-				$output->writeln( '<error>Invalid version comparison.</error>' );
+				$output->writeln( '<error>Your comparison string is invalid. Please format as "{compare_operator} {version_number}", e.g. --version-compare="< 8.4.0"</error>' );
 				return;
 			}
 
