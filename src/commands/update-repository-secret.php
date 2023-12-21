@@ -143,6 +143,13 @@ class Update_Repository_Secret extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		foreach ( $this->repositories as $repository ) {
 			$secrets = get_github_repository_secrets( GITHUB_API_OWNER, $repository );
+
+			// Check if $secrets is an array before proceeding
+			if ( ! \is_array( $secrets ) ) {
+				$output->writeln( "<error>Error: Unable to retrieve secrets for $repository. Skipping...</error>", OutputInterface::VERBOSITY_VERBOSE );
+				continue;
+			}
+
 			if ( ! \in_array( $this->secret_name, \array_column( $secrets, 'name' ), true ) ) {
 				$output->writeln( "<comment>Secret $this->secret_name not found on $repository. Skipping...</comment>", OutputInterface::VERBOSITY_VERBOSE );
 				continue;
