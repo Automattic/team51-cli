@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
@@ -336,6 +338,12 @@ class Create_Development_Site extends Command {
 
 		exit;
 	}
+
+	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
+        if ($input->mustSuggestOptionValuesFor('format')) {
+            $suggestions->suggestValues(['json', 'xml']);
+        }
+    }
 
 	// region HELPERS
 

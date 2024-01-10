@@ -51,11 +51,12 @@ $application->addCommands(
 		new Team51\Command\WPCOM_Get_Stickers(),
 		new Team51\Command\WPCOM_Add_Sticker(),
 		new Team51\Command\WPCOM_Remove_Sticker(),
+		new Team51\Command\Testing(),
 	)
 );
 
 foreach ( $application->all() as $command ) {
-	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
+	$command->addOption( '--contractor', '-con', InputOption::VALUE_NONE, 'Use the contractor config file.' );
 	$command->addOption( '--dev', null, InputOption::VALUE_NONE, 'Run the CLI tool in developer mode.' );
 }
 
