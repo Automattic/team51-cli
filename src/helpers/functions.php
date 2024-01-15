@@ -173,20 +173,28 @@ function run_app_command( Application $application, string $command_name, array 
  *
  * @param   array   $command            The command to run.
  * @param   string  $working_directory  The working directory to run the command in.
+ * @param   bool    $exit_on_error      Whether to exit if the command returns an error or not.
  *
  * @link    https://symfony.com/doc/current/components/process.html
  *
- * @return  string
+ * @return  Process
  */
-function run_system_command( array $command, string $working_directory = '.' ): string {
+function run_system_command( array $command, string $working_directory = '.', bool $exit_on_error = true ): Process {
 	$process = new Process( $command, $working_directory );
-	$process->run();
 
-	if ( ! $process->isSuccessful() ) {
-		throw new ProcessFailedException( $process );
+	try {
+		$process->mustRun();
+	} catch ( ProcessFailedException $exception ) {
+		console_writeln( "Process Failed Exception: {$exception->getMessage()}" );
+		console_writeln( 'Original command:' . \PHP_EOL . \print_r( $command, true ) );
+		console_writeln( $exception->getTraceAsString() );
+
+		if ( $exit_on_error ) {
+			exit( $exception->getCode() );
+		}
 	}
 
-	return $process->getOutput();
+	return $process;
 }
 
 // endregion

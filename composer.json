@@ -18,6 +18,7 @@
             "src/helpers/functions.php",
             "src/helpers/1password-functions.php",
             "src/helpers/deployhq-functions.php",
+            "src/helpers/flickr-functions.php",
             "src/helpers/github-functions.php",
             "src/helpers/pressable-functions.php",
             "src/helpers/wpcom-functions.php"

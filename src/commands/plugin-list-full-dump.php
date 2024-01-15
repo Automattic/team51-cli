@@ -89,6 +89,7 @@ class Plugin_Summary extends Command {
 						$site['blog_id'],
 						$site_plugin->slug,
 						$site_plugin->active,
+						$site_plugin->version,
 					);
 				}
 			}
@@ -98,7 +99,7 @@ class Plugin_Summary extends Command {
 		$output->writeln( '<info>Making the CSV...<info>' );
 		$timestamp = date( 'Y-m-d-H-i-s' );
 		$fp        = fopen( 'plugins-on-t51-sites-' . $timestamp . '.csv', 'w' );
-		fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Plugin Slug', 'Active' ) );
+		fputcsv( $fp, array( 'Site URL', 'Blog ID', 'Plugin Slug', 'Active', 'Version' ) );
 		foreach ( $plugins_on_t51_sites as $fields ) {
 			fputcsv( $fp, $fields );
 		}

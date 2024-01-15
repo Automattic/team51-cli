@@ -5,6 +5,7 @@ secrets/*
 config.json
 config.example.json
 src/helpers/pressable_token.json
+flickr
 
 .dev
 .idea

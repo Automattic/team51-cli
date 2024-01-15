@@ -21,6 +21,7 @@ $application->addCommands(
 		new Team51\Command\Create_Repository(),
 		new Team51\Command\Add_Branch_Protection_Rules(),
 		new Team51\Command\Delete_Branch_Protection_Rules(),
+		new Team51\Command\Flickr_Scrap_Photostream(),
 		new Team51\Command\Jetpack_Enable_SSO(),
 		new Team51\Command\Remove_User(),
 		new Team51\Command\Update_Repository_Secret(),
