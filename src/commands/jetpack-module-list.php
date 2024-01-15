@@ -37,7 +37,7 @@ class Jetpack_Modules extends Command {
 		$module_data = $api_helper->call_wpcom_api( 'rest/v1.1/jetpack-blogs/' . $site->ID . '/rest-api/?path=/jetpack/v4/module/all', array() );
 
 		if ( ! empty( $module_data->error ) ) {
-			$output->writeln( '<error>Failed. ' . $result->message . '<error>' );
+			$output->writeln( '<error>Failed. ' . $module_data->message . '<error>' );
 			exit;
 		}
 
