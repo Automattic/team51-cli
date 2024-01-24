@@ -31,30 +31,26 @@ class Pressable_Get_Db_Backup extends Command {
 	protected static $defaultName = 'pressable:get-db-backup'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
-	 * Safety Net data file URLs.
-	 *
-	 * @var string[]
-	 */
-	protected const SAFETY_NET_DATA_URLS = [
-		'scrublist' => 'https://github.com/a8cteam51/safety-net/raw/trunk/assets/data/option_scrublist.txt',
-		'denylist' => 'https://github.com/a8cteam51/safety-net/raw/trunk/assets/data/plugin_denylist.txt',
-	];
-
-	/**
 	 * Tables to scrub
 	 *
 	 * @var string[]
 	 */
-	protected const SCRUBBED_TABLES = [
-		'wp_users',
+	protected ?array $ignore_tables = [
 		'woocommerce_order_itemmeta',
 		'woocommerce_order_items',
+		'woocommerce_api_keys',
+		'woocommerce_payment_tokens',
+		'woocommerce_payment_tokenmeta',
+		'wp_woocommerce_log',
+		'woocommerce_sessions',
 		'wc_orders',
 		'wc_order_addresses',
 		'wc_order_operational_data',
 		'wc_orders_meta',
 		'wpml_mails',
 	];
+
+	protected ?array $ignore_options = [];
 
 	/**
 	 * The Pressable site to connect to.
@@ -71,39 +67,11 @@ class Pressable_Get_Db_Backup extends Command {
 	protected ?string $user_email = null;
 
 	/**
-	 * The interactive hell type to open.
+	 * The interactive shell type to open.
 	 *
 	 * @var string|null
 	 */
 	protected ?string $shell_type = null;
-
-	/**
-	 * The exported SQL filename.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $sql_filename = null;
-
-	/**
-	 * The current table we are processing. (False if we're outside of actual table data)
-	 *
-	 * @var string|bool
-	 */
-	protected string|bool $current_table = false;
-
-	/**
-	 * List of options to scrub.
-	 *
-	 * @var array
-	 */
-	protected array $scrublist = [];
-
-	/**
-	 * List of plugins to deny.
-	 *
-	 * @var array
-	 */
-	protected array $denylist = [];
 
 	// endregion
 
@@ -114,10 +82,10 @@ class Pressable_Get_Db_Backup extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Downloads a Pressable database backup.' )
-			->setHelp( "This command accepts a Pressable site as an input, then exports and downloads the database for that site.\nThe downloaded file will be in the current directory with the name pressable-<site id>-<timestamp>.sql" );
+			 ->setHelp( "This command accepts a Pressable site as an input, then exports and downloads the database for that site.\nThe downloaded file will be in the current directory with the name pressable-<site id>-<timestamp>.sql" );
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to connect to.' )
-			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' );
+			 ->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' );
 	}
 
 	/**
@@ -125,6 +93,8 @@ class Pressable_Get_Db_Backup extends Command {
 	 */
 	protected function initialize( InputInterface $input, OutputInterface $output ): void {
 		maybe_define_console_verbosity( $output->getVerbosity() );
+
+		$this->ignore_options = $this->get_safety_net_list();
 
 		// Retrieve and validate the modifier options.
 		$this->shell_type = 'ssh';
@@ -152,23 +122,23 @@ class Pressable_Get_Db_Backup extends Command {
 			'user'
 		);
 		$input->setOption( 'user', $this->user_email ); // Store the user email in the input.
+
+		// Get the database prefix with wp cli command
+		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
+		if ( \is_null( $ssh ) ) {
+			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
+			exit( 1 );
+		}
+
+		$dbPrefix = trim( $ssh->exec( 'wp db prefix --quiet --skip-plugins --skip-themes 2> /dev/null' ) );
+
+		$this->ignore_tables = array_map( fn( string $table ) => $dbPrefix . $table, $this->ignore_tables );
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int {
-		// TEST CODE
-		$this->sql_filename = '/Users/taco/Downloads/149844071-2023-10-23-b8f3f0f.sql';
-		// END TEST CODE
-
-		$this->denylist = $this->get_safety_net_list( 'denylist' );
-		$this->scrublist = $this->get_safety_net_list( 'scrublist' );
-		$this->process_sql_file();
-
-		//TEST CODE
-		return 1;
-		// END TEST CODE
 		$output->writeln( "<fg=magenta;options=bold>Exporting {$this->pressable_site->displayName} (ID {$this->pressable_site->id}, URL {$this->pressable_site->url}) as $this->user_email.</>" );
 
 		// Retrieve the SFTP user for the given email.
@@ -183,17 +153,78 @@ class Pressable_Get_Db_Backup extends Command {
 			return 1;
 		}
 
-		$date = new \DateTime();
-		$formatted_date = $date->format('Y-m-d');
-		$filename = "{$this->pressable_site->displayName}-{$formatted_date}.sql";
+		$database      = trim( $ssh->exec( 'basename "$(pwd)"' ) );
+		$date          = new \DateTime();
+		$formattedDate = $date->format( 'Y-m-d' );
+		$filename      = "{$this->pressable_site->displayName}-{$formattedDate}.sql";
 
 		$ssh->setTimeout( 0 ); // Disable timeout in case the command takes a long time.
-		$ssh->exec(
-			"wp db export $filename --exclude_tables=wp_users,woocommerce_order_itemmeta,woocommerce_order_items,wc_orders,wc_order_addresses,wc_order_operational_data,wc_orders_meta,wpml_mails",
-			static function( string $str ): void {
-				echo $str;
-			}
+
+		$baseCommand     = "mysqldump --single-transaction --skip-lock-tables $database";
+		$excludedOptions = "'" . implode( "', '", $this->ignore_options ) . "'";
+
+		// Array of all commands
+		$commands = [
+			"$baseCommand --no-data --ignore-table={$database}.wp_posts --ignore-table={$database}.wp_postmeta --ignore-table={$database}.wp_users --ignore-table={$database}.wp_usermeta > $filename",
+			"$baseCommand --tables wp_options --where=\"option_name NOT IN ($excludedOptions) AND option_name NOT LIKE '%key%'\" >> $filename",
+			"$baseCommand --tables wp_postmeta --where=\"post_id not in (select ID from wp_posts where post_type in ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription'))\" >> $filename",
+			"$baseCommand --tables wp_posts --where=\"post_type NOT IN ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription')\" >> $filename",
+			"$baseCommand --tables wp_users --where=\"ID not in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value = 0)\" >> $filename",
+			"$baseCommand --tables wp_usermeta --where=\"user_id in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value != 0)\" >> $filename",
+			"$baseCommand --tables wp_comments --where=\"comment_type != 'order_note'\" >> $filename",
+		];
+
+		// Get list of all tables in the database
+		$all_tables = $ssh->exec("mysql -N -e 'SHOW TABLES' $database");
+
+		// Exclude ignored tables and tables that we're getting data for in other commands
+		$tables_to_dump = implode(
+			' ',
+			array_diff(
+				explode( "\n", trim( $all_tables ) ),
+				$this->ignore_tables,
+				[
+					'wp_options',
+					'wp_posts',
+					'wp_postmeta',
+					'wp_users',
+					'wp_usermeta',
+					'wp_comments',
+				]
+			)
 		);
+
+		$commands[] = "$baseCommand --tables $tables_to_dump >> $filename";
+
+		// Execute each command
+		foreach ($commands as $cmd) {
+			$output->writeln("<info>Executing: $cmd</info>");
+			$ssh->exec( $cmd );
+		}
+
+		// Download the file.
+		$sftp = Pressable_Connection_Helper::get_sftp_connection( $this->pressable_site->id );
+		if ( \is_null( $sftp ) ) {
+			$output->writeln( '<error>Could not connect to the SFTP server.</error>' );
+			return 1;
+		}
+
+		$output->writeln( "<info>Downloading $filename</info>" );
+
+		$result = $sftp->get( "/home/$database/$filename", $filename);
+
+		if ( ! $result ) {
+			$output->writeln( '<error>Could not download the file.</error>' );
+			$output->writeln( "<error>{$sftp->getLastSFTPError()}</error>" );
+			return 1;
+		}
+
+		$current_directory = getcwd();
+
+		$output->writeln( "<info>File downloaded to $current_directory/$filename</info>" );
+
+		// Delete the file from the server
+		$ssh->exec( "rm /home/$database/$filename" );
 
 		return 0;
 	}
@@ -222,94 +253,52 @@ class Pressable_Get_Db_Backup extends Command {
 	}
 
 	/**
-	 * Processes the current line of the SQL file. Updates the data as necessary
-	 *
-	 * @param string $line	The current line of the SQL file.
-	 *
-	 * @return string
-	 */
-	private function process_line( string $line ) {
-		if ( $this->current_table === false ){
-			// Check if we're on a new table
-			// Format in the SQL file:
-			// 	-- Dumping data for table `<table>`
-			if ( preg_match( '/^-- Dumping data for table `(.*)`$/', $line, $matches ) ) {
-				$this->current_table = $matches[1];
-			}
-			return $line;
-		}
-
-		// Check if we're actually in the table's data
-		// We want INSERT lines. If the line is "UNLOCK TABLES;", then we've left
-		if ( $line === "UNLOCK TABLES;" ) {
-			$this->current_table = false;
-			return $line;
-		}
-		if ( ! preg_match( '/^INSERT INTO `(.*)`/', $line, $matches ) ) {
-			return $line;
-		}
-
-		// If we're in wp_options, scrub the options
-		if ( $this->current_table === 'wp_options' ) {
-			return $this->scrub_options( $line );
-		}
-		// Check if we're in a table we want to scrub
-		if ( $this->current_table === in_array( $this->current_table, self::SCRUBBED_TABLES ) ) {
-			return '';
-		}
-
-		return $line;
-	}
-
-	/**
-	 * Processes the downloaded SQL file.
-	 *
-	 * @return bool
-	 */
-	private function process_sql_file() {
-		$file = fopen( $this->sql_filename, 'r' );
-		if ( ! $file ) {
-			return false;
-		}
-		while (($line = fgets($file)) !== false) {
-			$line = $this->process_line( $line );
-			// TEST CODE
-			print($line);
-		}
-	}
-
-	/**
-	 * Checks if we are currently in the specified table.
-	 *
-	 * @param string $table_name
-	 *
-	 * @return bool
-	 */
-	private function is_in_table( string $table_name ) : bool {
-		return $this->current_table === $table_name;
-	}
-
-	/**
-	 * Retrieves list from Safety Net repo
-	 *
-	 * @param string $listname
+	 * Retrieves a list from Safety Net of options to ignore
 	 *
 	 * @return array
 	 */
-	private function get_safety_net_list( string $listname ) : array {
-		$list = file_get_contents( self::SAFETY_NET_DATA_URLS[$listname] );
-		return explode( "\n", $list );
-	}
+	private function get_safety_net_list() : array {
+		$list = file_get_contents( 'https://github.com/a8cteam51/safety-net/raw/trunk/assets/data/option_scrublist.txt' );
 
-	/**
-	 * Scrub the options table
-	 *
-	 * @param string $line
-	 *
-	 * @return string
-	 */
-	private function scrub_options( string $line ) : string {
-		return $line;
+		// If the list can't be retrieved, use this as a fallback.
+		if ( ! $list ) {
+			return array(
+				'jetpack_active_modules',
+				'jetpack_private_options',
+				'jetpack_secrets',
+				'klaviyo_api_key',
+				'klaviyo_edd_license_key',
+				'klaviyo_settings',
+				'leadin_access_token',
+				'mailchimp-woocommerce',
+				'mailchimp-woocommerce-cached-api-account-name',
+				'mailster_options',
+				'mc4wp',
+				'novos_klaviyo_option_name',
+				'shareasale_wc_tracker_options',
+				'woocommerce-ppcp-settings',
+				'woocommerce_afterpay_settings',
+				'woocommerce_braintree_credit_card_settings',
+				'woocommerce_braintree_paypal_settings',
+				'woocommerce_paypal_settings',
+				'woocommerce_ppcp-gateway_settings',
+				'woocommerce_referralcandy_settings',
+				'woocommerce_shipstation_auth_key',
+				'woocommerce_stripe_account_settings',
+				'woocommerce_stripe_api_settings',
+				'woocommerce_stripe_settings',
+				'woocommerce_woocommerce_payments_settings',
+				'wpmandrill',
+				'wprus',
+				'yotpo_settings',
+				'zmail_access_token',
+				'zmail_auth_code',
+				'zmail_integ_client_secret',
+				'zmail_refresh_token',
+			);
+		}
+
+		return explode( "\n", $list );
 	}
 
 	// endregion
