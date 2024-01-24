@@ -32,7 +32,7 @@ class Pressable_Get_Db_Backup extends Command {
 	 *
 	 * @var string[]
 	 */
-	protected ?array $ignore_tables = [
+	protected ?array $ignore_tables = array(
 		'woocommerce_order_itemmeta',
 		'woocommerce_order_items',
 		'woocommerce_api_keys',
@@ -45,9 +45,9 @@ class Pressable_Get_Db_Backup extends Command {
 		'wc_order_operational_data',
 		'wc_orders_meta',
 		'wpml_mails',
-	];
+	);
 
-	protected ?array $ignore_options = [];
+	protected ?array $ignore_options = array();
 
 	/**
 	 * The Pressable site to connect to.
@@ -79,10 +79,10 @@ class Pressable_Get_Db_Backup extends Command {
 	 */
 	protected function configure(): void {
 		$this->setDescription( 'Downloads a Pressable database backup.' )
-			 ->setHelp( "This command accepts a Pressable site as an input, then exports and downloads the database for that site.\nThe downloaded file will be in the current directory with the name pressable-<site id>-<timestamp>.sql" );
+			->setHelp( "This command accepts a Pressable site as an input, then exports and downloads the database for that site.\nThe downloaded file will be in the current directory with the name pressable-<site id>-<timestamp>.sql" );
 
 		$this->addArgument( 'site', InputArgument::REQUIRED, 'ID or URL of the site to connect to.' )
-			 ->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' );
+			->addOption( 'user', 'u', InputOption::VALUE_REQUIRED, 'Email of the user to connect as. Defaults to your Team51 1Password email.' );
 	}
 
 	/**
@@ -127,9 +127,9 @@ class Pressable_Get_Db_Backup extends Command {
 			exit( 1 );
 		}
 
-		$dbPrefix = trim( $ssh->exec( 'wp db prefix --quiet --skip-plugins --skip-themes 2> /dev/null' ) );
+		$db_prefix = trim( $ssh->exec( 'wp db prefix --quiet --skip-plugins --skip-themes 2> /dev/null' ) );
 
-		$this->ignore_tables = array_map( fn( string $table ) => $dbPrefix . $table, $this->ignore_tables );
+		$this->ignore_tables = array_map( fn( string $table ) => $db_prefix . $table, $this->ignore_tables );
 	}
 
 	/**
@@ -150,29 +150,29 @@ class Pressable_Get_Db_Backup extends Command {
 			return 1;
 		}
 
-		$database      = trim( $ssh->exec( 'basename "$(pwd)"' ) );
-		$date          = new \DateTime();
-		$formattedDate = $date->format( 'Y-m-d' );
-		$filename      = "{$this->pressable_site->displayName}-{$formattedDate}.sql";
+		$database       = trim( $ssh->exec( 'basename "$(pwd)"' ) );
+		$date           = new \DateTime();
+		$formatted_date = $date->format( 'Y-m-d' );
+		$filename       = "{$this->pressable_site->displayName}-{$formatted_date}.sql";
 
 		$ssh->setTimeout( 0 ); // Disable timeout in case the command takes a long time.
 
-		$baseCommand     = "mysqldump --single-transaction --skip-lock-tables $database";
-		$excludedOptions = "'" . implode( "', '", $this->ignore_options ) . "'";
+		$base_command     = "mysqldump --single-transaction --skip-lock-tables $database";
+		$excluded_options = "'" . implode( "', '", $this->ignore_options ) . "'";
 
 		// Array of all commands
-		$commands = [
-			"$baseCommand --no-data --ignore-table={$database}.wp_posts --ignore-table={$database}.wp_postmeta --ignore-table={$database}.wp_users --ignore-table={$database}.wp_usermeta > $filename",
-			"$baseCommand --tables wp_options --where=\"option_name NOT IN ($excludedOptions) AND option_name NOT LIKE '%key%'\" >> $filename",
-			"$baseCommand --tables wp_postmeta --where=\"post_id not in (select ID from wp_posts where post_type in ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription'))\" >> $filename",
-			"$baseCommand --tables wp_posts --where=\"post_type NOT IN ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription')\" >> $filename",
-			"$baseCommand --tables wp_users --where=\"ID not in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value = 0)\" >> $filename",
-			"$baseCommand --tables wp_usermeta --where=\"user_id in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value != 0)\" >> $filename",
-			"$baseCommand --tables wp_comments --where=\"comment_type != 'order_note'\" >> $filename",
-		];
+		$commands = array(
+			"$base_command --no-data --ignore-table={$database}.wp_posts --ignore-table={$database}.wp_postmeta --ignore-table={$database}.wp_users --ignore-table={$database}.wp_usermeta > $filename",
+			"$base_command --tables wp_options --where=\"option_name NOT IN ($excluded_options) AND option_name NOT LIKE '%key%'\" >> $filename",
+			"$base_command --tables wp_postmeta --where=\"post_id not in (select ID from wp_posts where post_type in ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription'))\" >> $filename",
+			"$base_command --tables wp_posts --where=\"post_type NOT IN ('shop_order', 'shop_order_refund', 'shop_subscription', 'subscription')\" >> $filename",
+			"$base_command --tables wp_users --where=\"ID not in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value = 0)\" >> $filename",
+			"$base_command --tables wp_usermeta --where=\"user_id in (select user_id from wp_usermeta where meta_key = 'wp_user_level' and meta_value != 0)\" >> $filename",
+			"$base_command --tables wp_comments --where=\"comment_type != 'order_note'\" >> $filename",
+		);
 
 		// Get list of all tables in the database
-		$all_tables = $ssh->exec("mysql -N -e 'SHOW TABLES' $database");
+		$all_tables = $ssh->exec( "mysql -N -e 'SHOW TABLES' $database" );
 
 		// Exclude ignored tables and tables that we're getting data for in other commands
 		$tables_to_dump = implode(
@@ -180,22 +180,22 @@ class Pressable_Get_Db_Backup extends Command {
 			array_diff(
 				explode( "\n", trim( $all_tables ) ),
 				$this->ignore_tables,
-				[
+				array(
 					'wp_options',
 					'wp_posts',
 					'wp_postmeta',
 					'wp_users',
 					'wp_usermeta',
 					'wp_comments',
-				]
+				)
 			)
 		);
 
-		$commands[] = "$baseCommand --tables $tables_to_dump >> $filename";
+		$commands[] = "$base_command --tables $tables_to_dump >> $filename";
 
 		// Execute each command
-		foreach ($commands as $cmd) {
-			$output->writeln("<info>Executing: $cmd</info>");
+		foreach ( $commands as $cmd ) {
+			$output->writeln( "<info>Executing: $cmd</info>" );
 			$ssh->exec( $cmd );
 		}
 
@@ -208,7 +208,7 @@ class Pressable_Get_Db_Backup extends Command {
 
 		$output->writeln( "<info>Downloading $filename</info>" );
 
-		$result = $sftp->get( "/home/$database/$filename", $filename);
+		$result = $sftp->get( "/home/$database/$filename", $filename );
 
 		if ( ! $result ) {
 			$output->writeln( '<error>Could not download the file.</error>' );
@@ -238,7 +238,7 @@ class Pressable_Get_Db_Backup extends Command {
 	 *
 	 * @return  string|null
 	 */
-	private function prompt_site_input( InputInterface $input,OutputInterface $output ): ?string {
+	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( $input->isInteractive() ) {
 			$question = new Question( '<question>Enter the site ID or URL to connect to:</question> ' );
 			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
