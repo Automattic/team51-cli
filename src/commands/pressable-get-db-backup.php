@@ -9,15 +9,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Team51\Helper\Pressable_Connection_Helper;
-use function Team51\Helper\create_pressable_site_collaborator;
 use function Team51\Helper\get_email_input;
-use function Team51\Helper\get_enum_input;
 use function Team51\Helper\get_pressable_site_from_input;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
 use function Team51\Helper\get_pressable_sites;
 use function Team51\Helper\list_1password_accounts;
 use function Team51\Helper\maybe_define_console_verbosity;
-use function Team51\Helper\reset_pressable_site_sftp_user_password;
 
 /**
  * CLI command for connecting to a Pressable site via SSH/SFTP and continuing on the interactive shell.
