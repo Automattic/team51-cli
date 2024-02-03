@@ -31,6 +31,28 @@ class Create_Development_Site extends Command {
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
 
+	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
+		$args = $input->getArguments();
+		$arg_keys = array_keys($args);
+		foreach( $arg_keys as $arg ) {
+			if ( ! in_array($arg, [ 'command' ]) ) {
+				$arg = '[' . $arg . ']';
+				$suggestions->suggestValue( $arg );
+			}
+		}
+
+		$options = $input->getOptions();
+		$opt_keys = array_keys($options);
+		foreach( $opt_keys as $opt ) {
+			if ( ! in_array($opt, ['ansi', 'contractor', 'help', 'no-interaction', 'version', 'verbose', 'quiet', 'dev']) ) {
+				$opt = '--' . $opt;
+				$suggestions->suggestValue( $opt );
+			}
+		}
+
+		$suggestions->suggestValue( 'Example: team51 create-development-site --siteid=123 --label=issue-1234 --temporary-clone --skip-safety-net --branch=feature-branch' . PHP_EOL );
+    }
+
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper();
 
@@ -338,12 +360,6 @@ class Create_Development_Site extends Command {
 
 		exit;
 	}
-
-	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
-        if ($input->mustSuggestOptionValuesFor('format')) {
-            $suggestions->suggestValues(['json', 'xml']);
-        }
-    }
 
 	// region HELPERS
 

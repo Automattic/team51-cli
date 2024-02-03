@@ -10,6 +10,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 class Get_Site_Stats extends Command {
 
@@ -58,6 +60,28 @@ class Get_Site_Stats extends Command {
 				'Export stats to a CSV file.'
 			);
 	}
+
+	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
+		$args = $input->getArguments();
+		$arg_keys = array_keys($args);
+		foreach( $arg_keys as $arg ) {
+			if ( ! in_array($arg, [ 'command' ]) ) {
+				$arg = '[' . $arg . ']';
+				$suggestions->suggestValue( $arg );
+			}
+		}
+
+		$options = $input->getOptions();
+		$opt_keys = array_keys($options);
+		foreach( $opt_keys as $opt ) {
+			if ( ! in_array($opt, ['ansi', 'contractor', 'help', 'no-interaction', 'version', 'verbose', 'quiet', 'dev']) ) {
+				$opt = '--' . $opt;
+				$suggestions->suggestValue( $opt );
+			}
+		}
+
+		$suggestions->suggestValue( 'Example: team51 stats:wpcom-traffic --csv --period=day --num=7 --date=2023-01-01' . PHP_EOL );
+    }
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper();
