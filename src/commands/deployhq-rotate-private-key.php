@@ -12,6 +12,8 @@ use function Team51\Helper\get_deployhq_projects;
  * CLI command for rotating private key in projects.
  */
 final class DeployHQ_Rotate_Private_Key extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	/**
 	 * {@inheritdoc}
 	 */

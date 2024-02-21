@@ -23,6 +23,8 @@ use function Team51\Helper\reset_pressable_site_sftp_user_password;
  * CLI command for connecting to a Pressable site via SSH/SFTP and continuing on the interactive shell.
  */
 class Pressable_Site_Open_Shell extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

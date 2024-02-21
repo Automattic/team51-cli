@@ -13,6 +13,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class Pressable_Call_Api extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'pressable-call-api';
 	private $api_helper;
 	private $output;

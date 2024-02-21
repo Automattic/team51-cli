@@ -9,8 +9,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Completion\CompletionInput;
-use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Team51\Helper\Pressable_Connection_Helper;
 use function Team51\Helper\get_pressable_site_by_id;
 use function Team51\Helper\get_pressable_site_sftp_user_by_email;
@@ -18,6 +16,8 @@ use function Team51\Helper\run_app_command;
 use function Team51\Helper\run_pressable_site_wp_cli_command;
 
 class Create_Development_Site extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'create-development-site';
 
 	protected function configure() {
@@ -30,28 +30,6 @@ class Create_Development_Site extends Command {
 		->addOption( 'skip-safety-net', null, InputOption::VALUE_NONE, 'Skips adding the Safety Net plugin to the development clone.' )
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
-
-	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
-		$args = $input->getArguments();
-		$arg_keys = array_keys($args);
-		foreach( $arg_keys as $arg ) {
-			if ( ! in_array($arg, [ 'command' ]) ) {
-				$arg = '[' . $arg . ']';
-				$suggestions->suggestValue( $arg );
-			}
-		}
-
-		$options = $input->getOptions();
-		$opt_keys = array_keys($options);
-		foreach( $opt_keys as $opt ) {
-			if ( ! in_array($opt, ['ansi', 'contractor', 'help', 'no-interaction', 'version', 'verbose', 'quiet', 'dev']) ) {
-				$opt = '--' . $opt;
-				$suggestions->suggestValue( $opt );
-			}
-		}
-
-		$suggestions->suggestValue( 'Example: team51 create-development-site --siteid=123 --label=issue-1234 --temporary-clone --skip-safety-net --branch=feature-branch' . PHP_EOL );
-    }
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$api_helper = new API_Helper();

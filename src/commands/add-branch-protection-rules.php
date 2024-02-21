@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Add_Branch_Protection_Rules extends Command {
+    use \Team51\Helper\Autocomplete;
+
     protected static $defaultName = 'add-branch-protection-rules';
 
     protected function configure() {

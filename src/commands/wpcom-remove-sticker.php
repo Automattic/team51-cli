@@ -14,6 +14,8 @@ use function Team51\Helper\get_wpcom_site_from_input;
 use function Team51\Helper\get_string_input;
 
 final class WPCOM_Remove_Sticker extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	/**
 	 * {@inheritdoc}
 	 */

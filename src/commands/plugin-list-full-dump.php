@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Plugin_Summary extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected static $defaultName = 'plugin-list-full-dump';
 

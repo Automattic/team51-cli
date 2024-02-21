@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Delete_Branch_Protection_Rules extends Command {
+    use \Team51\Helper\Autocomplete;
+
     protected static $defaultName = 'delete-branch-protection-rules';
 
     protected function configure() {

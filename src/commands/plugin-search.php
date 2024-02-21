@@ -18,6 +18,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command to search all Team51 sites for a specific plugin.
  */
 class Plugin_Search extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

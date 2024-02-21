@@ -22,6 +22,7 @@ use function Team51\Helper\maybe_define_console_verbosity;
  */
 class Flickr_Scrap_Photostream extends Command {
 	// region FIELDS AND CONSTANTS
+	use \Team51\Helper\Autocomplete;
 
 	/**
 	 * {@inheritdoc}

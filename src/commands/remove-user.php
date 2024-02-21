@@ -12,6 +12,8 @@ use Symfony\Component\Console\Helper\Table;
 use Team51\Helper\WPCOM_API_Helper;
 
 class Remove_User extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'remove-user';
 	private $api_helper;
 	private $output;

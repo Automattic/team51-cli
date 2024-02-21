@@ -27,6 +27,8 @@ use function Team51\Helper\update_github_repository;
  * CLI command for creating a new GitHub repository.
  */
 class Create_Repository extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

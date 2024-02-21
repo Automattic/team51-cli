@@ -11,6 +11,7 @@ use Symfony\Component\Console\Descriptor\JsonDescriptor;
 use Symfony\Component\Console\Descriptor\XmlDescriptor;
 
 class Dump_Commands extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected function configure() {
 		$this

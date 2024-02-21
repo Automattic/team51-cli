@@ -18,6 +18,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for creating a new collaborator on a Pressable site.
  */
 class Pressable_Site_Create_Collaborator extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

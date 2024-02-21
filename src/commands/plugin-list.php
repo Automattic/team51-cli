@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Plugin_List extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'plugin-list';
 
 	protected function configure() {

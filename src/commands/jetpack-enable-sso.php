@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Jetpack_Enable_SSO extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'jetpack-enable-sso';
 
 	protected function configure() {

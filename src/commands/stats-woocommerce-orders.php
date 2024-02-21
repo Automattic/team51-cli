@@ -12,6 +12,7 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class Get_WooCommerce_Stats extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected static $defaultName = 'stats:woocommerce-orders';
 

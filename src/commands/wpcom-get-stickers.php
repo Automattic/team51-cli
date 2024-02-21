@@ -14,6 +14,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\get_wpcom_site_from_input;
 
 final class WPCOM_Get_Stickers extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	/**
 	 * {@inheritdoc}
 	 */

@@ -9,8 +9,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use Symfony\Component\Console\Completion\CompletionInput;
-use Symfony\Component\Console\Completion\CompletionSuggestions;
 use function Team51\Helper\add_pressable_site_domain;
 use function Team51\Helper\convert_pressable_site;
 use function Team51\Helper\get_pressable_site_by_id;
@@ -30,6 +28,8 @@ use function Team51\Helper\update_1password_item;
  * CLI command for adding a domain to a Pressable site.
  */
 final class Pressable_Site_Add_Domain extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -73,28 +73,6 @@ final class Pressable_Site_Add_Domain extends Command {
 			->addArgument( 'domain', InputArgument::REQUIRED, 'The domain to add to the site.' )
 			->addOption( 'primary', null, InputOption::VALUE_NONE, 'Set the given domain as the primary one.' );
 	}
-
-	public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void {
-		$args = $input->getArguments();
-		$arg_keys = array_keys($args);
-		foreach( $arg_keys as $arg ) {
-			if ( ! in_array($arg, [ 'command' ]) ) {
-				$arg = '[' . $arg . ']';
-				$suggestions->suggestValue( $arg );
-			}
-		}
-
-		$options = $input->getOptions();
-		$opt_keys = array_keys($options);
-		foreach( $opt_keys as $opt ) {
-			if ( ! in_array($opt, ['ansi', 'contractor', 'help', 'no-interaction', 'version', 'verbose', 'quiet', 'dev']) ) {
-				$opt = '--' . $opt;
-				$suggestions->suggestValue( $opt );
-			}
-		}
-
-		$suggestions->suggestValue( 'Example: team51 pressable:add-site-domain --primary https://wordpress.com' . PHP_EOL );
-    }
 
 	/**
 	 * {@inheritDoc}
