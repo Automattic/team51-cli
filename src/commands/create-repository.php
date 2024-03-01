@@ -128,7 +128,7 @@ class Create_Repository extends Command {
 		// endregion
 
 		// region PLUGIN REPO OPTIONS
-		$this->addOption( 'plugin-name', null, InputArgument::REQUIRED, 'The name of the plugin.' )
+		$this->addOption( 'plugin-name', null, InputOption::VALUE_REQUIRED, 'The name of the plugin.' )
 			->addOption( 'plugin-php-short-prefix', null, InputOption::VALUE_REQUIRED, 'The short prefix for global PHP variables inside the plugin.' );
 		// endregion
 
