@@ -5,12 +5,25 @@ use Symfony\Component\Console\Input\InputOption;
 
 define( 'TEAM51_CLI_ROOT_DIR', __DIR__ );
 if ( getenv( 'TEAM51_CONTRACTOR' ) ) { // Add the contractor flag automatically if set through the environment.
-	$argv[]            = '-c';
-	$_SERVER['argv'][] = '-c';
+	$argv[]            = '-con';
+	$_SERVER['argv'][] = '-con';
 }
 
 require __DIR__ . '/vendor/autoload.php';
-require __DIR__ . '/src/helpers/config-loader.php';
+
+// If one the arguments is --help or an auto-complete flag, skip the config-loader to avoid communicating with 1Pass
+$requires_auth = true;
+foreach( $argv as $arg ) {
+	if ( in_array( $arg, ['_complete', '-h', '--help'], true ) ) {
+		$requires_auth = false;
+		break;
+	}
+}
+
+if ( $requires_auth ) {
+	require __DIR__ . '/src/helpers/config-loader.php';
+}
+
 
 $application = new Application();
 
@@ -55,7 +68,7 @@ $application->addCommands(
 );
 
 foreach ( $application->all() as $command ) {
-	$command->addOption( '--contractor', '-c', InputOption::VALUE_NONE, 'Use the contractor config file.' );
+	$command->addOption( '--contractor', '-con', InputOption::VALUE_NONE, 'Use the contractor config file.' );
 	$command->addOption( '--dev', null, InputOption::VALUE_NONE, 'Run the CLI tool in developer mode.' );
 }
 

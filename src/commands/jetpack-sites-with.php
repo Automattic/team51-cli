@@ -12,6 +12,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 
 class Jetpack_Sites_With extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'jetpack-sites-with';
 
 	/**

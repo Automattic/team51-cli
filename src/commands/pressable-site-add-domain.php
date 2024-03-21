@@ -28,6 +28,8 @@ use function Team51\Helper\update_1password_item;
  * CLI command for adding a domain to a Pressable site.
  */
 final class Pressable_Site_Add_Domain extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

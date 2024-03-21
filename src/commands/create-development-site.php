@@ -16,6 +16,8 @@ use function Team51\Helper\run_app_command;
 use function Team51\Helper\run_pressable_site_wp_cli_command;
 
 class Create_Development_Site extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'create-development-site';
 
 	protected function configure() {

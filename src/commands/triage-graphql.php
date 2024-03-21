@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Triage_GraphQL extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'triage';
 
 	const TRIAGE_STATUS           = '🆕 Needs Triaged';

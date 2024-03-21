@@ -76,8 +76,9 @@ function update() {
 }
 
 // Initialize environment.
-$is_quiet = false;
-$is_dev   = false;
+$is_quiet        = false;
+$is_dev          = false;
+$is_autocomplete = false;
 
 foreach ( $argv as $arg ) {
 	switch ( $arg ) {
@@ -87,6 +88,11 @@ foreach ( $argv as $arg ) {
 			break;
 		case '--dev':
 			$is_dev = true;
+			break;
+		case '_complete':
+			$is_dev   = true;
+			$is_quiet = true;
+			$is_autocomplete = true;
 			break;
 	}
 }
@@ -98,6 +104,7 @@ if ( file_exists( __DIR__ . '/.dev' ) ) {
 
 define( 'IS_QUIET', $is_quiet );
 define( 'IS_DEV', $is_dev );
+define( 'IS_AUTOCOMPLETE', $is_autocomplete );
 
 // Print ASCII art.
 print_ascii_art();
@@ -110,7 +117,9 @@ if ( IS_DEV ) {
 }
 
 // Update Composer.
-run_command( sprintf( 'composer install -o --working-dir %s', __DIR__ ) );
-run_command( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) );
+if ( ! IS_AUTOCOMPLETE ) {
+	run_command( sprintf( 'composer install -o --working-dir %s', __DIR__ ) );
+	run_command( sprintf( 'composer dump-autoload -o --working-dir %s', __DIR__ ) );
+}
 
 require __DIR__ . '/load-application.php';

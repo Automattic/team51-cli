@@ -26,6 +26,8 @@ use function Team51\Helper\reset_pressable_site_sftp_user_password;
  * CLI command for rotating the SFTP password of users on Pressable sites.
  */
 final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

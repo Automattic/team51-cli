@@ -24,6 +24,8 @@ use function Team51\Helper\run_app_command;
  * CLI command for rotating the SFTP and WP user passwords of a given user on Pressable sites.
  */
 final class Pressable_Site_Rotate_Passwords extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

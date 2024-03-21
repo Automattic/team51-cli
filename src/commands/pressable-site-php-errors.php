@@ -21,6 +21,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for getting PHP errors from a Pressable site.
  */
 class Pressable_Site_PHP_Errors extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**

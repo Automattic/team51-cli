@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Jetpack_Modules extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'jetpack-module-list';
 
 	protected function configure() {

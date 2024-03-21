@@ -12,6 +12,8 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class Site_List extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'site-list';
 
 	protected function configure() {
