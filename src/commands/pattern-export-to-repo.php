@@ -103,14 +103,17 @@ class Pattern_Export_To_Repo extends Command {
 		if ( ! empty( $result ) ) {
 
 			// Temporary directory to clone the repository
-			$temp_dir = sys_get_temp_dir() . '/special-projects-patterns';
-			$repo_url = 'git@github.com:a8cteam51/special-projects-patterns.git';
+			$temp_dir = sys_get_temp_dir() . '/team51-patterns';
+			$repo_url = 'git@github.com:a8cteam51/team51-patterns.git';
 
 			// Clone the repository
 			run_system_command( [ 'git', 'clone', $repo_url, $temp_dir ], sys_get_temp_dir() );
 
+			// The 'patterns' folder at the root of the repo.
+			$patterns_dir = $temp_dir . '/patterns';
+
 			// Additional setup for category directory and metadata.json handling.
-			$category_dir = $temp_dir . '/' . $this->category_slug;
+			$category_dir = $patterns_dir . '/' . $this->category_slug;
 			$metadata_path = $category_dir . '/metadata.json';
 
 			// Ensure the category directory exists.
@@ -144,9 +147,11 @@ class Pattern_Export_To_Repo extends Command {
 			file_put_contents( $json_file_path, $result );
 
 			// Add, commit, and push the change.
+			$branch_name = 'add/' . $pattern_file_base . '-' . time();
+			run_system_command( [ 'git', 'branch', '-m' , $branch_name ], $temp_dir );
 			run_system_command( [ 'git', 'add', $json_file_path ], $temp_dir );
 			run_system_command( [ 'git', 'commit', '-m', 'New pattern: ' . $pattern_file_base ], $temp_dir );
-			run_system_command( [ 'git', 'push', 'origin', 'trunk' ], $temp_dir );
+			run_system_command( [ 'git', 'push', 'origin', $branch_name ], $temp_dir );
 
 			// Clean up by removing the cloned repository directory, if desired
 			run_system_command( [ 'rm', '-rf', $temp_dir ], sys_get_temp_dir() );
