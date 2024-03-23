@@ -93,8 +93,6 @@ class Pattern_Export_To_Repo extends Command {
 
 		$result = $ssh_connection->exec( $command );
 
-		$output->writeln( $result );
-
 		if ( ! empty( $result ) ) {
 
 			// Temporary directory to clone the repository
