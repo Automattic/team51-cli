@@ -80,18 +80,25 @@ class Pattern_Export_To_Repo extends Command {
 	 * {@inheritDoc}
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
+
+		// Upload script.
+		$sftp   = Pressable_Connection_Helper::get_sftp_connection( $this->pressable_site->id );
+		$result = $sftp->put( '/htdocs/pattern-extract.php', file_get_contents( __DIR__ . '/../../scaffold/pattern-extract.php' ) );
+		if ( ! $result ) {
+			$output->writeln( "<error>Failed to copy pattern-extract.php to {$this->pressable_site->id}.</error>" );
+		}
+
 		$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh_connection ) ) {
 			$output->writeln( "<error>Failed to connect via SSH for {$this->pressable_site->url}. Aborting!</error>" );
 			return 1;
 		}
 
-		$command = sprintf(
-			'wp eval "if (!empty(\$pattern = WP_Block_Patterns_Registry::get_instance()->get_registered(\'%s\'))) { echo json_encode([\'__file\' => \'wp_block\', \'title\' => \$pattern[\'title\'], \'content\' => \$pattern[\'content\'], \'syncStatus\' => \'\']); }"',
-			addslashes( $this->pattern_name )
-		);
+		// Run script.
+		$result = $ssh_connection->exec( sprintf( "wp eval-file /htdocs/pattern-extract.php '%s'", $this->pattern_name ) );
 
-		$result = $ssh_connection->exec( $command );
+		// Delete script.
+		$ssh_connection->exec( 'rm /htdocs/pattern-extract.php' );
 
 		if ( ! empty( $result ) ) {
 
@@ -119,7 +126,7 @@ class Pattern_Export_To_Repo extends Command {
 			}
 
 			// Path to the JSON file for the pattern.
-			$pattern_file_base = $this->_slugify( $this->pattern_name );
+			$pattern_file_base = basename( $this->_slugify( $this->pattern_name ) );
 			$pattern_file_name = $pattern_file_base . '.json';
 			$json_file_path = $category_dir . '/' . $pattern_file_name;
 
@@ -161,9 +168,12 @@ class Pattern_Export_To_Repo extends Command {
 	 */
 	private function prompt_site_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( $input->isInteractive() ) {
+
+			// Ask for the pattern name, providing an example as a hint.
 			$question = new Question( '<question>Enter the site ID or URL to add the domain to:</question> ' );
 			$question->setAutocompleterValues( \array_map( static fn( object $site ) => $site->url, get_pressable_sites() ?? array() ) );
 
+			// Retrieve the user's input.
 			$site = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 
@@ -180,11 +190,11 @@ class Pattern_Export_To_Repo extends Command {
 	private function prompt_pattern_name_input( InputInterface $input, OutputInterface $output ): ?string {
 		if ( $input->isInteractive() ) {
 
-			// Ask for the pattern name, providing an example as a hint
+			// Ask for the pattern name, providing an example as a hint.
 			$question_text = '<question>Enter the pattern name (e.g., "twentytwentyfour/banner-hero"):</question> ';
 			$question = new Question( $question_text );
 
-			// Retrieve the user's input
+			// Retrieve the user's input.
 			$pattern_name = $this->getHelper( 'question' )->ask( $input, $output, $question );
 		}
 
