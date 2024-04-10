@@ -103,7 +103,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
 			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>SSH connection established.</>', OutputInterface::VERBOSITY_VERBOSE );
@@ -116,7 +116,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 			}
 		);
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

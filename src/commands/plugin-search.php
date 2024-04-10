@@ -86,7 +86,7 @@ class Plugin_Search extends Command {
 		$sites = get_wpcom_jetpack_sites();
 		if ( empty( $sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>Successfully fetched ' . count( $sites ) . ' Jetpack sites.</>', OutputInterface::VERBOSITY_VERBOSE );
@@ -133,7 +133,7 @@ class Plugin_Search extends Command {
 			$this->output_not_checked_site_list( $sites_not_checked, $output );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

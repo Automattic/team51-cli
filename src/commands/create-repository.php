@@ -237,7 +237,7 @@ class Create_Repository extends Command {
 		$repository = create_github_repository_from_template( GITHUB_API_OWNER, $this->repo_slug, GITHUB_API_OWNER, "team51-$this->repo_type-scaffold", $this->repo_description );
 		if ( \is_null( $repository ) ) {
 			$output->writeln( "<error>Failed to create $this->repo_slug repository from template. Aborting!</error>" );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$repository = update_github_repository(
@@ -254,7 +254,7 @@ class Create_Repository extends Command {
 		);
 		if ( \is_null( $repository ) ) {
 			$output->writeln( "<error>Failed to update $this->repo_slug repository. Aborting!</error>" );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( "<fg=green;options=bold>Successfully created $this->repo_slug repository from template.</>" );
@@ -394,7 +394,7 @@ class Create_Repository extends Command {
 			);
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

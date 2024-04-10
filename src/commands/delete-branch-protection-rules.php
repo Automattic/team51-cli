@@ -20,7 +20,7 @@ class Delete_Branch_Protection_Rules extends Command {
         ->addArgument( 'repo-slug', InputArgument::REQUIRED, "Repository name in slug form (e.g. client-name)?" );
     }
 
-    protected function execute( InputInterface $input, OutputInterface $output ) {
+    protected function execute( InputInterface $input, OutputInterface $output ): int {
         $api_helper = new API_Helper;
 
         $slug = $input->getArgument( 'repo-slug' );
@@ -33,5 +33,7 @@ class Delete_Branch_Protection_Rules extends Command {
         } else {
             $output->writeln( "<info>Failed to delete branch protection rules for $slug: {$delete_branch_protection_rules->message}</info>" );
         }
+
+        return Command::SUCCESS;
     }
 }

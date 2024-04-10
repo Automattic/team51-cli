@@ -21,7 +21,7 @@ class Plugin_List extends Command {
 		->addArgument( 'site-domain', InputArgument::REQUIRED, 'The domain of the Jetpack connected site.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$site_domain = $input->getArgument( 'site-domain' );
 
 		$api_helper = new API_Helper;
@@ -56,5 +56,6 @@ class Plugin_List extends Command {
 		$plugin_table->setRows( $plugin_list );
 		$plugin_table->render();
 
+		return Command::SUCCESS;
 	}
 }

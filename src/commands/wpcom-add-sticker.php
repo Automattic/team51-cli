@@ -76,7 +76,7 @@ final class WPCOM_Add_Sticker extends Command {
 	/**
 	 * {@inheritDoc}
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$response = WPCOM_API_Helper::call_api(
 			sprintf( WPCOM_ADD_STICKER_URL, $this->wpcom_site->ID, $this->sticker ),
 			'POST'
@@ -87,6 +87,8 @@ final class WPCOM_Add_Sticker extends Command {
 		} else {
 			$output->writeln( "<comment>Couldn't add `{$this->sticker}` on site `{$this->wpcom_site->ID}`<comment>" );
 		}
+
+		return Command::SUCCESS;
 	}
 
 	/**

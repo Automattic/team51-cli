@@ -35,7 +35,7 @@ class Jetpack_Sites_With extends Command {
 		->addArgument( 'module-status', InputArgument::OPTIONAL, 'The status of the Jetpack module to search for.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$module_slug    = strtolower( $input->getArgument( 'module-slug' ) );
 		$module_status  = strtolower( $input->getArgument( 'module-status' ) );
 		$validation_run = true;
@@ -133,6 +133,7 @@ class Jetpack_Sites_With extends Command {
 
 		$output->writeln( '<info>All done! :)<info>' );
 
+		return Command::SUCCESS;
 	}
 
 	private function get_list_of_modules( $site_id ) {

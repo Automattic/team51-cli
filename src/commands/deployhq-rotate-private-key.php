@@ -57,6 +57,6 @@ final class DeployHQ_Rotate_Private_Key extends Command {
 			$output->writeln( "{$project->permalink}: Done!" );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 }

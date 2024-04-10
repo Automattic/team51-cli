@@ -53,7 +53,7 @@ class Pressable_Site_Create_Collaborator extends Command {
 	 * @param \Symfony\Component\Console\Output\OutputInterface $output
 	 * @return void
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		// Handle if searching by domain or using the passed site name.
 		if ( $input->getOption( 'search' ) ) {
 			$this->handle_search_for_site( $input, $output );
@@ -62,6 +62,8 @@ class Pressable_Site_Create_Collaborator extends Command {
 		}
 
 		$output->writeln( "<info>\nAll done!<info>" );
+
+		return Command::SUCCESS;
 	}
 
 	/***********************************

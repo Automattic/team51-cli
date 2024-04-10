@@ -26,7 +26,7 @@ class Remove_User extends Command {
 		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$this->api_helper = new API_Helper();
 		$this->output     = $output;
 
@@ -139,6 +139,8 @@ class Remove_User extends Command {
 		// TODO: Remove user from Github too?
 
 		$output->writeln( '<info>All done!<info>' );
+
+		return Command::SUCCESS;
 	}
 
 	/**

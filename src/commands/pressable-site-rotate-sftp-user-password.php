@@ -204,7 +204,7 @@ final class Pressable_Site_Rotate_SFTP_User_Password extends Command {
 			$output->writeln( "<comment>New SFTP user password:</comment> <fg=green;options=bold>$new_pressable_sftp_password</>" );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

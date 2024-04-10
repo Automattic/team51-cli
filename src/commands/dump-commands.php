@@ -25,18 +25,19 @@ class Dump_Commands extends Command {
 
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 
 		try {
 			$descriptor = $this->get_descriptor( $input->getOption( 'format' ) );
 		} catch ( \Exception $e ) {
 			$output->writeln( '<error>' . $e->getMessage() . '</error>' );
-			return;
+			return Command::FAILURE;
 		}
 
 		$stream = $this->set_output_stream( $input, $output );
 		$descriptor->describe( $stream, $this->getApplication() );
 
+		return Command::SUCCESS;
 	}
 
 	private function get_descriptor( $format ) {

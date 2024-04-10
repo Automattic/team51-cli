@@ -174,7 +174,7 @@ class Update_Repository_Secret extends Command {
 			}
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	/**

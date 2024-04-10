@@ -172,7 +172,7 @@ final class Pressable_Site_Rotate_Passwords extends Command {
 			$output
 		);
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

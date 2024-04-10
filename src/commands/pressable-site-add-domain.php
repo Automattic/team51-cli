@@ -133,7 +133,7 @@ final class Pressable_Site_Add_Domain extends Command {
 			$result = convert_pressable_site( $this->pressable_site->id );
 			if ( \is_null( $result ) ) {
 				$output->writeln( '<error>Failed to convert staging site to live site.</error>' );
-				return 1;
+				return Command::FAILURE;
 			}
 
 			$output->writeln( '<fg=green;options=bold>Converted staging site to live site.</>' );
@@ -147,7 +147,7 @@ final class Pressable_Site_Add_Domain extends Command {
 		$site_domains = add_pressable_site_domain( $this->pressable_site->id, $this->new_domain );
 		if ( \is_null( $site_domains ) ) {
 			$output->writeln( '<error>Failed to add domain to site.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>Domain added to site.</>' );
@@ -157,7 +157,7 @@ final class Pressable_Site_Add_Domain extends Command {
 			$new_domain = $this->find_domain_object( $site_domains );
 			if ( \is_null( $new_domain ) ) {
 				$output->writeln( '<error>Failed to find the newly added domain in the list of site domains.</error>' );
-				return 1;
+				return Command::FAILURE;
 			}
 
 			// Set the new domain as the primary domain.
@@ -169,7 +169,7 @@ final class Pressable_Site_Add_Domain extends Command {
 				$new_domain = set_pressable_site_primary_domain( $this->pressable_site->id, $new_domain->id );
 				if ( \is_null( $new_domain ) ) {
 					$output->writeln( '<error>Failed to set primary domain.</error>' );
-					return 1;
+					return Command::FAILURE;
 				}
 
 				$output->writeln( '<fg=green;options=bold>Domain set as primary.</>' );
@@ -228,7 +228,7 @@ final class Pressable_Site_Add_Domain extends Command {
 			}
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

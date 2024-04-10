@@ -47,13 +47,13 @@ class Pressable_Call_Api extends Command {
 	 * @param \Symfony\Component\Console\Output\OutputInterface $output
 	 * @return void
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$this->api_helper = new API_Helper();
 		$this->output     = $output;
 
 		if ( ! in_array( $input->getOption( 'format' ), array( 'text', 'json' ), true ) ) {
 			$this->output->writeln( '<error>Invalid output format</error>' );
-			return;
+			return Command::FAILURE;
 		}
 
 		$this->format = $input->getOption( 'format' );
@@ -61,6 +61,8 @@ class Pressable_Call_Api extends Command {
 		$this->handle_api_call( $input, $output );
 
 		$output->writeln( "<info>\nAll done!<info>" );
+
+		return Command::SUCCESS;
 	}
 
 	/***********************************

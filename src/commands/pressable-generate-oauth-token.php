@@ -84,7 +84,7 @@ class Pressable_Generate_OAuth_Token extends Command {
 			) . PHP_EOL
 		);
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

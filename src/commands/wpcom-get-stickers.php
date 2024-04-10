@@ -58,14 +58,14 @@ final class WPCOM_Get_Stickers extends Command {
 	/**
 	 * {@inheritDoc}
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$stickers = WPCOM_API_Helper::call_api(
 			sprintf( WPCOM_GET_STICKERS_URL, $this->wpcom_site->ID )
 		);
 
 		if ( empty( $stickers ) ) {
 			$output->writeln( '<comment>Site has no stickers associated.<comment>' );
-			exit;
+			return Command::FAILURE;
 		}
 
 		$sticker_table = new Table( $output );
@@ -74,6 +74,8 @@ final class WPCOM_Get_Stickers extends Command {
 			->setHeaders( array( "ID: {$this->wpcom_site->ID} ({$this->wpcom_site->URL})" ) )
 			->setRows( array_map( fn ( $sticker ) => array( $sticker ), $stickers ) )
 			->render();
+
+		return Command::SUCCESS;
 	}
 
 	/**

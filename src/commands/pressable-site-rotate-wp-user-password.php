@@ -193,7 +193,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( '<fg=green;options=bold>WP user password updated in 1Password.</>' );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

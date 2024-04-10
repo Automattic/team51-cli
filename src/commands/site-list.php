@@ -25,7 +25,7 @@ class Site_List extends Command {
 		->addOption( 'exclude', null, InputOption::VALUE_OPTIONAL, "Optional.\nExclude columns from the export option. Possible values: Site Name, Domain, Site ID, and Host. Letter case is not important.\nExample usage:\nsite-list csv-export --exclude='Site name, Host'\nsite-list json-export --exclude='site id,host'\n" );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$api_helper = new API_Helper;
 
 		$audit = false;
@@ -217,6 +217,8 @@ class Site_List extends Command {
 			$this->create_json( $final_site_list, $atomic_count, $pressable_count, $simple_count, $other_count, $filtered_site_count, $json_ex_columns );
 			$output->writeln( '<info>Exported to sites.json in the current folder.<info>' );
 		}
+
+		return Command::SUCCESS;
 	}
 
 	protected function eval_which_host( $site, $pressable_sites ) {
