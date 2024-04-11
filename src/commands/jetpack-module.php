@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Jetpack_Module extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'jetpack-module';
 
 	private array $settings = array(
@@ -25,7 +27,7 @@ class Jetpack_Module extends Command {
 		->addArgument( 'setting', InputArgument::REQUIRED, 'enable/disable' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$site_domain     = $input->getArgument( 'site-domain' );
 		$module          = $input->getArgument( 'module' );
 		$setting         = $input->getArgument( 'setting' );
@@ -68,6 +70,8 @@ class Jetpack_Module extends Command {
 		}
 
 		$output->writeln( '<info>All done! :)<info>' );
+
+		return Command::SUCCESS;
 	}
 
 	/**

@@ -16,6 +16,8 @@ use function Team51\Helper\run_app_command;
 use function Team51\Helper\run_pressable_site_wp_cli_command;
 
 class Create_Development_Site extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'create-development-site';
 
 	protected function configure() {
@@ -29,7 +31,7 @@ class Create_Development_Site extends Command {
 		->addOption( 'branch', null, InputOption::VALUE_REQUIRED, "The GitHub branch you would like to the development site to use. Defaults to 'develop'." );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$api_helper = new API_Helper();
 
 		$production_site_id = $input->getOption( 'site-id' );
@@ -334,7 +336,7 @@ class Create_Development_Site extends Command {
 			)
 		);
 
-		exit;
+		return Command::SUCCESS;
 	}
 
 	// region HELPERS

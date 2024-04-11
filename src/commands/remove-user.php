@@ -12,6 +12,8 @@ use Symfony\Component\Console\Helper\Table;
 use Team51\Helper\WPCOM_API_Helper;
 
 class Remove_User extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'remove-user';
 	private $api_helper;
 	private $output;
@@ -24,7 +26,7 @@ class Remove_User extends Command {
 		->addOption( 'list', null, InputOption::VALUE_NONE, 'List the sites where this email is found.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$this->api_helper = new API_Helper();
 		$this->output     = $output;
 
@@ -137,6 +139,8 @@ class Remove_User extends Command {
 		// TODO: Remove user from Github too?
 
 		$output->writeln( '<info>All done!<info>' );
+
+		return Command::SUCCESS;
 	}
 
 	/**

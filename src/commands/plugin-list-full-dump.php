@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Plugin_Summary extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected static $defaultName = 'plugin-list-full-dump';
 
@@ -27,7 +28,7 @@ class Plugin_Summary extends Command {
 			->setDescription( 'Dumps a CSV of all plugins on on all t51 sites, including activation status' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 
 		$api_helper = new API_Helper();
 
@@ -107,6 +108,7 @@ class Plugin_Summary extends Command {
 
 		$output->writeln( '<info>Done, CSV saved to your current working directory: plugins-on-t51-sites-' . $timestamp . '.csv<info>' );
 
+		return Command::SUCCESS;
 	}
 
 	// Helper functions, getting list of plugins and getting woocommerce stats

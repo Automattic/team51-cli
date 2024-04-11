@@ -18,6 +18,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command to search all Team51 sites for a specific plugin.
  */
 class Plugin_Search extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -84,7 +86,7 @@ class Plugin_Search extends Command {
 		$sites = get_wpcom_jetpack_sites();
 		if ( empty( $sites ) ) {
 			$output->writeln( '<error>Failed to fetch sites.<error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>Successfully fetched ' . count( $sites ) . ' Jetpack sites.</>', OutputInterface::VERBOSITY_VERBOSE );
@@ -131,7 +133,7 @@ class Plugin_Search extends Command {
 			$this->output_not_checked_site_list( $sites_not_checked, $output );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

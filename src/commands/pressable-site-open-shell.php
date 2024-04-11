@@ -23,6 +23,8 @@ use function Team51\Helper\reset_pressable_site_sftp_user_password;
  * CLI command for connecting to a Pressable site via SSH/SFTP and continuing on the interactive shell.
  */
 class Pressable_Site_Open_Shell extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -115,7 +117,7 @@ class Pressable_Site_Open_Shell extends Command {
 			$sftp_user = create_pressable_site_collaborator( $this->user_email, $this->pressable_site->id );
 			if ( \is_null( $sftp_user ) ) {
 				$output->writeln( "<error>Could not create a Pressable SFTP user with the email $this->user_email on {$this->pressable_site->displayName}.</>" );
-				return 1;
+				return Command::FAILURE;
 			}
 
 			// SFTP users are different from collaborator users. We need to query the API again to get the SFTP user.
@@ -129,7 +131,7 @@ class Pressable_Site_Open_Shell extends Command {
 			$result = reset_pressable_site_sftp_user_password( $this->pressable_site->id, $sftp_user->username );
 			if ( \is_null( $result ) ) {
 				$output->writeln( "<error>Could not reset the SFTP password of $sftp_user->email on {$this->pressable_site->displayName}.</>" );
-				return 1;
+				return Command::FAILURE;
 			}
 
 			$output->writeln( "<comment>New SFTP user password:</comment> <fg=green;options=bold>$result</>" );
@@ -144,10 +146,10 @@ class Pressable_Site_Open_Shell extends Command {
 		}
 		if ( ! \is_null( \passthru( "$this->shell_type $ssh_host", $result_code ) ) ) {
 			$output->writeln( "<error>Could not open an interactive $this->shell_type shell. Error code: $result_code</error>" );
-			return 1;
+			return Command::FAILURE;
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

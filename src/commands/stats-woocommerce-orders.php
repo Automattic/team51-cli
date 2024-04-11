@@ -12,6 +12,7 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class Get_WooCommerce_Stats extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected static $defaultName = 'stats:woocommerce-orders';
 
@@ -58,7 +59,7 @@ class Get_WooCommerce_Stats extends Command {
 			);
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$plugin_slug = 'woocommerce';
 
 		$api_helper = new API_Helper();
@@ -270,6 +271,8 @@ class Get_WooCommerce_Stats extends Command {
 		}
 
 		$output->writeln( '<info>All done! :)<info>' );
+
+		return Command::SUCCESS;
 	}
 
 	// Helper functions, getting list of plugins and getting woocommerce stats

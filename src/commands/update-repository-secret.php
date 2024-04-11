@@ -20,6 +20,8 @@ use function Team51\Helper\update_github_repository_secret;
  * CLI command for updating a GitHub repository secret.
  */
 class Update_Repository_Secret extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -172,7 +174,7 @@ class Update_Repository_Secret extends Command {
 			}
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	/**

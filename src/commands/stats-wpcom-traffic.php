@@ -12,6 +12,7 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class Get_Site_Stats extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	protected static $defaultName = 'stats:wpcom-traffic';
 
@@ -59,7 +60,7 @@ class Get_Site_Stats extends Command {
 			);
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$api_helper = new API_Helper();
 
 		// error if the unir or date options are not set
@@ -243,6 +244,8 @@ class Get_Site_Stats extends Command {
 		}
 
 		$output->writeln( '<info>All done! :)<info>' );
+
+		return Command::SUCCESS;
 	}
 
 	// Helper functions, getting site stats

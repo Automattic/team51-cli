@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Triage_GraphQL extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'triage';
 
 	const TRIAGE_STATUS           = '🆕 Needs Triaged';
@@ -19,10 +21,10 @@ class Triage_GraphQL extends Command {
 			->setHelp( 'Scans the triage column to find due dates in the near future.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		if ( ! defined( 'GITHUB_DEVQUEUE_PROJECT_ID' ) ) {
 			$output->writeln( '<error>GITHUB_DEVQUEUE_PROJECT_ID not set in config.</error>' );
-			return;
+			return Command::FAILURE;
 		}
 
 		$api_helper = new API_Helper();
@@ -113,6 +115,8 @@ class Triage_GraphQL extends Command {
 				)
 			);
 		}
+
+		return Command::SUCCESS;
 	}
 
 	private function query( string $project_id, string $after = '', int $per_page = 100 ) {

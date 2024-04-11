@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Add_Branch_Protection_Rules extends Command {
+    use \Team51\Helper\Autocomplete;
+
     protected static $defaultName = 'add-branch-protection-rules';
 
     protected function configure() {
@@ -18,12 +20,12 @@ class Add_Branch_Protection_Rules extends Command {
         ->addArgument( 'repo-slug', InputArgument::REQUIRED, "Repository name in slug form (e.g. client-name)?" );
     }
 
-    protected function execute( InputInterface $input, OutputInterface $output ) {
+    protected function execute( InputInterface $input, OutputInterface $output ): int {
         $api_helper = new API_Helper;
 
-	$slug = $input->getArgument( 'repo-slug' );
+        $slug = $input->getArgument( 'repo-slug' );
 
-	// TODO: Allow these rules to be managed via the config.json file.
+        // TODO: Allow these rules to be managed via the config.json file.
 
         $branch_protection_rules = array (
             'required_status_checks' => array (
@@ -40,10 +42,12 @@ class Add_Branch_Protection_Rules extends Command {
         $output->writeln( "<comment>Adding branch protection rules to $slug.</comment>" );
         $branch_protection_rules = $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/trunk/protection", $branch_protection_rules, 'PUT' );
 
-	if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
-		$output->writeln( "<info>Done. Added branch protection rules to $slug.</info>" );
-	} else {
-		$output->writeln( "<info>Failed to add branch protection rules to $slug.</info>" );
-	}
+        if ( ! empty( $branch_protection_rules->required_status_checks->contexts ) ) {
+            $output->writeln( "<info>Done. Added branch protection rules to $slug.</info>" );
+        } else {
+            $output->writeln( "<info>Failed to add branch protection rules to $slug.</info>" );
+        }
+
+        return Command::SUCCESS;
     }
 }

@@ -11,6 +11,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use function Team51\Helper\run_app_command;
 
 class Create_Production_Site extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'create-production-site';
 
 	const DEPLOYHQ_ZONE_EUROPE  = 3; // UK
@@ -32,7 +34,7 @@ class Create_Production_Site extends Command {
 		->addOption( 'template-id', null, InputOption::VALUE_OPTIONAL, 'The template that will be used while creating the project on DeployHQ. By default the DEPLOYHQ_DEFAULT_PROJECT_TEMPLATE config param is used.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$api_helper = new API_Helper();
 
 		$manual_task_notices = array();
@@ -333,7 +335,7 @@ class Create_Production_Site extends Command {
 			)
 		);
 
-		exit;
+		return Command::SUCCESS;
 	}
 
 	// Convert a text string to something ready to be used as a unique, machine-friendly identifier

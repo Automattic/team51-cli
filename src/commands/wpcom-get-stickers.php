@@ -14,6 +14,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
 use function Team51\Helper\get_wpcom_site_from_input;
 
 final class WPCOM_Get_Stickers extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -56,14 +58,14 @@ final class WPCOM_Get_Stickers extends Command {
 	/**
 	 * {@inheritDoc}
 	 */
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$stickers = WPCOM_API_Helper::call_api(
 			sprintf( WPCOM_GET_STICKERS_URL, $this->wpcom_site->ID )
 		);
 
 		if ( empty( $stickers ) ) {
 			$output->writeln( '<comment>Site has no stickers associated.<comment>' );
-			exit;
+			return Command::SUCCESS;
 		}
 
 		$sticker_table = new Table( $output );
@@ -72,6 +74,8 @@ final class WPCOM_Get_Stickers extends Command {
 			->setHeaders( array( "ID: {$this->wpcom_site->ID} ({$this->wpcom_site->URL})" ) )
 			->setRows( array_map( fn ( $sticker ) => array( $sticker ), $stickers ) )
 			->render();
+
+		return Command::SUCCESS;
 	}
 
 	/**

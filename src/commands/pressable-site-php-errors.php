@@ -21,6 +21,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for getting PHP errors from a Pressable site.
  */
 class Pressable_Site_PHP_Errors extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -107,7 +109,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		$ssh_connection = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh_connection ) ) {
 			$output->writeln( "<error>Failed to connect via SSH for {$this->pressable_site->url}. Aborting!</error>" );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<comment>Finding the PHP error log location.</comment>', OutputInterface::VERBOSITY_VERBOSE );
@@ -116,7 +118,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		$error_log_path = $ssh_connection->exec( 'wp eval "echo ini_get(\'error_log\');"' );
 		if ( empty( $error_log_path ) ) {
 			$output->writeln( "<error>Failed to find the PHP error log location for {$this->pressable_site->url}. Aborting!</error>" );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( "<info>Found the PHP error log location: $error_log_path</info>", OutputInterface::VERBOSITY_DEBUG );
@@ -132,13 +134,13 @@ class Pressable_Site_PHP_Errors extends Command {
 				$output->writeln( "<info>The PHP error log for {$this->pressable_site->url} appears to be empty. Go make some errors and try again!</info>" );
 			}
 
-			return 1;
+			return Command::FAILURE;
 		}
 
 		// Output the raw log if requested in said format.
 		if ( 'raw' === $this->format ) {
 			$this->output_raw_error_log( $error_log, $output );
-			return 0;
+			return Command::SUCCESS;
 		}
 
 		// Parse the error log for the most recent fatal errors.
@@ -147,7 +149,7 @@ class Pressable_Site_PHP_Errors extends Command {
 		$php_errors = $this->parse_error_log( $error_log );
 		if ( 0 === count( $php_errors ) ) {
 			$output->writeln( "<info>The PHP error log for {$this->pressable_site->url} appears to be empty. Go make some errors and try again!</info>" );
-			return 0;
+			return Command::SUCCESS;
 		}
 
 		$stats_table = $this->analyze_error_entries( $php_errors );
@@ -163,7 +165,7 @@ class Pressable_Site_PHP_Errors extends Command {
 				break;
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

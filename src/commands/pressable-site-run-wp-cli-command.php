@@ -18,6 +18,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for running a WP-CLI command on a Pressable site.
  */
 final class Pressable_Site_Run_WP_CLI_Command extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -101,7 +103,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
 			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>SSH connection established.</>', OutputInterface::VERBOSITY_VERBOSE );
@@ -114,7 +116,7 @@ final class Pressable_Site_Run_WP_CLI_Command extends Command {
 			}
 		);
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

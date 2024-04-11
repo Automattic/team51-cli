@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
 class Plugin_List extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'plugin-list';
 
 	protected function configure() {
@@ -19,7 +21,7 @@ class Plugin_List extends Command {
 		->addArgument( 'site-domain', InputArgument::REQUIRED, 'The domain of the Jetpack connected site.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$site_domain = $input->getArgument( 'site-domain' );
 
 		$api_helper = new API_Helper;
@@ -54,5 +56,6 @@ class Plugin_List extends Command {
 		$plugin_table->setRows( $plugin_list );
 		$plugin_table->render();
 
+		return Command::SUCCESS;
 	}
 }

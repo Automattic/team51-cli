@@ -17,6 +17,7 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for uploading the site icon as apple-touch-icon.png on a Pressable site.
  */
 final class Pressable_Site_Upload_Icon extends Command {
+	use \Team51\Helper\Autocomplete;
 
 	/**
 	 * {@inheritdoc}
@@ -75,20 +76,20 @@ final class Pressable_Site_Upload_Icon extends Command {
 		$sftp = Pressable_Connection_Helper::get_sftp_connection( $this->pressable_site->id );
 		if ( \is_null( $sftp ) ) {
 			$output->writeln( '<error>Could not connect to the SFTP server.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( '<fg=green;options=bold>SFTP connection established.</>', OutputInterface::VERBOSITY_VERBOSE );
 
 		if ( $sftp->file_exists( 'apple-touch-icon.png' ) ) {
 			$output->writeln( '<comment>apple-touch-icon.png already exists. Aborting.</comment>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$ssh = Pressable_Connection_Helper::get_ssh_connection( $this->pressable_site->id );
 		if ( \is_null( $ssh ) ) {
 			$output->writeln( '<error>Could not connect to the SSH server.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 		$output->writeln( '<fg=green;options=bold>SSH connection established.</>', OutputInterface::VERBOSITY_VERBOSE );
 
@@ -100,7 +101,7 @@ final class Pressable_Site_Upload_Icon extends Command {
 		if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			$output->writeln( '<error>Site has no icon set. Aborting.</error>' );
 			$output->writeln( "<error>Error with URL: $url</error>", OutputInterface::VERBOSITY_VERY_VERBOSE );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$output->writeln( "<fg=green;options=bold>Site icon URL: $url</>", OutputInterface::VERBOSITY_VERBOSE );
@@ -109,13 +110,13 @@ final class Pressable_Site_Upload_Icon extends Command {
 		$file_data = \file_get_contents( $url );
 		if ( false === $file_data ) {
 			$output->writeln( '<error>Could not download the site icon. Aborting.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$image = $this->process_image( $file_data, $output );
 		if ( false === $image ) {
 			$output->writeln( '<error>Could not process the site icon. Aborting.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		// If site icon is set and downloaded successfully, upload it to the site.
@@ -131,7 +132,7 @@ final class Pressable_Site_Upload_Icon extends Command {
 
 		if ( false === $result ) {
 			$output->writeln( '<error>Could not upload the site icon.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		if ( ! $this->dry_run ) {
@@ -139,7 +140,7 @@ final class Pressable_Site_Upload_Icon extends Command {
 			$output->writeln( "<info>URL: https://{$this->pressable_site->url}/apple-touch-icon.png</info>", OutputInterface::VERBOSITY_VERBOSE );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	/**

@@ -22,6 +22,7 @@ use function Team51\Helper\maybe_define_console_verbosity;
  */
 class Flickr_Scrap_Photostream extends Command {
 	// region FIELDS AND CONSTANTS
+	use \Team51\Helper\Autocomplete;
 
 	/**
 	 * {@inheritdoc}
@@ -90,7 +91,7 @@ class Flickr_Scrap_Photostream extends Command {
 		$photosets = get_flickr_photosets_for_user( $this->flickr_user_id );
 		if ( \is_null( $photosets ) ) {
 			$output->writeln( '<error>Failed to fetch photosets from Flickr.</error>' );
-			return 1;
+			return Command::FAILURE;
 		}
 
 		$photosets_data_directory = TEAM51_CLI_ROOT_DIR . "/flickr/$this->flickr_user_id/photosets";
@@ -122,7 +123,7 @@ class Flickr_Scrap_Photostream extends Command {
 				);
 				if ( \is_null( $photoset_photos ) ) {
 					$output->writeln( "<error>Failed to fetch photos from Flickr. Photoset error: $photoset->id</error>" );
-					return 1;
+					return Command::FAILURE;
 				}
 
 				$photos[] = $photoset_photos->photo;
@@ -164,7 +165,7 @@ class Flickr_Scrap_Photostream extends Command {
 			);
 			if ( \is_null( $photos ) ) {
 				$output->writeln( "<error>Failed to fetch photos from Flickr. Page error: $current_page</error>" );
-				return 1;
+				return Command::FAILURE;
 			}
 
 			$progress_bar = new ProgressBar( $output, \min( $this->limit ?? PHP_INT_MAX, \count( $photos->photo ) ) );
@@ -188,7 +189,7 @@ class Flickr_Scrap_Photostream extends Command {
 				$comments = get_flickr_comments_for_photo( $photo->id );
 				if ( \is_null( $comments ) ) {
 					$output->writeln( "<error>Failed to fetch comments from Flickr. Photo error: $photo->id</error>" );
-					return 1;
+					return Command::FAILURE;
 				}
 
 				\file_put_contents(
@@ -203,7 +204,7 @@ class Flickr_Scrap_Photostream extends Command {
 					$media_sizes = get_flickr_photo_sizes( $photo->id );
 					if ( \is_null( $media_sizes ) ) {
 						$output->writeln( "<error>Failed to fetch file sizes. Media error: $photo->id</error>" );
-						return 1;
+						return Command::FAILURE;
 					}
 
 					foreach ( $media_sizes->size as $size ) {
@@ -217,12 +218,12 @@ class Flickr_Scrap_Photostream extends Command {
 				$media_file = \file_get_contents( $media_url );
 				if ( empty( $media_file ) ) {
 					$output->writeln( "<error>Failed to download media. Meida error: $photo->id, Media URL: $media_url</error>" );
-					return 1;
+					return Command::FAILURE;
 				}
 
 				if ( false === \file_put_contents( $media_data_directory . '/media.' . $photo->originalformat, $media_file ) ) {
 					$output->writeln( "<error>Failed to save media. Media error: $photo->id</error>" );
-					return 1;
+					return Command::FAILURE;
 				}
 
 				if ( $this->limit ) {
@@ -241,7 +242,7 @@ class Flickr_Scrap_Photostream extends Command {
 			$has_next_page = 0 !== $this->limit && $photos->page < $photos->pages;
 		} while ( $has_next_page );
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

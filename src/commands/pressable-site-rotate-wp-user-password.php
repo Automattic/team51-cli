@@ -36,6 +36,8 @@ use function Team51\Helper\update_1password_item;
  * CLI command for rotating the WP password of users on Pressable sites.
  */
 final class Pressable_Site_Rotate_WP_User_Password extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -191,7 +193,7 @@ final class Pressable_Site_Rotate_WP_User_Password extends Command {
 			$output->writeln( '<fg=green;options=bold>WP user password updated in 1Password.</>' );
 		}
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

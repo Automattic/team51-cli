@@ -16,6 +16,8 @@ use function Team51\Helper\maybe_define_console_verbosity;
  * CLI command for generating an OAuth token for the Pressable API.
  */
 class Pressable_Generate_OAuth_Token extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	// region FIELDS AND CONSTANTS
 
 	/**
@@ -82,7 +84,7 @@ class Pressable_Generate_OAuth_Token extends Command {
 			) . PHP_EOL
 		);
 
-		return 0;
+		return Command::SUCCESS;
 	}
 
 	// endregion

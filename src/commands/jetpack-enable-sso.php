@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Jetpack_Enable_SSO extends Command {
+	use \Team51\Helper\Autocomplete;
+
 	protected static $defaultName = 'jetpack-enable-sso';
 
 	protected function configure() {
@@ -18,7 +20,7 @@ class Jetpack_Enable_SSO extends Command {
 		->addArgument( 'site-domain', InputArgument::REQUIRED, 'The domain of the Jetpack connected site.' );
 	}
 
-	protected function execute( InputInterface $input, OutputInterface $output ) {
+	protected function execute( InputInterface $input, OutputInterface $output ): int {
 		$site_domain = $input->getArgument( 'site-domain' );
 
 		$api_helper = new API_Helper();
@@ -54,5 +56,7 @@ class Jetpack_Enable_SSO extends Command {
 		}
 
 		$output->writeln( '<info>All done! :)<info>' );
+
+		return Command::SUCCESS;
 	}
 }
