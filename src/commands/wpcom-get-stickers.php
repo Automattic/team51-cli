@@ -65,7 +65,7 @@ final class WPCOM_Get_Stickers extends Command {
 
 		if ( empty( $stickers ) ) {
 			$output->writeln( '<comment>Site has no stickers associated.<comment>' );
-			return Command::FAILURE;
+			return Command::SUCCESS;
 		}
 
 		$sticker_table = new Table( $output );

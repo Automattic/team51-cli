@@ -53,7 +53,7 @@ class Pressable_Call_Api extends Command {
 
 		if ( ! in_array( $input->getOption( 'format' ), array( 'text', 'json' ), true ) ) {
 			$this->output->writeln( '<error>Invalid output format</error>' );
-			return Command::FAILURE;
+			return Command::INVALID;
 		}
 
 		$this->format = $input->getOption( 'format' );
