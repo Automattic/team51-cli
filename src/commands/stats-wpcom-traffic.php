@@ -144,11 +144,11 @@ class Get_Site_Stats extends Command {
 				array_push(
 					$team51_site_stats,
 					array(
-						'blog_id'  => $site['blog_id'],
-						'site_url' => $site['site_url'],
-						'views'    => $stats->views,
-						'visitors' => $stats->visitors,
-						'comments' => $stats->comments,
+						'blog_id'   => $site['blog_id'],
+						'site_url'  => $site['site_url'],
+						'views'     => $stats->views,
+						'visitors'  => $stats->visitors,
+						'comments'  => $stats->comments,
 						'followers' => $stats->followers,
 					)
 				);
@@ -209,9 +209,9 @@ class Get_Site_Stats extends Command {
 			$formatted_team51_site_stats[] = array( $site['blog_id'], $site['site_url'], number_format( $site['views'], 0 ), number_format( $site['visitors'], 0 ), number_format( $site['comments'], 0 ), number_format( $site['followers'], 0 ) );
 		}
 
-		$sum_total_views    = number_format( $sum_total_views, 0 );
-		$sum_total_visitors = number_format( $sum_total_visitors, 0 );
-		$sum_total_comments = number_format( $sum_total_comments, 0 );
+		$sum_total_views     = number_format( $sum_total_views, 0 );
+		$sum_total_visitors  = number_format( $sum_total_visitors, 0 );
+		$sum_total_comments  = number_format( $sum_total_comments, 0 );
 		$sum_total_followers = number_format( $sum_total_followers, 0 );
 
 		$output->writeln( '<info>Site stats for Team51 sites during the ' . $num . ' ' . $period . ' period ending ' . $date . '<info>' );
@@ -250,6 +250,5 @@ class Get_Site_Stats extends Command {
 	private function get_site_stats( $site_id, $period, $date, $num ) {
 		$site_stats = $this->api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_id . '/stats/summary?period=' . $period . '&date=' . $date . '&num=' . $num, array() );
 		return $site_stats;
-
 	}
 }

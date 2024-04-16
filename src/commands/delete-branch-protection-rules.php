@@ -9,27 +9,27 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Delete_Branch_Protection_Rules extends Command {
-    protected static $defaultName = 'delete-branch-protection-rules';
+	protected static $defaultName = 'delete-branch-protection-rules';
 
-    protected function configure() {
-        $this
-        ->setDescription( "Delete branch protection rules for a given GitHub repository." )
-        ->setHelp( "Allows deleting branch protection rules for a GitHub repository.." )
-        ->addArgument( 'repo-slug', InputArgument::REQUIRED, "Repository name in slug form (e.g. client-name)?" );
-    }
+	protected function configure() {
+		$this
+		->setDescription( 'Delete branch protection rules for a given GitHub repository.' )
+		->setHelp( 'Allows deleting branch protection rules for a GitHub repository..' )
+		->addArgument( 'repo-slug', InputArgument::REQUIRED, 'Repository name in slug form (e.g. client-name)?' );
+	}
 
-    protected function execute( InputInterface $input, OutputInterface $output ) {
-        $api_helper = new API_Helper;
+	protected function execute( InputInterface $input, OutputInterface $output ) {
+		$api_helper = new API_Helper();
 
-        $slug = $input->getArgument( 'repo-slug' );
+		$slug = $input->getArgument( 'repo-slug' );
 
-        $output->writeln( "<comment>Adding branch protection rules to $slug.</comment>" );
-        $delete_branch_protection_rules = $api_helper->call_github_api( "repos/" . GITHUB_API_OWNER . "/$slug/branches/master/protection", array(), 'DELETE' );
+		$output->writeln( "<comment>Adding branch protection rules to $slug.</comment>" );
+		$delete_branch_protection_rules = $api_helper->call_github_api( 'repos/' . GITHUB_API_OWNER . "/$slug/branches/master/protection", array(), 'DELETE' );
 
-        if ( ! empty( '' === $delete_branch_protection_rules ) ) {
-            $output->writeln( "<info>Done. Deleted branch protection rules for $slug.</info>" );
-        } else {
-            $output->writeln( "<info>Failed to delete branch protection rules for $slug: {$delete_branch_protection_rules->message}</info>" );
-        }
-    }
+		if ( ! empty( '' === $delete_branch_protection_rules ) ) {
+			$output->writeln( "<info>Done. Deleted branch protection rules for $slug.</info>" );
+		} else {
+			$output->writeln( "<info>Failed to delete branch protection rules for $slug: {$delete_branch_protection_rules->message}</info>" );
+		}
+	}
 }

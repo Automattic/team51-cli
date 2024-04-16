@@ -22,7 +22,7 @@ class Plugin_List extends Command {
 	protected function execute( InputInterface $input, OutputInterface $output ) {
 		$site_domain = $input->getArgument( 'site-domain' );
 
-		$api_helper = new API_Helper;
+		$api_helper = new API_Helper();
 
 		$site = $api_helper->call_wpcom_api( 'rest/v1.1/sites/' . $site_domain, array() );
 
@@ -53,6 +53,5 @@ class Plugin_List extends Command {
 
 		$plugin_table->setRows( $plugin_list );
 		$plugin_table->render();
-
 	}
 }
