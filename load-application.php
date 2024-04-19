@@ -51,6 +51,7 @@ $application->addCommands(
 		new Team51\Command\WPCOM_Get_Stickers(),
 		new Team51\Command\WPCOM_Add_Sticker(),
 		new Team51\Command\WPCOM_Remove_Sticker(),
+		new Team51\Command\Pressable_Get_Db_Backup(),
 	)
 );
 
