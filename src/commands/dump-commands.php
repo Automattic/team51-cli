@@ -21,7 +21,6 @@ class Dump_Commands extends Command {
 			->addOption( 'format', 'f', InputOption::VALUE_REQUIRED, 'The format to use (md, txt, json, xml)', 'md' )
 			->addOption( 'save', '', InputOption::VALUE_NONE, 'Save the output to a file' )
 			->addOption( 'destination', 'd', InputOption::VALUE_REQUIRED, "The path to save the output to (Only applies if --save option is set)\nIf an extension isn't specified, it will be added automatically based on the format (e.g., 'dump-commands --format=json --destination=myfile' will output to myfile.json", getcwd() . '/team51-commands' );
-
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
@@ -35,7 +34,6 @@ class Dump_Commands extends Command {
 
 		$stream = $this->set_output_stream( $input, $output );
 		$descriptor->describe( $stream, $this->getApplication() );
-
 	}
 
 	private function get_descriptor( $format ) {

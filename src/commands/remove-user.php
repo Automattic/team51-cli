@@ -143,7 +143,7 @@ class Remove_User extends Command {
 	 * Given an email, return the list of sites owned by that user.
 	 */
 	private function get_wpcom_users( $email ) {
-		$exclude_sites   = array(
+		$exclude_sites = array(
 			'https://woocommerce.com',
 		);
 

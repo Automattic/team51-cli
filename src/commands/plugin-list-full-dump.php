@@ -106,7 +106,6 @@ class Plugin_Summary extends Command {
 		fclose( $fp );
 
 		$output->writeln( '<info>Done, CSV saved to your current working directory: plugins-on-t51-sites-' . $timestamp . '.csv<info>' );
-
 	}
 
 	// Helper functions, getting list of plugins and getting woocommerce stats

@@ -156,7 +156,6 @@ class Create_Production_Site extends Command {
 			$output
 		);
 
-
 		$jetpack_activation_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/activate', (int) $pressable_site->data->id );
 		$jetpack_connection_link  = sprintf( 'https://my.pressable.com/sites/%d/jetpack_partnership/next_url', (int) $pressable_site->data->id );
 		$networkadmin_search_link = sprintf( 'https://wordpress.com/wp-admin/network/sites.php?s=%s&submit=Search+Sites', $pressable_site->data->url );
@@ -201,13 +200,17 @@ class Create_Production_Site extends Command {
 			$output->writeln( "<info>Created new project in DeployHQ.</info>\n" );
 		}
 
-		$output->writeln( "<comment>Adding private key to DeployHQ project.</comment>" );
+		$output->writeln( '<comment>Adding private key to DeployHQ project.</comment>' );
 
-		$project_info = $api_helper->call_deploy_hq_api( 'projects/' . $project_info->permalink, 'PUT', array(
-			'project' => array(
-				'custom_private_key' => DEPLOYHQ_PRIVATE_KEY
+		$project_info = $api_helper->call_deploy_hq_api(
+			'projects/' . $project_info->permalink,
+			'PUT',
+			array(
+				'project' => array(
+					'custom_private_key' => DEPLOYHQ_PRIVATE_KEY,
+				),
 			)
-		) );
+		);
 
 		if ( empty( $project_info ) || empty( $project_info->public_key ) ) {
 			$output->writeln( '<error>Failed to add private key to DeployHQ project. Aborting!</error>' );
@@ -318,7 +321,7 @@ class Create_Production_Site extends Command {
 		$manual_task_count = 1;
 		foreach ( $manual_task_notices as $notice ) {
 			$output->writeln( "<comment>$manual_task_count) $notice</comment>" );
-			$manual_task_count++;
+			++$manual_task_count;
 		}
 
 		$output->writeln( '' );

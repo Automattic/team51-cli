@@ -163,5 +163,4 @@ class Pressable_Call_Api extends Command {
 		$dump = 'json' === $this->format ? json_encode( $result, JSON_PRETTY_PRINT ) : print_r( $result, true );
 		$output->writeln( sprintf( '<info>API call result: %s</info>', $dump ) );
 	}
-
 }

@@ -24,7 +24,7 @@ class Site_List extends Command {
 	}
 
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$api_helper = new API_Helper;
+		$api_helper = new API_Helper();
 
 		$audit = false;
 
@@ -431,5 +431,3 @@ class Site_List extends Command {
 		fclose( $fp );
 	}
 }
-
-

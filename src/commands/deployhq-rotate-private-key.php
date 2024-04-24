@@ -41,8 +41,8 @@ final class DeployHQ_Rotate_Private_Key extends Command {
 
 			$data = array(
 				'project' => array(
-					'custom_private_key' => DEPLOYHQ_PRIVATE_KEY
-				)
+					'custom_private_key' => DEPLOYHQ_PRIVATE_KEY,
+				),
 			);
 
 			$response = DeployHQ_API_Helper::call_api( "projects/{$project->permalink}", 'PUT', $data );

@@ -43,7 +43,7 @@ class Jetpack_Sites_With extends Command {
 			exit;
 		}
 
-		$api_helper = new API_Helper;
+		$api_helper = new API_Helper();
 
 		$output->writeln( '<info>Fetching list of sites...<info>' );
 
@@ -130,7 +130,6 @@ class Jetpack_Sites_With extends Command {
 		$not_found_table->render();
 
 		$output->writeln( '<info>All done! :)<info>' );
-
 	}
 
 	private function get_list_of_modules( $site_id ) {
